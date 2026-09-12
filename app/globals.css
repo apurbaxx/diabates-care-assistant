@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* Chart/UI chrome — from the validated reference palette (light mode; this
+     app does not ship a dark mode in the MVP). */
+  --color-surface: #fcfcfb;
+  --color-page: #f6f7f6;
+  --color-ink: #0b0b0b;
+  --color-ink-secondary: #52514e;
+  --color-muted: #898781;
+  --color-gridline: #e1e0d9;
+  --color-baseline: #c3c2b7;
+  --color-border: rgba(11, 11, 11, 0.1);
+
+  /* Categorical slot 1 — used as the single brand/series hue throughout. */
+  --color-brand-100: #cde2fb;
+  --color-brand-200: #9ec5f4;
+  --color-brand-300: #6da7ec;
+  --color-brand-400: #3987e5;
+  --color-brand-500: #2a78d6;
+  --color-brand-600: #184f95;
+  --color-brand-700: #0d366b;
+
+  /* Status palette — fixed, reserved for severity only, never for identity. */
+  --color-status-good: #0ca30c;
+  --color-status-warning: #fab219;
+  --color-status-serious: #ec835a;
+  --color-status-critical: #d03b3b;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-brand-100);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

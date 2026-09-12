@@ -1,0 +1,14 @@
+CLINICAL CHEMISTRY REPORT
+Collection date: 2025-09-02
+
+Glycated Haemoglobin (HbA1c)   64      mmol/mol
+Creatinine                     97      umol/L
+Potassium                      4.9     mmol/L
+Sodium                         138     mmol/L
+Total Cholesterol              5.2     mmol/L
+LDL                            3.0     mmol/L
+HDL                            1.1     mmol/L
+Triglycerides                  1.9     mmol/L
+Vitamin B12                    210     pg/mL
+
+Notes: Fasting sample. Repeat in 3 months if clinically indicated.

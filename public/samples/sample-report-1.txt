@@ -1,0 +1,16 @@
+LABORATORY REPORT
+Specimen collected: 2025-08-12
+Patient MRN: (redacted — synthetic use only)
+
+HbA1c                        7.8      %
+Fasting Plasma Glucose       162      mg/dL
+Serum Creatinine             1.1      mg/dL
+eGFR                         78       mL/min/1.73m2
+Urine Albumin/Creatinine     45       mg/g
+Potassium                    4.4      mmol/L
+LDL Cholesterol              112      mg/dL
+HDL Cholesterol              42       mg/dL
+Triglycerides                165      mg/dL
+Haemoglobin                  13.9     g/dL
+
+End of report.
