@@ -48,7 +48,7 @@ export function PatientSelection() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
+            <img src="/logo.png" alt="" className="h-14 w-14 shrink-0 rounded-lg object-contain" />
             <div>
               <h1 className="text-lg font-semibold text-ink">Diabetes Care Assistant</h1>
               <p className="text-xs text-muted">Record-review assistant. You interpret; the record and guidelines are shown.</p>
@@ -95,9 +95,6 @@ export function PatientSelection() {
                         {patient.mrn} · {ageAt(patient.dob, new Date().toISOString().slice(0, 10))} · {patient.sex}
                       </div>
                     </div>
-                    <span className="rounded-full bg-page px-2 py-0.5 text-[11px] font-medium text-ink-secondary">
-                      {flaggedCount > 0 ? `${flaggedCount} flagged for review` : "No items flagged"}
-                    </span>
                   </div>
 
                   <div className="text-xs capitalize text-ink-secondary">

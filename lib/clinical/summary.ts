@@ -127,7 +127,7 @@ export function buildSummary(
   paragraphs.push(
     flaggedCount > 0
       ? `${flaggedCount} item${flaggedCount === 1 ? "" : "s"} flagged for review — see the Trends, Medications, and Safety sections below.`
-      : "No items are currently flagged for review in this record.",
+      : "",
   );
 
   return { headline, paragraphs, evidence, guidelines: guidelineRefs };
