@@ -5,7 +5,10 @@ import type { Insight, Medication, Visit } from "@/lib/types";
 import { TrendChart } from "@/components/trends/TrendChart";
 import { InsightList } from "@/components/shared/InsightCard";
 import { buildSeries } from "@/lib/clinical/context";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { cn } from "@/lib/cn";
+
+const hba1cStyle = paramStyle("hba1c");
 
 interface MedRow {
   med: Medication;
@@ -63,10 +66,13 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
     <div className="space-y-5">
       <div className="rounded-xl border border-border bg-surface p-4">
         <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-sm font-semibold text-ink">HbA1c, for alignment with regimen changes</h3>
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <hba1cStyle.icon className="h-4 w-4 shrink-0" style={{ color: hba1cStyle.accent }} strokeWidth={2.25} />
+            HbA1c, for alignment with regimen changes
+          </h3>
           <span className="text-xs text-muted">{rangeLabel}</span>
         </div>
-        <TrendChart parameter="hba1c" points={series.hba1c ?? []} />
+        <TrendChart parameter="hba1c" points={series.hba1c ?? []} color={hba1cStyle.accent} />
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-4">

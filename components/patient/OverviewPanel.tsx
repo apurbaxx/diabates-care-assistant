@@ -1,9 +1,8 @@
-import { Sparkles, Droplet, Flame, Scale, HeartPulse, Waves, FlaskConical, CalendarClock, FileText, ChevronRight } from "lucide-react";
+import { CalendarClock, FileText, ChevronRight } from "lucide-react";
 import type { EngineResult, Patient, ParameterSeriesPoint } from "@/lib/types";
 import { ageAt } from "@/lib/clinical/derive";
 import { formatWithUnit } from "@/lib/clinical/units";
-import { InsightList } from "@/components/shared/InsightCard";
-import { insightsForScope } from "@/lib/clinical/engine";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { AiMarker } from "@/components/shared/Badges";
 import { GuidelineCitation } from "@/components/shared/GuidelineCitation";
 import { Sparkline } from "@/components/shared/Sparkline";
@@ -27,17 +26,16 @@ function StatTile({
   label,
   value,
   sub,
-  icon: Icon,
-  tint,
+  paramKey,
   points,
 }: {
   label: string;
   value: string;
   sub?: string;
-  icon: typeof Droplet;
-  tint: string;
+  paramKey: string;
   points?: ParameterSeriesPoint[];
 }) {
+  const { icon: Icon, tint } = paramStyle(paramKey);
   return (
     <div className={cn("rounded-xl border p-3", tint)}>
       <div className="flex items-center gap-1.5 text-xs font-medium">
@@ -58,7 +56,6 @@ function StatTile({
 export function OverviewPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
   const { derived, summary } = engine;
   const latestVisit = derived.latestVisit;
-  const overviewInsights = insightsForScope(engine.insights, "overview");
 
   const recentReports = [...patient.labReports].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 
@@ -88,53 +85,47 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
             <StatTile
               label="HbA1c"
               value={formatWithUnit("hba1c", latestVisit?.labs.hba1c)}
-              icon={Droplet}
-              tint="border-rose-200/60 bg-rose-50 text-rose-700"
+              paramKey="hba1c"
               points={engine.trends.hba1c?.points}
             />
             <StatTile
               label="Fasting glucose"
               value={formatWithUnit("fastingGlucose", latestVisit?.labs.fastingGlucose)}
-              icon={Flame}
-              tint="border-amber-200/60 bg-amber-50 text-amber-700"
+              paramKey="fastingGlucose"
               points={engine.trends.fastingGlucose?.points}
             />
             <StatTile
               label="Weight"
               value={latestVisit?.vitals.weightKg ? `${latestVisit.vitals.weightKg.toFixed(1)} kg` : "—"}
               sub={derived.bmi ? `BMI ${derived.bmi.toFixed(1)}` : undefined}
-              icon={Scale}
-              tint="border-violet-200/60 bg-violet-50 text-violet-700"
+              paramKey="weightKg"
               points={engine.trends.weightKg?.points}
             />
             <StatTile
               label="Blood pressure"
               value={latestVisit?.vitals.systolic ? `${latestVisit.vitals.systolic}/${latestVisit.vitals.diastolic}` : "—"}
-              icon={HeartPulse}
-              tint="border-sky-200/60 bg-sky-50 text-sky-700"
+              paramKey="systolic"
               points={engine.trends.systolic?.points}
             />
             <StatTile
               label="eGFR"
               value={derived.egfr ? `${derived.egfr.toFixed(0)}` : "—"}
               sub={derived.ckdStage}
-              icon={Waves}
-              tint="border-emerald-200/60 bg-emerald-50 text-emerald-700"
+              paramKey="egfr"
               points={engine.trends.egfr?.points}
             />
             <StatTile
               label="UACR"
               value={formatWithUnit("uacr", latestVisit?.labs.uacr)}
               sub={derived.albuminuriaStage}
-              icon={FlaskConical}
-              tint="border-teal-200/60 bg-teal-50 text-teal-700"
+              paramKey="uacr"
               points={engine.trends.uacr?.points}
             />
           </div>
         </div>
 
         {/* Demographics + status */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div>
           <div className="rounded-xl border border-border bg-surface p-4">
             <h3 className="mb-3 text-sm font-semibold text-ink">Patient information</h3>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -178,14 +169,6 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
                 ? latestVisit.medications.map((m) => `${m.name} ${m.dose}${m.unit} ${m.frequency}`).join(", ")
                 : "None recorded"}
             </p>
-          </div>
-
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-brand-500" />
-              <h3 className="text-sm font-semibold text-ink">AI insights — overview</h3>
-            </div>
-            <InsightList insights={overviewInsights} />
           </div>
         </div>
       </div>

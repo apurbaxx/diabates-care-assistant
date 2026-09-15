@@ -5,6 +5,7 @@ import { ArrowLeftRight } from "lucide-react";
 import type { Patient } from "@/lib/types";
 import { compareVisits } from "@/lib/clinical/analyzers/comparison";
 import { parameterMeta } from "@/lib/clinical/units";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { cn } from "@/lib/cn";
 
 export function VisitComparison({ patient }: { patient: Patient }) {
@@ -59,9 +60,16 @@ export function VisitComparison({ patient }: { patient: Patient }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.map((r) => {
+                const style = paramStyle(r.key);
+                return (
                 <tr key={r.key} className="border-b border-gridline/60">
-                  <td className="py-2 font-medium text-ink">{r.label}</td>
+                  <td className="py-2 font-medium text-ink">
+                    <span className="flex items-center gap-1.5">
+                      <style.icon className="h-3.5 w-3.5 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
+                      {r.label}
+                    </span>
+                  </td>
                   <td className="py-2 tabular-nums text-ink-secondary">
                     {r.previous !== undefined ? `${r.previous.toFixed(parameterMeta(r.key).decimals)} ${r.unit}` : "—"}
                     {r.previousDate && r.previous !== undefined && (
@@ -91,7 +99,8 @@ export function VisitComparison({ patient }: { patient: Patient }) {
                   </td>
                   <td className="py-2 text-xs text-ink-secondary">{r.trendSummary}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           <p className="mt-2 text-xs text-muted">

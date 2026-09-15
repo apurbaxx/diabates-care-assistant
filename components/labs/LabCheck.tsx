@@ -6,6 +6,7 @@ import type { LabComparison, LabReport, ParsedLabValue, Patient } from "@/lib/ty
 import { parseLabCsv, parseLabText } from "@/lib/labs/parser";
 import { compareReport } from "@/lib/clinical/analyzers/comparison";
 import { ANALYTES, parameterMeta } from "@/lib/clinical/units";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { useAppStore } from "@/lib/store";
 import { InsightList } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
@@ -188,9 +189,15 @@ export function LabCheck({ patient }: { patient: Patient }) {
             <tbody>
               {values.map((v) => {
                 const meta = ANALYTES[v.key];
+                const style = paramStyle(v.key);
                 return (
                   <tr key={v.key} className="border-b border-gridline/60">
-                    <td className="py-1.5 font-medium text-ink">{meta.label}</td>
+                    <td className="py-1.5 font-medium text-ink">
+                      <span className="flex items-center gap-1.5">
+                        <style.icon className="h-3.5 w-3.5 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
+                        {meta.label}
+                      </span>
+                    </td>
                     <td className="py-1.5 tabular-nums text-ink-secondary">
                       {v.reportedValue} {v.reportedUnit}
                     </td>
@@ -270,9 +277,16 @@ export function LabCheck({ patient }: { patient: Patient }) {
                 </tr>
               </thead>
               <tbody>
-                {comparison.rows.map((r) => (
+                {comparison.rows.map((r) => {
+                  const style = paramStyle(r.key);
+                  return (
                   <tr key={r.key} className="border-b border-gridline/60">
-                    <td className="py-2 font-medium text-ink">{r.label}</td>
+                    <td className="py-2 font-medium text-ink">
+                      <span className="flex items-center gap-1.5">
+                        <style.icon className="h-3.5 w-3.5 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
+                        {r.label}
+                      </span>
+                    </td>
                     <td className="py-2 tabular-nums font-semibold text-ink">
                       {r.current?.toFixed(parameterMeta(r.key).decimals)} {r.unit}
                     </td>
@@ -299,7 +313,8 @@ export function LabCheck({ patient }: { patient: Patient }) {
                     </td>
                     <td className="py-2 text-xs text-ink-secondary">{r.trendSummary}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
             <p className="mt-2 text-xs text-muted">● marks a change exceeding this analyte's measurement-variability threshold.</p>

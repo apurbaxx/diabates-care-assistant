@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Insight, TrendResult } from "@/lib/types";
 import { TrendChart, type ReferenceMark } from "./TrendChart";
 import { parameterMeta } from "@/lib/clinical/units";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { insightsForParameter } from "@/lib/clinical/engine";
 import { InsightCard } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
@@ -46,6 +47,7 @@ export function TrendWorkbench({
 
   const trend = trends[active];
   const meta = parameterMeta(active);
+  const style = paramStyle(active);
   const relatedInsights = useMemo(() => insightsForParameter(insights, active), [insights, active]);
   const referenceMarks = referenceMarksFor(active);
 
@@ -54,6 +56,9 @@ export function TrendWorkbench({
       <div className="mb-4 flex flex-wrap gap-1.5">
         {TABS.map((t) => {
           const hasData = (trends[t.key]?.points.length ?? 0) > 0;
+          const isActive = active === t.key;
+          const tabStyle = paramStyle(t.key);
+          const Icon = tabStyle.icon;
           return (
             <button
               key={t.key}
@@ -63,14 +68,15 @@ export function TrendWorkbench({
                 setHighlighted([]);
               }}
               className={cn(
-                "rounded-full px-3 py-1.5 text-sm font-medium transition",
-                active === t.key
-                  ? "bg-brand-500 text-white"
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                isActive
+                  ? "border-transparent bg-brand-500 text-white"
                   : hasData
-                    ? "bg-surface text-ink-secondary hover:bg-brand-100/50"
-                    : "cursor-not-allowed bg-surface text-muted opacity-40",
+                    ? "border-border bg-surface text-ink-secondary hover:bg-brand-100/50"
+                    : "cursor-not-allowed border-border bg-surface text-muted opacity-40",
               )}
             >
+              <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} style={!isActive && hasData ? { color: tabStyle.accent } : undefined} />
               {t.label}
             </button>
           );
@@ -80,7 +86,10 @@ export function TrendWorkbench({
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-xl border border-border bg-surface p-4">
           <div className="mb-2 flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold text-ink">{meta.label}</h3>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <style.icon className="h-4 w-4 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
+              {meta.label}
+            </h3>
             {trend && trend.points.length > 0 && (
               <span className="text-xs text-muted">
                 {trend.points.length} measurement{trend.points.length === 1 ? "" : "s"}
@@ -92,6 +101,7 @@ export function TrendWorkbench({
             points={trend?.points ?? []}
             referenceMarks={referenceMarks}
             highlightedVisitIds={highlighted}
+            color={style.accent}
           />
           {trend && trend.points.length >= 2 && (
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-brand-100/30 p-2.5">

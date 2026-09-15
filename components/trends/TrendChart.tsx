@@ -24,6 +24,8 @@ interface TrendChartProps {
   points: ParameterSeriesPoint[];
   referenceMarks?: ReferenceMark[];
   highlightedVisitIds?: string[];
+  /** Line/dot colour — defaults to the app's single brand hue. */
+  color?: string;
 }
 
 function formatDate(iso: string): string {
@@ -31,7 +33,13 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { year: "2-digit", month: "short" });
 }
 
-export function TrendChart({ parameter, points, referenceMarks = [], highlightedVisitIds = [] }: TrendChartProps) {
+export function TrendChart({
+  parameter,
+  points,
+  referenceMarks = [],
+  highlightedVisitIds = [],
+  color = "var(--color-brand-500)",
+}: TrendChartProps) {
   const meta = parameterMeta(parameter);
   const data = points.map((p) => ({ ...p, label: formatDate(p.date) }));
 
@@ -98,7 +106,7 @@ export function TrendChart({ parameter, points, referenceMarks = [], highlighted
           <Line
             type="monotone"
             dataKey="value"
-            stroke="var(--color-brand-500)"
+            stroke={color}
             strokeWidth={2}
             dot={(props) => {
               const isHighlighted = highlightedVisitIds.includes(props.payload.visitId ?? "");
@@ -108,13 +116,13 @@ export function TrendChart({ parameter, points, referenceMarks = [], highlighted
                   cx={props.cx}
                   cy={props.cy}
                   r={isHighlighted ? 6 : 3.5}
-                  fill={isHighlighted ? "var(--color-status-critical)" : "var(--color-brand-500)"}
+                  fill={isHighlighted ? "var(--color-status-critical)" : color}
                   stroke={isHighlighted ? "var(--color-surface)" : "none"}
                   strokeWidth={isHighlighted ? 2 : 0}
                 />
               );
             }}
-            activeDot={{ r: 6, fill: "var(--color-brand-600)" }}
+            activeDot={{ r: 6, fill: color }}
             isAnimationActive={false}
           />
         </LineChart>

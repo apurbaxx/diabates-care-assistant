@@ -7,6 +7,7 @@ import { formatWithUnit } from "@/lib/clinical/units";
 import { insightsForVisit } from "@/lib/clinical/engine";
 import { InsightCard } from "@/components/shared/InsightCard";
 import { describeChange } from "@/lib/clinical/analyzers/medication";
+import { paramStyle } from "@/lib/clinical/paramStyle";
 import { cn } from "@/lib/cn";
 
 const DISPLAY_LABS: { key: keyof Visit["labs"]; label: string }[] = [
@@ -18,6 +19,11 @@ const DISPLAY_LABS: { key: keyof Visit["labs"]; label: string }[] = [
   { key: "ldl", label: "LDL" },
   { key: "potassium", label: "Potassium" },
 ];
+
+const weightStyle = paramStyle("weightKg");
+const WeightIcon = weightStyle.icon;
+const bpStyle = paramStyle("systolic");
+const BpIcon = bpStyle.icon;
 
 export function VisitTimeline({ visits, insights }: { visits: Visit[]; insights: Insight[] }) {
   const chronological = [...visits].sort((a, b) => b.date.localeCompare(a.date));
@@ -70,27 +76,39 @@ export function VisitTimeline({ visits, insights }: { visits: Visit[]; insights:
 
               {isOpen && (
                 <div className="space-y-4 border-t border-gridline px-4 py-4">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-                    {DISPLAY_LABS.filter((d) => visit.labs[d.key] !== undefined).map((d) => (
-                      <div key={d.key}>
-                        <div className="text-xs text-muted">{d.label}</div>
-                        <div className="text-sm font-semibold tabular-nums text-ink">
-                          {formatWithUnit(d.key, visit.labs[d.key])}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {DISPLAY_LABS.filter((d) => visit.labs[d.key] !== undefined).map((d) => {
+                      const { icon: Icon, tint } = paramStyle(d.key);
+                      return (
+                        <div key={d.key} className={cn("rounded-lg border px-2.5 py-2", tint)}>
+                          <div className="flex items-center gap-1.5 text-xs font-medium">
+                            <Icon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
+                            {d.label}
+                          </div>
+                          <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
+                            {formatWithUnit(d.key, visit.labs[d.key])}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {visit.vitals.weightKg !== undefined && (
-                      <div>
-                        <div className="text-xs text-muted">Weight</div>
-                        <div className="text-sm font-semibold tabular-nums text-ink">
+                      <div className={cn("rounded-lg border px-2.5 py-2", weightStyle.tint)}>
+                        <div className="flex items-center gap-1.5 text-xs font-medium">
+                          <WeightIcon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
+                          Weight
+                        </div>
+                        <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
                           {visit.vitals.weightKg.toFixed(1)} kg
                         </div>
                       </div>
                     )}
                     {visit.vitals.systolic !== undefined && (
-                      <div>
-                        <div className="text-xs text-muted">Blood pressure</div>
-                        <div className="text-sm font-semibold tabular-nums text-ink">
+                      <div className={cn("rounded-lg border px-2.5 py-2", bpStyle.tint)}>
+                        <div className="flex items-center gap-1.5 text-xs font-medium">
+                          <BpIcon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
+                          Blood pressure
+                        </div>
+                        <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
                           {visit.vitals.systolic}/{visit.vitals.diastolic} mmHg
                         </div>
                       </div>
