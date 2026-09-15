@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Search, Sparkles, Stethoscope } from "lucide-react";
+import { PlusCircle, Search, Sparkles } from "lucide-react";
 import { useAppStore, ensureSeeded } from "@/lib/store";
 import { runEngine } from "@/lib/clinical/engine";
 import { ageAt } from "@/lib/clinical/derive";
@@ -47,7 +47,8 @@ export function PatientSelection() {
       <header className="border-b border-gridline bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <Stethoscope className="h-6 w-6 text-brand-500" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
             <div>
               <h1 className="text-lg font-semibold text-ink">Diabetes Care Assistant</h1>
               <p className="text-xs text-muted">Record-review assistant. You interpret; the record and guidelines are shown.</p>
