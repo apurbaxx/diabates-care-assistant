@@ -55,7 +55,7 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
       </div>
 
       {/* Demographics + status */}
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+      <div className="grid gap-4">
         <div className="rounded-xl border border-border bg-surface p-4">
           <h3 className="mb-3 text-sm font-semibold text-ink">Patient information</h3>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
@@ -99,24 +99,6 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
               ? latestVisit.medications.map((m) => `${m.name} ${m.dose}${m.unit} ${m.frequency}`).join(", ")
               : "None recorded"}
           </p>
-        </div>
-
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h3 className="mb-3 text-sm font-semibold text-ink">Individualised targets</h3>
-          <div className="space-y-3 text-sm">
-            <div>
-              <div className="text-xs text-muted">HbA1c goal</div>
-              <div className="font-semibold text-brand-700">{derived.hba1cTarget.value}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">Blood pressure goal</div>
-              <div className="font-semibold text-brand-700">{derived.bpTarget.value}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted">LDL-C goal</div>
-              <div className="font-semibold text-brand-700">{derived.ldlTarget.value}</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -167,7 +149,11 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
 
       {summary.guidelines.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-ink">Guideline basis for this summary</h3>
+          <h3 className="mb-1 text-sm font-semibold text-ink">Relevant Reference Information</h3>
+          <p className="mb-2 text-xs text-muted">
+            General guideline statements related to the values shown above — not a personalised recommendation for
+            this patient.
+          </p>
           <div className="space-y-2">
             {summary.guidelines.map((g) => (
               <GuidelineCitation key={g.id} guideline={g} />

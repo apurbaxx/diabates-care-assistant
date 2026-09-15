@@ -1,19 +1,18 @@
 import type { Insight } from "@/lib/types";
 import { makeInsight, type AnalysisContext } from "../context";
 import { guidelines } from "../guidelines";
-import { labValueEvidence, computationEvidence, visitEvidence } from "../evidence";
-import { estimatedAverageGlucose, EAG_METHOD, targetNumber } from "../derive";
+import { labValueEvidence, computationEvidence } from "../evidence";
+import { estimatedAverageGlucose, EAG_METHOD } from "../derive";
 import { describeSpan, monthsBetween } from "../stats";
 
-/** Glycaemic control: target attainment, trajectory, and HbA1c/glucose coherence. */
+/** Glycaemic control: trajectory and HbA1c/glucose coherence, from the record alone. */
 export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
   const out: Insight[] = [];
-  const { trends, derived, visits } = ctx;
+  const { trends, visits } = ctx;
   const a1cTrend = trends.hba1c;
   const points = a1cTrend?.points ?? [];
   if (points.length === 0) return out;
 
-  const target = targetNumber(derived.hba1cTarget);
   const latest = points[points.length - 1];
   const latestVisit = visits.find((v) => v.id === latest.visitId);
 
@@ -25,7 +24,7 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
       makeInsight({
         scope: "trend",
         kind: "trend",
-        severity: latest.value > target ? "attention" : "watch",
+        severity: "watch",
         title: `HbA1c rising: ${sequence} %`,
         statement:
           a1cTrend.monotonicRun >= 3
@@ -50,7 +49,7 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
         severity: "info",
         title: `HbA1c improving: ${sequence} %`,
         statement: `HbA1c has fallen by ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)} (${sequence} %).`,
-        detail: `Theil–Sen slope ${a1cTrend.slopePerYear.toFixed(2)} %/year. Consider whether the current regimen carries hypoglycaemia risk if the value is now below the individualised goal.`,
+        detail: `Theil–Sen slope ${a1cTrend.slopePerYear.toFixed(2)} %/year.`,
         evidence: runPoints.map((p) =>
           labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
         ),
@@ -98,59 +97,7 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
     );
   }
 
-  // --- 2. Target attainment ----------------------------------------------
-  const aboveTarget = latest.value > target;
-  const consecutiveAbove = countTrailing(points.map((p) => p.value), (v) => v > target);
-
-  if (aboveTarget) {
-    out.push(
-      makeInsight({
-        scope: "overview",
-        kind: "possible-significance",
-        severity: latest.value >= target + 1 ? "attention" : "watch",
-        title: `HbA1c ${latest.value.toFixed(1)} % is above the individualised goal of ${derived.hba1cTarget.value}`,
-        statement: `The most recent HbA1c (${latest.value.toFixed(1)} %, ${latest.date}) sits ${(latest.value - target).toFixed(1)} percentage points above the goal of ${derived.hba1cTarget.value}${consecutiveAbove > 1 ? `, and has been above goal at the last ${consecutiveAbove} measurements` : ""}.`,
-        detail: `Goal derivation: ${derived.hba1cTarget.rationale}`,
-        evidence: [
-          labValueEvidence("hba1c", latest.value, latest.date, { visitId: latest.visitId }),
-          computationEvidence(
-            "Individualised HbA1c goal",
-            latest.date,
-            derived.hba1cTarget.value,
-            `ADA §6 individualisation applied to: age ${derived.ageYears}, duration ${derived.diabetesDurationYears} y, eGFR ${derived.egfr ?? "n/a"}, hypoglycaemia history ${ctx.patient.hypoglycemiaHistory ? "yes" : "no"}`,
-            derived.hba1cTarget.rationale,
-          ),
-        ],
-        guidelines: [derived.hba1cTarget.guideline],
-        parameters: ["hba1c"],
-        visitIds: latest.visitId ? [latest.visitId] : [],
-      }),
-    );
-  } else if (latest.value < target - 1 && hasHypoRiskAgent(ctx)) {
-    out.push(
-      makeInsight({
-        scope: "safety",
-        kind: "possible-significance",
-        severity: "watch",
-        title: "HbA1c well below goal on a hypoglycaemia-risk regimen",
-        statement: `HbA1c is ${latest.value.toFixed(1)} %, more than 1 percentage point below the individualised goal of ${derived.hba1cTarget.value}, while the patient is on ${hypoRiskAgentNames(ctx).join(" and ")}.`,
-        detail:
-          "Below-goal HbA1c on insulin or a secretagogue raises the question of hypoglycaemia burden. Worth reviewing hypoglycaemia history and considering whether de-intensification is appropriate.",
-        evidence: [
-          labValueEvidence("hba1c", latest.value, latest.date, { visitId: latest.visitId }),
-          ...(latestVisit
-            ? [visitEvidence(latestVisit, `Active agents: ${hypoRiskAgentNames(ctx).join(", ")}`)]
-            : []),
-        ],
-        guidelines: guidelines("ADA_HYPO_RISK", "ADA_DEINTENSIFICATION"),
-        confidence: "inferred",
-        parameters: ["hba1c"],
-        visitIds: latest.visitId ? [latest.visitId] : [],
-      }),
-    );
-  }
-
-  // --- 3. HbA1c vs measured glucose coherence -----------------------------
+  // --- 2. HbA1c vs measured glucose coherence -----------------------------
   const fpgPoints = trends.fastingGlucose?.points ?? [];
   const latestFpg = fpgPoints[fpgPoints.length - 1];
   if (latestFpg && latestVisit && latestFpg.visitId === latest.visitId) {
@@ -166,8 +113,6 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
           severity: "watch",
           title: "HbA1c and fasting glucose appear discordant",
           statement: `HbA1c ${latest.value.toFixed(1)} % corresponds to an estimated average glucose of ${eag} mg/dL, while the same-day fasting glucose was ${latestFpg.value.toFixed(0)} mg/dL.`,
-          detail:
-            "Discordance can be physiological (post-prandial-dominant vs fasting-dominant patterns) or can reflect conditions that alter red cell lifespan, such as anaemia, CKD or haemoglobinopathy. Glucose-based confirmation is the usual next step.",
           evidence: [
             labValueEvidence("hba1c", latest.value, latest.date, { visitId: latest.visitId }),
             labValueEvidence("fastingGlucose", latestFpg.value, latestFpg.date, {
@@ -188,17 +133,17 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
     }
   }
 
-  // --- 4. Monitoring interval ---------------------------------------------
+  // --- 3. Monitoring interval ---------------------------------------------
   if (points.length >= 2) {
     const gap = monthsBetween(points[points.length - 2].date, latest.date);
-    if (aboveTarget && gap > 6.5) {
+    if (gap > 6.5) {
       out.push(
         makeInsight({
           scope: "screening",
           kind: "observation",
           severity: "watch",
-          title: "HbA1c retested less often than quarterly while above goal",
-          statement: `${Math.round(gap)} months elapsed between the last two HbA1c measurements (${points[points.length - 2].date} and ${latest.date}) while the value was above the individualised goal.`,
+          title: "HbA1c retested less often than quarterly",
+          statement: `${Math.round(gap)} months elapsed between the last two HbA1c measurements (${points[points.length - 2].date} and ${latest.date}).`,
           evidence: [
             labValueEvidence("hba1c", points[points.length - 2].value, points[points.length - 2].date, {
               visitId: points[points.length - 2].visitId,
@@ -216,30 +161,4 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
   }
 
   return out;
-}
-
-function countTrailing<T>(arr: T[], pred: (v: T) => boolean): number {
-  let n = 0;
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if (pred(arr[i])) n++;
-    else break;
-  }
-  return n;
-}
-
-const HYPO_RISK_CLASSES = new Set([
-  "sulfonylurea",
-  "basal-insulin",
-  "bolus-insulin",
-  "premix-insulin",
-]);
-
-export function hasHypoRiskAgent(ctx: AnalysisContext): boolean {
-  return ctx.activeMedications.some((m) => HYPO_RISK_CLASSES.has(m.medClass));
-}
-
-export function hypoRiskAgentNames(ctx: AnalysisContext): string[] {
-  return ctx.activeMedications
-    .filter((m) => HYPO_RISK_CLASSES.has(m.medClass))
-    .map((m) => m.name);
 }

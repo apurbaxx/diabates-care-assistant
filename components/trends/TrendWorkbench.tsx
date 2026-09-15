@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DerivedState, Insight, TrendResult } from "@/lib/types";
+import type { Insight, TrendResult } from "@/lib/types";
 import { TrendChart, type ReferenceMark } from "./TrendChart";
 import { parameterMeta } from "@/lib/clinical/units";
-import { targetNumber } from "@/lib/clinical/derive";
 import { insightsForParameter } from "@/lib/clinical/engine";
 import { InsightCard } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
@@ -20,16 +19,9 @@ const TABS: { key: string; label: string }[] = [
   { key: "ldl", label: "LDL cholesterol" },
 ];
 
-function referenceMarksFor(parameter: string, derived: DerivedState): ReferenceMark[] {
+/** General KDIGO staging boundaries only — never a personalised treatment target. */
+function referenceMarksFor(parameter: string): ReferenceMark[] {
   switch (parameter) {
-    case "hba1c":
-      return [{ value: targetNumber(derived.hba1cTarget), label: `Goal ${derived.hba1cTarget.value}` }];
-    case "systolic":
-      return [{ value: 130, label: "Goal < 130" }];
-    case "ldl": {
-      const goal = derived.ldlTarget.value.includes("70") ? 70 : 100;
-      return [{ value: goal, label: `Goal < ${goal}` }];
-    }
     case "egfr":
       return [{ value: 60, label: "CKD threshold (60)" }];
     case "uacr":
@@ -44,11 +36,9 @@ function referenceMarksFor(parameter: string, derived: DerivedState): ReferenceM
 
 export function TrendWorkbench({
   trends,
-  derived,
   insights,
 }: {
   trends: Record<string, TrendResult>;
-  derived: DerivedState;
   insights: Insight[];
 }) {
   const [active, setActive] = useState("hba1c");
@@ -57,7 +47,7 @@ export function TrendWorkbench({
   const trend = trends[active];
   const meta = parameterMeta(active);
   const relatedInsights = useMemo(() => insightsForParameter(insights, active), [insights, active]);
-  const referenceMarks = referenceMarksFor(active, derived);
+  const referenceMarks = referenceMarksFor(active);
 
   return (
     <div>

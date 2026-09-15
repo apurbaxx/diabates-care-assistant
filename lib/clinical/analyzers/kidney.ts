@@ -7,17 +7,9 @@ import {
   albuminuriaLabel,
   ckdStage,
   ckdStageLabel,
-  kdigoRisk,
   CKD_EPI_METHOD,
 } from "../derive";
 import { describeSpan, daysBetween, monthsBetween } from "../stats";
-
-const RISK_LABEL: Record<string, string> = {
-  low: "low risk",
-  moderate: "moderately increased risk",
-  high: "high risk",
-  "very-high": "very high risk",
-};
 
 /**
  * Kidney analysis: eGFR trajectory, CKD stage transitions, albuminuria category
@@ -48,7 +40,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
       out.push(
         makeInsight({
           scope: "trend",
-          kind: dropPct >= 30 ? "possible-significance" : "trend",
+          kind: dropPct >= 30 ? "flagged-for-review" : "trend",
           severity,
           title: `eGFR down ${dropPct.toFixed(0)} % from baseline (${baseline.value.toFixed(0)} → ${latest.value.toFixed(0)})`,
           statement:
@@ -182,7 +174,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
       out.push(
         makeInsight({
           scope: "trend",
-          kind: confirmed ? "possible-significance" : "observation",
+          kind: confirmed ? "flagged-for-review" : "observation",
           severity: worsening ? (confirmed ? "attention" : "watch") : "info",
           title: `Albuminuria category ${worsening ? "increased" : "decreased"}: ${stageBefore} → ${stageNow}`,
           statement:
@@ -208,55 +200,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
     }
   }
 
-  // --- 4. Current KDIGO risk cell ------------------------------------------
-  if (derived.ckdStage && derived.albuminuriaStage && derived.egfr !== undefined) {
-    const risk = kdigoRisk(derived.ckdStage, derived.albuminuriaStage);
-    const uacrLatest = uacrPoints[uacrPoints.length - 1];
-    const egfrLatest = egfrPoints[egfrPoints.length - 1];
-    if (risk !== "low") {
-      out.push(
-        makeInsight({
-          scope: "overview",
-          kind: "possible-significance",
-          severity: risk === "very-high" ? "attention" : "watch",
-          title: `KDIGO risk category: ${derived.ckdStage}${derived.albuminuriaStage} — ${RISK_LABEL[risk]}`,
-          statement: `Combining ${ckdStageLabel(derived.ckdStage)} with ${albuminuriaLabel(derived.albuminuriaStage)} places this patient in the ${RISK_LABEL[risk]} cell of the KDIGO heatmap.`,
-          detail:
-            "The KDIGO CGA grid combines GFR and albuminuria categories because the two together predict adverse outcomes better than either alone. Monitoring frequency and therapy choice both follow from this cell.",
-          evidence: [
-            ...(egfrLatest
-              ? [
-                  labValueEvidence("egfr", egfrLatest.value, egfrLatest.date, {
-                    visitId: egfrLatest.visitId,
-                    note: `GFR category ${derived.ckdStage}`,
-                  }),
-                ]
-              : []),
-            ...(uacrLatest
-              ? [
-                  labValueEvidence("uacr", uacrLatest.value, uacrLatest.date, {
-                    visitId: uacrLatest.visitId,
-                    note: `Albuminuria category ${derived.albuminuriaStage}`,
-                  }),
-                ]
-              : []),
-            computationEvidence(
-              "KDIGO risk cell",
-              egfrLatest?.date ?? derived.latestVisit?.date ?? "",
-              `${derived.ckdStage} / ${derived.albuminuriaStage} → ${RISK_LABEL[risk]}`,
-              "KDIGO 2024 CGA heatmap lookup (GFR category × albuminuria category)",
-            ),
-          ],
-          guidelines: guidelines("KDIGO_STAGING", "ADA_SGLT2_CKD"),
-          confidence: "inferred",
-          parameters: ["egfr", "uacr"],
-          visitIds: [egfrLatest?.visitId, uacrLatest?.visitId].filter(Boolean) as string[],
-        }),
-      );
-    }
-  }
-
-  // --- 5. Kidney screening interval ---------------------------------------
+  // --- 4. Kidney screening interval ---------------------------------------
   const lastUacr = uacrPoints[uacrPoints.length - 1];
   const lastVisitDate = visits[visits.length - 1]?.date;
   if (lastVisitDate) {

@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Diabetes Care Assistant for Doctors",
-  description: "Clinical decision support for longitudinal diabetes management.",
+  description:
+    "Assistive record-review tool for longitudinal diabetes management — surfaces trends and guideline citations; the clinician decides.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

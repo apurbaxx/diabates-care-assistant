@@ -28,12 +28,12 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
       out.push(
         makeInsight({
           scope: "safety",
-          kind: "possible-significance",
+          kind: "flagged-for-review",
           severity: "attention",
-          title: `Metformin active at eGFR ${egfr.toFixed(0)} — below the contraindication threshold`,
-          statement: `${metformin.name} ${metformin.dose} ${metformin.unit} ${metformin.frequency} is on the active list while eGFR is ${egfr.toFixed(0)} mL/min/1.73m². Metformin is contraindicated below 30.`,
+          title: `Metformin active at eGFR ${egfr.toFixed(0)} — below the ADA guideline threshold of 30`,
+          statement: `${metformin.name} ${metformin.dose} ${metformin.unit} ${metformin.frequency} is on the active list. eGFR is ${egfr.toFixed(0)} mL/min/1.73m², below the threshold ADA's metformin guidance below addresses.`,
           detail:
-            "Confirm the eGFR on a repeat sample before acting — a single low value may reflect a reversible fall. If sustained, the contraindication applies.",
+            "A single low eGFR value may reflect a reversible change (e.g. volume depletion, acute illness). A repeat measurement would confirm whether this is sustained.",
           evidence: [
             medicationEvidence(
               lastVisit,
@@ -57,12 +57,12 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
       out.push(
         makeInsight({
           scope: "safety",
-          kind: "possible-significance",
+          kind: "flagged-for-review",
           severity: maxDose ? "attention" : "watch",
-          title: `Metformin at eGFR ${egfr.toFixed(0)} — dose review band (30–44)`,
-          statement: `${metformin.name} is dosed at ${metformin.dose} ${metformin.unit} ${metformin.frequency} while eGFR is ${egfr.toFixed(0)} mL/min/1.73m².${maxDose ? " ADA advises dose reduction in this band." : ""}`,
+          title: `Metformin at eGFR ${egfr.toFixed(0)} — within the ADA 30–44 dosing band`,
+          statement: `${metformin.name} is dosed at ${metformin.dose} ${metformin.unit} ${metformin.frequency} while eGFR is ${egfr.toFixed(0)} mL/min/1.73m².${maxDose ? " This dose is above what ADA's guidance associates with this eGFR band." : ""}`,
           detail:
-            "In the eGFR 30–44 band, initiation is not recommended and continuation should be at a reduced dose with an explicit benefit–risk review. Monitor eGFR more often than annually at this level.",
+            "This eGFR band (30–44) is the range ADA's metformin-dosing guidance specifically addresses (see citation), including a more frequent eGFR-monitoring interval than the annual default.",
           evidence: [
             medicationEvidence(
               lastVisit,
@@ -114,10 +114,10 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
     out.push(
       makeInsight({
         scope: "safety",
-        kind: "possible-significance",
+        kind: "flagged-for-review",
         severity: "watch",
         title: `SGLT2 inhibitor active at eGFR ${egfr.toFixed(0)}`,
-        statement: `${sglt2.name} is on the active list at an eGFR of ${egfr.toFixed(0)} mL/min/1.73m², below the ≥20 threshold at which initiation is recommended.`,
+        statement: `${sglt2.name} is on the active list at an eGFR of ${egfr.toFixed(0)} mL/min/1.73m², below the ≥20 mL/min/1.73m² threshold referenced in ADA's SGLT2i-in-CKD guidance (cited below).`,
         detail:
           "Continuation below the initiation threshold is sometimes appropriate for kidney protection; the glucose-lowering effect is minimal at this eGFR. Worth an explicit decision rather than a default.",
         evidence: [
@@ -141,7 +141,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
     out.push(
       makeInsight({
         scope: "safety",
-        kind: "possible-significance",
+        kind: "flagged-for-review",
         severity: "watch",
         title: "Sulfonylurea and insulin prescribed together",
         statement: `${su.name} and ${insulin.name} are both on the active list. Combining a secretagogue with insulin stacks the two highest hypoglycaemia-risk classes.`,
@@ -169,7 +169,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
     out.push(
       makeInsight({
         scope: "safety",
-        kind: "possible-significance",
+        kind: "flagged-for-review",
         severity: potassium >= 5.5 ? "attention" : "watch",
         title: `Potassium ${potassium.toFixed(1)} mmol/L on ${ras.name}`,
         statement: `Serum potassium is ${potassium.toFixed(1)} mmol/L (${lastVisit.date}) while ${ras.name} is active${egfr !== undefined && egfr < 45 ? ` and eGFR is ${egfr.toFixed(0)}` : ""}.`,
@@ -225,12 +225,11 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         kind: "observation",
         severity: "watch",
         title: "No statin on the active list in the 40–75 age band",
-        statement: `Patient is ${derived.ageYears} years old with diabetes and no statin appears on the current medication list${ldl !== undefined ? `; most recent LDL-C is ${ldl.toFixed(0)} mg/dL (goal ${derived.ldlTarget.value})` : ""}.`,
-        detail: derived.ldlTarget.rationale,
+        statement: `Patient is ${derived.ageYears} years old with diabetes and no statin appears on the current medication list${ldl !== undefined ? `; most recent LDL-C is ${ldl.toFixed(0)} mg/dL` : ""}.`,
         evidence: [
           computationEvidence("Age at latest visit", lastVisit.date, `${derived.ageYears} years`, `Derived from date of birth ${patient.dob}`),
           ...(ldl !== undefined
-            ? [labValueEvidence("ldl", ldl, lastVisit.date, { visitId: lastVisit.id, note: `Goal ${derived.ldlTarget.value}` })]
+            ? [labValueEvidence("ldl", ldl, lastVisit.date, { visitId: lastVisit.id })]
             : []),
           medicationEvidence(
             lastVisit,

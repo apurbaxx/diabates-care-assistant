@@ -3,7 +3,7 @@ import { classifyIntent } from "./intent";
 import { retrieve } from "./retrieve";
 
 const FOOTER_CAVEAT =
-  "This is clinical decision support drawing on the record shown, not a diagnosis or a prescription. You remain responsible for interpreting it and deciding on management.";
+  "This restates facts and guideline text from the record shown — not a diagnosis or a prescription. You interpret it and decide on management.";
 
 /**
  * Deterministic composition of the retrieval bundle into an answer. This is the

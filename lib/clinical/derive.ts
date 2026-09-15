@@ -2,13 +2,10 @@ import type {
   AlbuminuriaStage,
   CkdStage,
   DerivedState,
-  KdigoRisk,
   Patient,
   Sex,
-  TargetRecommendation,
   Visit,
 } from "@/lib/types";
-import { guideline } from "./guidelines";
 import { yearsBetween } from "./stats";
 
 /**
@@ -77,19 +74,6 @@ export function albuminuriaLabel(stage: AlbuminuriaStage): string {
   return map[stage];
 }
 
-/** KDIGO CGA risk heatmap cell. */
-export function kdigoRisk(g: CkdStage, a: AlbuminuriaStage): KdigoRisk {
-  const table: Record<CkdStage, Record<AlbuminuriaStage, KdigoRisk>> = {
-    G1: { A1: "low", A2: "moderate", A3: "high" },
-    G2: { A1: "low", A2: "moderate", A3: "high" },
-    G3a: { A1: "moderate", A2: "high", A3: "very-high" },
-    G3b: { A1: "high", A2: "very-high", A3: "very-high" },
-    G4: { A1: "very-high", A2: "very-high", A3: "very-high" },
-    G5: { A1: "very-high", A2: "very-high", A3: "very-high" },
-  };
-  return table[g][a];
-}
-
 /** ADAG study regression: eAG (mg/dL) = 28.7 × A1c − 46.7 */
 export function estimatedAverageGlucose(hba1c: number): number {
   return Math.round(28.7 * hba1c - 46.7);
@@ -114,83 +98,6 @@ export function bmiClass(value: number): string {
 
 export function ageAt(dobIso: string, atIso: string): number {
   return Math.floor(yearsBetween(dobIso, atIso));
-}
-
-// ---------------------------------------------------------------------------
-// Individualised targets — ADA §6 logic, made explicit
-// ---------------------------------------------------------------------------
-
-export function hba1cTarget(
-  patient: Patient,
-  derived: { ageYears: number; diabetesDurationYears: number; egfr?: number },
-): TargetRecommendation {
-  const reasons: string[] = [];
-  let target = 7.0;
-
-  const advancedComplications =
-    patient.comorbidities.includes("ascvd") ||
-    patient.comorbidities.includes("heart-failure") ||
-    (derived.egfr !== undefined && derived.egfr < 45) ||
-    patient.comorbidities.includes("retinopathy");
-
-  if (
-    patient.limitedLifeExpectancy ||
-    patient.hypoglycemiaHistory ||
-    derived.ageYears >= 75 ||
-    (advancedComplications && derived.diabetesDurationYears > 15)
-  ) {
-    target = 8.0;
-    if (patient.limitedLifeExpectancy) reasons.push("limited life expectancy");
-    if (patient.hypoglycemiaHistory) reasons.push("history of significant hypoglycaemia");
-    if (derived.ageYears >= 75) reasons.push(`age ${derived.ageYears}`);
-    if (advancedComplications && derived.diabetesDurationYears > 15)
-      reasons.push("long duration with established complications");
-  } else if (
-    derived.diabetesDurationYears < 5 &&
-    !advancedComplications &&
-    derived.ageYears < 65 &&
-    !patient.hypoglycemiaHistory
-  ) {
-    target = 6.5;
-    reasons.push("short diabetes duration");
-    reasons.push("no established cardiovascular or kidney complications");
-  } else {
-    reasons.push("no factors favouring a less stringent goal");
-  }
-
-  return {
-    value: `< ${target.toFixed(1)} %`,
-    rationale:
-      target === 7.0
-        ? `Standard goal applied — ${reasons.join("; ")}.`
-        : `Goal individualised to <${target.toFixed(1)}%, reflecting: ${reasons.join("; ")}. Confirm against your own assessment.`,
-    guideline:
-      target === 7.0
-        ? guideline("ADA_A1C_GENERAL")
-        : guideline("ADA_A1C_INDIVIDUALISED"),
-  };
-}
-
-export function bpTarget(): TargetRecommendation {
-  return {
-    value: "< 130 / 80 mmHg",
-    rationale:
-      "ADA target for adults with diabetes and hypertension where it can be safely attained.",
-    guideline: guideline("ADA_BP_TARGET"),
-  };
-}
-
-export function ldlTarget(patient: Patient): TargetRecommendation {
-  const hasAscvd =
-    patient.comorbidities.includes("ascvd") ||
-    patient.comorbidities.includes("heart-failure");
-  return {
-    value: hasAscvd ? "< 70 mg/dL" : "< 100 mg/dL",
-    rationale: hasAscvd
-      ? "Established cardiovascular disease — high-intensity statin with LDL-C goal <70 mg/dL (<55 mg/dL if very high risk)."
-      : "Primary prevention in diabetes — moderate-intensity statin, LDL-C goal <100 mg/dL.",
-    guideline: guideline("ADA_STATIN"),
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -245,8 +152,6 @@ export function deriveState(patient: Patient, asOf?: string): DerivedState {
 
   const hba1c = latestLab(patient, "hba1c");
 
-  const partial = { ageYears, diabetesDurationYears, egfr };
-
   return {
     ageYears,
     diabetesDurationYears,
@@ -256,18 +161,8 @@ export function deriveState(patient: Patient, asOf?: string): DerivedState {
     egfrSource,
     ckdStage: gStage,
     albuminuriaStage: albStage,
-    kdigoRisk: gStage && albStage ? kdigoRisk(gStage, albStage) : undefined,
     eAG: hba1c ? estimatedAverageGlucose(hba1c.value) : undefined,
-    hba1cTarget: hba1cTarget(patient, partial),
-    bpTarget: bpTarget(),
-    ldlTarget: ldlTarget(patient),
     latestVisit,
     previousVisit,
   };
-}
-
-/** Numeric value of the HbA1c target, for comparisons. */
-export function targetNumber(target: TargetRecommendation): number {
-  const m = target.value.match(/([\d.]+)/);
-  return m ? parseFloat(m[1]) : 7.0;
 }

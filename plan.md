@@ -1,9 +1,9 @@
 # Diabetes Care Assistant for Doctors — Build Plan
 
-> Doctor-facing clinical decision-support (CDS) system for longitudinal diabetes management.
-> **Not a chatbot. Not an LLM wrapper.** A deterministic, guideline-encoded clinical reasoning
+> Doctor-facing assistive record-review system for longitudinal diabetes management.
+> **Not a chatbot. Not an LLM wrapper.** A deterministic, guideline-encoded reasoning
 > engine with an optional natural-language layer that is only allowed to speak about facts the
-> engine already computed and cited.
+> engine already computed and cited. The clinician always interprets and decides.
 
 ---
 
@@ -13,8 +13,8 @@
 |---|---|
 | **Not an LLM wrapper** | All clinical logic lives in `lib/clinical/*` as deterministic TypeScript rules derived from published guidelines. The engine runs with zero network access. The LLM (if a key exists) only *rephrases* an already-computed, already-cited fact bundle and is forbidden new claims. |
 | **Every insight is verifiable** | Every `Insight` object must carry `≥1 EvidenceRef` (patient datum: visit id + field + value + date) or `≥1 GuidelineRef` (source + section + grade + URL). Insights without evidence are dropped by a validator before render. |
-| **Observation ≠ trend ≠ significance** | `Insight.kind: 'observation' | 'trend' | 'possible-significance'`. Rendered with distinct colour/label. Significance-class insights always end with a doctor-decision framing. |
-| **Doctor in control** | No auto-actions. All outputs phrased as *consider / discuss / note*. Prominent "clinical decision support — not a diagnosis" framing. Doctor can dismiss/acknowledge insights. |
+| **Observation ≠ trend ≠ flagged-for-review** | `Insight.kind: 'observation' | 'trend' | 'flagged-for-review'`. Rendered with a neutral kind badge only — no red/amber urgency colour-coding. |
+| **Doctor in control** | No auto-actions. All outputs phrased as *consider / discuss / note*. Prominent "assistive tool — not a diagnosis" framing. Doctor can dismiss/acknowledge insights. |
 | **No unsupported claims** | Causality guard: medication→outcome statements only emitted when temporal window + magnitude + no-confounder checks pass; otherwise phrased as temporal association only. |
 
 ---
@@ -62,20 +62,18 @@ GuidelineRef   { id, source, year, section, title, statement, grade?, url }
 ### 3.1 `guidelines.ts` — encoded knowledge base
 Structured, citable entries (statement + source + section + evidence grade + URL). Seeded from:
 - **ADA Standards of Care in Diabetes — 2025** (Sections 2, 6, 8, 9, 10, 11)
-- **KDIGO 2024 Clinical Practice Guideline for CKD** (albuminuria/eGFR staging, risk heatmap)
+- **KDIGO 2024 Clinical Practice Guideline for CKD** (albuminuria/eGFR staging definitions)
 - **KDIGO 2022 Diabetes Management in CKD**
 - **ADA/EASD 2022 Consensus Report** on hyperglycaemia management in T2D
-- **ACC/AHA** BP targets where ADA cross-references
+- **ACC/AHA** guidance where ADA cross-references
 
 Each entry exposes `applies(ctx: PatientContext): boolean` so retrieval is *rule-based*, not embedding-guessed.
 
 ### 3.2 `derive.ts` — computed clinical quantities
 - **eGFR** — CKD-EPI 2021 creatinine equation (race-free)
-- **CKD stage** G1–G5, **albuminuria** A1–A3, **KDIGO risk heatmap** cell (low → very high)
+- **CKD stage** G1–G5, **albuminuria** A1–A3 (KDIGO's published staging boundaries, applied to the record — no risk score or heatmap classification is derived or shown)
 - **BMI**, BSA, **eAG** from HbA1c (`eAG = 28.7 × A1c − 46.7`)
-- **HbA1c individualised target** per ADA §6 (age, duration, comorbidity, hypoglycaemia risk, life expectancy) → `{target, rationale, guidelineRef}`
-- **BP target**, **LDL target** per ASCVD risk tier
-- **Metformin eGFR dosing gate**, SGLT2i / GLP-1RA eligibility flags
+- No personalised treatment targets (HbA1c/BP/LDL goals) are computed or displayed — ADA/KDIGO numbers appear only as general reference citations, never attached to this patient as "your target"
 
 ### 3.3 `stats.ts` — trend mathematics
 - **Theil–Sen slope** + Kendall's tau (robust to outliers, tiny n)
@@ -85,11 +83,11 @@ Each entry exposes `applies(ctx: PatientContext): boolean` so retrieval is *rule
 - `classify(): 'stable' | 'rising' | 'falling' | 'variable' | 'insufficient-data'`
 
 ### 3.4 `analyzers/` — insight producers (each pure: `(ctx) => Insight[]`)
-1. `glycemic.ts` — HbA1c vs individualised target, trajectory, time-above-target, glucose/HbA1c discordance
-2. `kidney.ts` — eGFR decline (≥30 % / ≥40 % from baseline), CKD stage transition, UACR category change + **KDIGO confirmation rule** (2 of 3 over 3–6 months), KDIGO risk-cell movement
-3. `medication.ts` — **therapeutic inertia** (target missed ≥2 visits, no regimen change), dose-change → response window (12–16 wks), guideline-indicated but absent agents (SGLT2i for CKD/HF/ASCVD; GLP-1RA for obesity/ASCVD), adherence-suggestive patterns
-4. `safety.ts` — metformin & eGFR<30, SGLT2i & eGFR<20, duplicate class, hypoglycaemia-risk stacking (SU+insulin), NSAID/ACEi/diuretic triple-whammy, missing statin/ACEi where indicated
-5. `cardiometabolic.ts` — BP, LDL, weight trajectory, BMI class change
+1. `glycemic.ts` — HbA1c trajectory (noise-gated), glucose/HbA1c discordance, retest-interval fact
+2. `kidney.ts` — eGFR decline (≥30 % / ≥40 % from baseline), CKD stage transition, UACR category change + **KDIGO confirmation rule** (2 of 3 over 3–6 months) — record facts only, no risk-cell classification
+3. `medication.ts` — medication change paired with the surrounding lab record, dose-change history, guideline-indicated but absent agents (SGLT2i for CKD/HF/ASCVD; GLP-1RA for obesity/ASCVD) shown as an absence-of-class fact
+4. `safety.ts` — metformin & eGFR<30, SGLT2i & eGFR<20, duplicate class, hypoglycaemia-risk stacking (SU+insulin), NSAID/ACEi/diuretic triple-whammy, missing statin where indicated
+5. `cardiometabolic.ts` — BP, LDL, weight trajectory (noise-gated trends only, no target comparison), BMI class change
 6. `screening.ts` — overdue annual UACR/eGFR, retinal exam, foot exam, lipid panel per ADA §4 intervals
 7. `comparison.ts` — new report vs previous vs trend delta engine (used by the Lab Check module)
 
@@ -99,7 +97,7 @@ Before any "X led to Y" phrasing:
 Fail any check ⇒ downgrade wording to **"observed after"** and set `confidence: 'associational'`.
 
 ### 3.6 `engine.ts`
-`runEngine(patient) → { insights, derived, targets, evidenceIndex }` — memoised, deterministic, testable.
+`runEngine(patient) → { insights, derived, trends, summary }` — memoised, deterministic, testable.
 
 ---
 
@@ -142,7 +140,7 @@ Pipeline — **retrieval-first, generation-last**:
 
 ```
 app/
-  page.tsx                    Patient selection (search, filter, risk chips, "generate synthetic")
+  page.tsx                    Patient selection (search, filter, flagged-count chips, "generate synthetic")
   patient/[id]/page.tsx       Dashboard shell with section nav
 components/
   patient/OverviewPanel       Demographics, dx, meds, comorbidities, latest values, AI summary
@@ -153,7 +151,7 @@ components/
   labs/LabCheck               Upload → parse → confirm → CURRENT vs PREVIOUS vs TREND table
                               → "N notable changes" summary
   assistant/AssistantPanel    Grounded Q&A with evidence chips
-  shared/InsightCard          kind badge, severity, statement, "Show evidence" →
+  shared/InsightCard          kind badge, statement, "Show evidence" →
   shared/EvidenceDrawer       The verification surface: measurement table, source visits,
                               guideline text, computation shown (e.g. the eGFR equation used)
   shared/GuidelineCitation
@@ -162,8 +160,9 @@ components/
 **Visual concept implemented as a persistent left rail** that mirrors the requested flow:
 `Patient data → History → AI analysis → Trends & changes → Insights → Guidelines & evidence → Doctor review`.
 
-Design: clinical light theme, slate/teal, generous whitespace, severity colour-coding
-(neutral-blue = observation, amber = trend worth watching, red = possible significance).
+Design: clinical light theme, slate/teal, generous whitespace, kind-based badges only
+(observation / trend / flagged-for-review), neutral colour across all insight types — no
+red/amber urgency coding.
 Every AI element carries a small ✦ marker and a "verify" affordance — never a bare claim.
 
 ---
@@ -199,6 +198,6 @@ Every AI element carries a small ✦ marker and a "verify" affordance — never 
 
 ## 10. Safety framing (non-negotiable, ships in v1)
 
-- Persistent footer: *"Clinical decision support. Synthetic data. Not a medical device. All outputs require clinician verification."*
+- Persistent footer: *"Assistive tool for clinician review. Synthetic data only — not a medical device. Every item traces to the record shown; interpretation and decisions remain with the treating clinician."*
 - No diagnoses, no prescriptions, no auto-titration.
 - Every insight → evidence in ≤1 click.

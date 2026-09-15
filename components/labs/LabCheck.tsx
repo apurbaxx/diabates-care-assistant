@@ -282,18 +282,16 @@ export function LabCheck({ patient }: { patient: Patient }) {
                     </td>
                     <td className="py-2">
                       {r.delta !== undefined ? (
-                        <span
-                          className={cn(
-                            "font-medium",
-                            r.interpretation === "improved" && "text-status-good",
-                            r.interpretation === "worsened" && "text-status-critical",
-                            (r.interpretation === "unchanged" || r.interpretation === "context-dependent") &&
-                              "text-ink-secondary",
-                          )}
-                        >
+                        <span className={cn("font-medium", r.notable ? "text-ink" : "text-ink-secondary")}>
                           {r.delta > 0 ? "+" : ""}
                           {r.delta.toFixed(parameterMeta(r.key).decimals)} {r.unit}
                           {r.notable && " ●"}
+                          {r.rangeStatus === "above-range" && (
+                            <span className="ml-1.5 text-xs font-normal text-muted">above range</span>
+                          )}
+                          {r.rangeStatus === "below-range" && (
+                            <span className="ml-1.5 text-xs font-normal text-muted">below range</span>
+                          )}
                         </span>
                       ) : (
                         <span className="text-muted">new</span>

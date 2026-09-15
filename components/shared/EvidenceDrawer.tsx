@@ -2,7 +2,7 @@
 
 import { X, FlaskConical, Calendar, Pill, FileText, Calculator } from "lucide-react";
 import type { EvidenceRef, Insight } from "@/lib/types";
-import { KindBadge, SeverityBadge, ConfidenceTag } from "./Badges";
+import { KindBadge, ConfidenceTag } from "./Badges";
 import { GuidelineCitation } from "./GuidelineCitation";
 import { KIND_DESCRIPTION } from "@/lib/clinical/context";
 
@@ -31,7 +31,6 @@ export function EvidenceDrawer({
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
               <KindBadge kind={insight.kind} />
-              <SeverityBadge severity={insight.severity} />
             </div>
             <h2 className="text-base font-semibold leading-snug text-ink">{insight.title}</h2>
           </div>

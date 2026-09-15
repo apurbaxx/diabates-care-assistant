@@ -240,10 +240,12 @@ export interface GuidelineRef {
  * The three classes the product spec requires us to keep distinct.
  * - observation: a value/change that is simply true of the record
  * - trend: a directional pattern that passed the noise gate in stats.ts
- * - possible-significance: an interpretation flagged for clinician review
+ * - flagged-for-review: surfaced because it may be relevant to management —
+ *   not a diagnosis or a verdict, just a pointer back to the record/guideline
  */
-export type InsightKind = "observation" | "trend" | "possible-significance";
+export type InsightKind = "observation" | "trend" | "flagged-for-review";
 
+/** Internal triage/sort weight only — not rendered as an urgency signal in the UI. */
 export type InsightSeverity = "info" | "watch" | "attention";
 
 export type InsightScope =
@@ -281,13 +283,6 @@ export interface Insight {
 
 export type CkdStage = "G1" | "G2" | "G3a" | "G3b" | "G4" | "G5";
 export type AlbuminuriaStage = "A1" | "A2" | "A3";
-export type KdigoRisk = "low" | "moderate" | "high" | "very-high";
-
-export interface TargetRecommendation {
-  value: string;
-  rationale: string;
-  guideline: GuidelineRef;
-}
 
 export interface DerivedState {
   ageYears: number;
@@ -298,11 +293,7 @@ export interface DerivedState {
   egfrSource: "reported" | "computed-ckd-epi-2021" | "unavailable";
   ckdStage?: CkdStage;
   albuminuriaStage?: AlbuminuriaStage;
-  kdigoRisk?: KdigoRisk;
   eAG?: number;
-  hba1cTarget: TargetRecommendation;
-  bpTarget: TargetRecommendation;
-  ldlTarget: TargetRecommendation;
   latestVisit?: Visit;
   previousVisit?: Visit;
 }
@@ -371,8 +362,8 @@ export interface LabComparisonRow {
   direction: ChangeDirection;
   /** Passed the analyte-specific noise gate. */
   notable: boolean;
-  /** Directional read in clinical terms, not just arithmetic. */
-  interpretation: "improved" | "worsened" | "unchanged" | "context-dependent";
+  /** Position relative to the analyte's reference/target range, where one is evaluable. Fact only — no favourability judgment. */
+  rangeStatus?: "above-range" | "within-range" | "below-range";
   trendDirection: TrendDirection;
   trendSummary: string;
   referenceRange?: string;

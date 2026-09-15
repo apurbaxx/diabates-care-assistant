@@ -87,7 +87,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
             </Section>
 
             <Section id="trends" title="Trend analysis">
-              <TrendWorkbench trends={engine.trends} derived={engine.derived} insights={engine.insights} />
+              <TrendWorkbench trends={engine.trends} insights={engine.insights} />
             </Section>
 
             <Section id="medications" title="Medication history">

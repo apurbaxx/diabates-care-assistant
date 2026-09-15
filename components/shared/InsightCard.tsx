@@ -2,15 +2,9 @@
 
 import { ChevronRight, Sparkles } from "lucide-react";
 import type { Insight } from "@/lib/types";
-import { SeverityBadge, KindBadge } from "./Badges";
+import { KindBadge } from "./Badges";
 import { useEvidence } from "./EvidenceContext";
 import { cn } from "@/lib/cn";
-
-const SEVERITY_BORDER: Record<Insight["severity"], string> = {
-  info: "border-l-brand-400",
-  watch: "border-l-[#fab219]",
-  attention: "border-l-[#d03b3b]",
-};
 
 export function InsightCard({ insight, compact = false }: { insight: Insight; compact?: boolean }) {
   const { openInsight } = useEvidence();
@@ -19,8 +13,7 @@ export function InsightCard({ insight, compact = false }: { insight: Insight; co
     <button
       onClick={() => openInsight(insight)}
       className={cn(
-        "group flex w-full items-start gap-2 rounded-lg border border-border border-l-4 bg-surface p-3 text-left transition hover:border-brand-300 hover:shadow-sm",
-        SEVERITY_BORDER[insight.severity],
+        "group flex w-full items-start gap-2 rounded-lg border border-border border-l-4 border-l-brand-300 bg-surface p-3 text-left transition hover:border-brand-300 hover:shadow-sm",
         compact && "p-2.5",
       )}
     >
@@ -29,7 +22,6 @@ export function InsightCard({ insight, compact = false }: { insight: Insight; co
         {!compact && (
           <div className="mb-1 flex flex-wrap gap-1.5">
             <KindBadge kind={insight.kind} />
-            <SeverityBadge severity={insight.severity} />
           </div>
         )}
         <p className={cn("text-ink", compact ? "text-sm" : "text-sm font-medium")}>{insight.title}</p>

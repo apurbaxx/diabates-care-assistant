@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     .map((g) => `[${g.id}] (${g.guideline.source} ${g.guideline.year}, ${g.guideline.section}) ${g.text}`)
     .join("\n");
 
-  const system = `You rephrase clinical decision-support output for a doctor. You may ONLY restate the facts and guideline statements given to you below — you must NOT add any new clinical claim, number, or inference that is not already present verbatim in the input.
+  const system = `You rephrase record-review output for a doctor — restating already-computed facts and cited guideline text in clear prose. You may ONLY restate the facts and guideline statements given to you below — you must NOT add any new clinical claim, number, or inference that is not already present verbatim in the input.
 
 Rules:
 - Every sentence describing a patient-specific fact must end with the bracketed id of the fact it came from, e.g. [F1].

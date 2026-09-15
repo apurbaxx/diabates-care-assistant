@@ -7,7 +7,7 @@ import type {
   LabReport,
   Patient,
 } from "@/lib/types";
-import { ANALYTES, parameterMeta } from "../units";
+import { ANALYTES, parameterMeta, rangeStatus } from "../units";
 import { analyseTrend } from "../stats";
 import { buildSeries } from "../context";
 import { makeInsight } from "../context";
@@ -47,8 +47,6 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
 
     const notable = delta !== undefined ? Math.abs(delta) >= meta.noise : false;
 
-    const interpretation = classifyInterpretation(meta.favourable, direction, notable);
-
     // Trend context: combine full history + this new value.
     const trendPoints = [...history, { date: report.date, value: current, reportId: report.id }];
     const trend = analyseTrend(key, trendPoints);
@@ -64,7 +62,7 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
       percentDelta,
       direction,
       notable,
-      interpretation,
+      rangeStatus: rangeStatus(key, current, patient.sex),
       trendDirection: trend.direction,
       trendSummary: trend.summary,
       referenceRange: meta.referenceRange,
@@ -94,17 +92,6 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
   };
 }
 
-function classifyInterpretation(
-  favourable: "lower" | "higher" | "range" | "context",
-  direction: ChangeDirection,
-  notable: boolean,
-): LabComparisonRow["interpretation"] {
-  if (!notable || direction === "same") return "unchanged";
-  if (favourable === "context" || favourable === "range") return "context-dependent";
-  if (favourable === "lower") return direction === "down" ? "improved" : "worsened";
-  return direction === "up" ? "improved" : "worsened";
-}
-
 function buildComparisonInsights(
   patient: Patient,
   report: LabReport,
@@ -129,27 +116,27 @@ function buildComparisonInsights(
   }
 
   for (const row of notable) {
-    const worsened = row.interpretation === "worsened";
-    const improved = row.interpretation === "improved";
+    const outOfRange = row.rangeStatus !== undefined && row.rangeStatus !== "within-range";
     const meta = parameterMeta(row.key);
     const arrow = `${meta.label} ${row.previous?.toFixed(meta.decimals) ?? "—"} → ${row.current?.toFixed(meta.decimals)} ${meta.unit}`;
 
     out.push(
       makeInsight({
         scope: "lab-report",
-        kind: worsened ? "possible-significance" : "observation",
-        severity: worsened ? "watch" : "info",
+        kind: outOfRange ? "flagged-for-review" : "observation",
+        severity: outOfRange ? "watch" : "info",
         title: arrow,
         statement:
           `${meta.label} changed from ${row.previous?.toFixed(meta.decimals)} ${meta.unit} (${row.previousDate}) to ${row.current?.toFixed(meta.decimals)} ${meta.unit} (${report.date}), ` +
           `a ${row.direction === "up" ? "rise" : "fall"} of ${Math.abs(row.delta ?? 0).toFixed(meta.decimals)} ${meta.unit}` +
           (row.percentDelta !== undefined ? ` (${row.percentDelta > 0 ? "+" : ""}${row.percentDelta.toFixed(0)}%)` : "") +
           `. Relative to the patient's own trend: ${row.trendSummary}`,
-        detail: improved
-          ? "This change is in the favourable direction."
-          : worsened
-            ? "This change is in the direction that usually prompts closer review, though a single new value should be read alongside the full trend and clinical context."
-            : "Direction alone does not determine favourability for this parameter — interpret alongside clinical context.",
+        detail:
+          row.rangeStatus === "within-range"
+            ? `This value is within the reference/target range shown (${meta.referenceRange ?? "see chart"}).`
+            : outOfRange
+              ? `This value is ${row.rangeStatus === "above-range" ? "above" : "below"} the reference/target range shown (${meta.referenceRange ?? "see chart"}). A single new value is best read alongside the full trend and clinical context.`
+              : "No reference range is evaluated for this parameter — read the value alongside the patient's own trend and clinical context.",
         evidence: row.evidence,
         guidelines: row.key === "egfr" || row.key === "uacr" || row.key === "creatinine"
           ? guidelines("KDIGO_PROGRESSION")

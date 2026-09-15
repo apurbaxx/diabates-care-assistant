@@ -1,12 +1,14 @@
-import type { EngineResult, EvidenceRef, GuidelineRef, Insight } from "@/lib/types";
+import type { EngineResult, EvidenceRef, GuidelineRef, Insight, ParameterSeriesPoint } from "@/lib/types";
 import type { AnalysisContext } from "./context";
-import { ckdStageLabel, albuminuriaLabel, targetNumber } from "./derive";
-import { describeSpan } from "./stats";
+import { guidelines } from "./guidelines";
 
 /**
  * Deterministic overview narrative. This is the "AI summary" the overview panel
- * shows — built entirely from the same derived state and insights the rest of the
- * app uses, so it can never say something the evidence trail doesn't back up.
+ * shows — built entirely from recorded values and their own history. It states
+ * what is on the record (value, date, previous value, change) and nothing more:
+ * no targets, no risk categorisation, no guideline-based judgment about what a
+ * value means. Guideline references collected here are general reference
+ * material, not a personalised recommendation for this patient.
  *
  * If an LLM key is configured, /api/assistant can rephrase this for tone, but the
  * facts and their evidence are fixed here first.
@@ -15,7 +17,7 @@ export function buildSummary(
   ctx: AnalysisContext,
   insights: Insight[],
 ): EngineResult["summary"] {
-  const { patient, derived, trends, visits } = ctx;
+  const { patient, derived, trends } = ctx;
   const paragraphs: string[] = [];
   const evidence: EvidenceRef[] = [];
   const guidelineRefs: GuidelineRef[] = [];
@@ -40,32 +42,23 @@ export function buildSummary(
   };
 
   const latestVisit = derived.latestVisit;
-  const hba1cTrend = trends.hba1c;
-  const a1cPoints = hba1cTrend?.points ?? [];
+  const a1cPoints = trends.hba1c?.points ?? [];
   const latestA1c = a1cPoints[a1cPoints.length - 1];
-  const target = targetNumber(derived.hba1cTarget);
+  const previousA1c = a1cPoints[a1cPoints.length - 2];
 
-  // --- Headline -------------------------------------------------------------
-  let headline: string;
-  if (!latestA1c) {
-    headline = `${patient.name} — insufficient HbA1c history to characterise glycaemic control.`;
-  } else if (latestA1c.value <= target && hba1cTrend?.direction !== "rising") {
-    headline = `${patient.name}'s diabetes is at or near the individualised goal (HbA1c ${latestA1c.value.toFixed(1)}%, goal ${derived.hba1cTarget.value}).`;
-  } else if (hba1cTrend?.direction === "rising") {
-    headline = `${patient.name}'s glycaemic control has been trending upward — HbA1c ${latestA1c.value.toFixed(1)}% against a goal of ${derived.hba1cTarget.value}.`;
-  } else {
-    headline = `${patient.name}'s HbA1c is ${latestA1c.value.toFixed(1)}%, above the individualised goal of ${derived.hba1cTarget.value}.`;
-  }
+  // --- Headline ---------------------------------------------------------
+  const headline = latestA1c
+    ? `${patient.name} — most recent HbA1c: ${latestA1c.value.toFixed(1)}% (recorded ${latestA1c.date}).`
+    : `${patient.name} — no HbA1c recorded in this record.`;
 
-  // --- Paragraph 1: glycaemic picture ----------------------------------------
+  // --- Context ------------------------------------------------------------
+  paragraphs.push(
+    `${patient.name} (${derived.ageYears}, ${patient.sex}) has a ${derived.diabetesDurationYears.toFixed(1)}-year history of ${diabetesTypeLabel(patient.diabetesType)}.`,
+  );
+
+  // --- HbA1c: recorded value + change only --------------------------------
   if (latestA1c) {
-    const durationText = `${derived.diabetesDurationYears.toFixed(1)}-year history of ${diabetesTypeLabel(patient.diabetesType)}`;
-    let p1 = `${patient.name} (${derived.ageYears}, ${patient.sex}) has a ${durationText}. Most recent HbA1c is ${latestA1c.value.toFixed(1)}% (${latestA1c.date})`;
-    if (a1cPoints.length >= 2) {
-      p1 += `, compared with ${a1cPoints[a1cPoints.length - 2].value.toFixed(1)}% at the previous visit`;
-    }
-    p1 += `. ${hba1cTrend?.summary ?? ""}`;
-    paragraphs.push(p1.trim());
+    paragraphs.push(factualLine("HbA1c", "%", 1, latestA1c, previousA1c));
     pushEvidence(
       a1cPoints.slice(-4).map((p) => ({
         id: `sum-a1c-${p.date}`,
@@ -77,22 +70,49 @@ export function buildSummary(
         visitId: p.visitId,
       })),
     );
-    pushGuidelines([derived.hba1cTarget.guideline]);
-  } else {
-    paragraphs.push(
-      `${patient.name} (${derived.ageYears}, ${patient.sex}) has a ${derived.diabetesDurationYears.toFixed(1)}-year history of ${diabetesTypeLabel(patient.diabetesType)}. No HbA1c is available in the current record.`,
-    );
+    pushGuidelines(guidelines("ADA_A1C_GENERAL"));
   }
 
-  // --- Paragraph 2: kidney picture, if relevant ------------------------------
-  if (derived.ckdStage && derived.albuminuriaStage) {
-    const p2 = `Kidney function: ${ckdStageLabel(derived.ckdStage)}, ${albuminuriaLabel(derived.albuminuriaStage)}${derived.kdigoRisk && derived.kdigoRisk !== "low" ? ` — ${derived.kdigoRisk.replace("-", " ")} risk on the KDIGO heatmap` : ""}.${
-      trends.egfr?.direction === "falling" ? " " + trends.egfr.summary : ""
-    }`;
-    paragraphs.push(p2);
+  // --- Blood pressure: recorded value + change only -----------------------
+  if (latestVisit?.vitals.systolic !== undefined && latestVisit?.vitals.diastolic !== undefined) {
+    const previousVisit = derived.previousVisit;
+    const s = latestVisit.vitals.systolic;
+    const d = latestVisit.vitals.diastolic;
+    let bpLine = `Blood pressure: ${s}/${d} mmHg — recorded ${latestVisit.date}.`;
+    if (previousVisit?.vitals.systolic !== undefined && previousVisit?.vitals.diastolic !== undefined) {
+      const ps = previousVisit.vitals.systolic;
+      const pd = previousVisit.vitals.diastolic;
+      bpLine += ` Previous: ${ps}/${pd} mmHg (${previousVisit.date}). Change: ${arrow(s - ps)}${Math.abs(s - ps)}/${arrow(d - pd)}${Math.abs(d - pd)} mmHg.`;
+    } else {
+      bpLine += " No previous value on record.";
+    }
+    paragraphs.push(bpLine);
+    pushGuidelines(guidelines("ADA_BP_TARGET"));
   }
 
-  // --- Paragraph 3: medications ------------------------------------------
+  // --- Kidney: recorded values + change only, no risk categorisation ------
+  if (derived.ckdStage && derived.egfr !== undefined) {
+    const egfrPoints = trends.egfr?.points ?? [];
+    const latestEgfr = egfrPoints[egfrPoints.length - 1];
+    const previousEgfr = egfrPoints[egfrPoints.length - 2];
+    if (latestEgfr) {
+      paragraphs.push(
+        `${factualLine(`eGFR (stage ${derived.ckdStage})`, " mL/min/1.73m²", 0, latestEgfr, previousEgfr)}`,
+      );
+    }
+
+    const uacrPoints = trends.uacr?.points ?? [];
+    const latestUacr = uacrPoints[uacrPoints.length - 1];
+    const previousUacr = uacrPoints[uacrPoints.length - 2];
+    if (latestUacr && derived.albuminuriaStage) {
+      paragraphs.push(
+        factualLine(`UACR (category ${derived.albuminuriaStage})`, " mg/g", 0, latestUacr, previousUacr),
+      );
+    }
+    pushGuidelines(guidelines("KDIGO_STAGING"));
+  }
+
+  // --- Medications: current list, recorded as-is --------------------------
   if (latestVisit) {
     const meds = ctx.activeMedications;
     if (meds.length > 0) {
@@ -102,26 +122,38 @@ export function buildSummary(
     }
   }
 
-  // --- Paragraph 4: what stands out -----------------------------------------
-  const flagged = insights.filter(
-    (i) => i.severity !== "info" && (i.scope === "overview" || i.scope === "trend" || i.scope === "safety" || i.scope === "medication"),
+  // --- Items flagged elsewhere: count only, no restated judgment ----------
+  const flaggedCount = insights.filter((i) => i.kind === "flagged-for-review").length;
+  paragraphs.push(
+    flaggedCount > 0
+      ? `${flaggedCount} item${flaggedCount === 1 ? "" : "s"} flagged for review — see the Trends, Medications, and Safety sections below.`
+      : "No items are currently flagged for review in this record.",
   );
-  if (flagged.length > 0) {
-    const top = flagged.slice(0, 3);
-    paragraphs.push(
-      `What stands out: ${top.map((i) => i.statement).join(" ")}`,
-    );
-    for (const i of top) {
-      pushEvidence(i.evidence);
-      pushGuidelines(i.guidelines);
-    }
-  } else {
-    paragraphs.push(
-      "No trends or medication patterns in this record currently exceed the thresholds this tool uses to flag review.",
-    );
-  }
 
   return { headline, paragraphs, evidence, guidelines: guidelineRefs };
+}
+
+function arrow(delta: number): string {
+  if (Math.abs(delta) < 1e-9) return "→";
+  return delta > 0 ? "↑" : "↓";
+}
+
+/** "Label: value unit — recorded date. Previous: value unit (date). Change: ↑/↓ magnitude unit." */
+function factualLine(
+  label: string,
+  unit: string,
+  decimals: number,
+  current: ParameterSeriesPoint,
+  previous: ParameterSeriesPoint | undefined,
+): string {
+  let line = `${label}: ${current.value.toFixed(decimals)}${unit} — recorded ${current.date}.`;
+  if (previous) {
+    const delta = current.value - previous.value;
+    line += ` Previous: ${previous.value.toFixed(decimals)}${unit} (${previous.date}). Change: ${arrow(delta)}${Math.abs(delta).toFixed(decimals)}${unit}.`;
+  } else {
+    line += " No previous value on record.";
+  }
+  return line;
 }
 
 function diabetesTypeLabel(t: string): string {

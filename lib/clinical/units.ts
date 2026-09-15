@@ -1,4 +1,6 @@
-import type { LabKey } from "@/lib/types";
+import type { LabKey, Sex } from "@/lib/types";
+
+type RangeBounds = { low?: number; high?: number };
 
 /**
  * Canonical unit per analyte plus everything the UI and the noise gates need.
@@ -17,8 +19,8 @@ export interface AnalyteMeta {
   noise: number;
   /** Typical adult reference interval, for display only. */
   referenceRange?: string;
-  /** Which direction is clinically favourable, where one exists. */
-  favourable: "lower" | "higher" | "range" | "context";
+  /** Machine-usable bound mirroring referenceRange, for a neutral above/within/below-range comparison. */
+  rangeBounds?: RangeBounds | ((sex: Sex) => RangeBounds);
   /** Sensible y-axis bounds for charting. */
   axis?: [number, number];
   group: "glycemic" | "renal" | "lipid" | "other";
@@ -35,7 +37,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     // meaningful difference for treatment decisions.
     noise: 0.4,
     referenceRange: "4.0 – 5.6 %",
-    favourable: "lower",
+    rangeBounds: { low: 4.0, high: 5.6 },
     axis: [5, 12],
     group: "glycemic",
   },
@@ -47,7 +49,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 15,
     referenceRange: "70 – 99 mg/dL",
-    favourable: "range",
+    rangeBounds: { low: 70, high: 99 },
     axis: [60, 300],
     group: "glycemic",
   },
@@ -59,7 +61,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 25,
     referenceRange: "< 140 mg/dL",
-    favourable: "lower",
+    rangeBounds: { high: 140 },
     axis: [80, 350],
     group: "glycemic",
   },
@@ -70,7 +72,6 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     unit: "mg/dL",
     decimals: 0,
     noise: 30,
-    favourable: "range",
     axis: [60, 350],
     group: "glycemic",
   },
@@ -82,7 +83,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 2,
     noise: 0.15,
     referenceRange: "0.6 – 1.2 mg/dL",
-    favourable: "lower",
+    rangeBounds: { low: 0.6, high: 1.2 },
     axis: [0.4, 3],
     group: "renal",
   },
@@ -95,7 +96,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     // KDIGO treats a sustained fall of >=5 as progression-relevant.
     noise: 5,
     referenceRange: "≥ 90 mL/min/1.73m²",
-    favourable: "higher",
+    rangeBounds: { low: 90 },
     axis: [0, 130],
     group: "renal",
   },
@@ -108,7 +109,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     // UACR has very high within-subject variability (CV ~30-50%).
     noise: 30,
     referenceRange: "< 30 mg/g",
-    favourable: "lower",
+    rangeBounds: { high: 30 },
     axis: [0, 400],
     group: "renal",
   },
@@ -120,7 +121,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 1,
     noise: 0.3,
     referenceRange: "3.5 – 5.1 mmol/L",
-    favourable: "range",
+    rangeBounds: { low: 3.5, high: 5.1 },
     axis: [3, 6.5],
     group: "other",
   },
@@ -132,7 +133,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 3,
     referenceRange: "135 – 145 mmol/L",
-    favourable: "range",
+    rangeBounds: { low: 135, high: 145 },
     group: "other",
   },
   ldl: {
@@ -143,7 +144,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 15,
     referenceRange: "< 100 mg/dL",
-    favourable: "lower",
+    rangeBounds: { high: 100 },
     axis: [30, 220],
     group: "lipid",
   },
@@ -155,7 +156,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 6,
     referenceRange: "> 40 (M) / > 50 (F) mg/dL",
-    favourable: "higher",
+    rangeBounds: (sex: Sex) => (sex === "male" ? { low: 40 } : { low: 50 }),
     group: "lipid",
   },
   triglycerides: {
@@ -166,7 +167,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 40,
     referenceRange: "< 150 mg/dL",
-    favourable: "lower",
+    rangeBounds: { high: 150 },
     group: "lipid",
   },
   totalCholesterol: {
@@ -177,7 +178,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 20,
     referenceRange: "< 200 mg/dL",
-    favourable: "lower",
+    rangeBounds: { high: 200 },
     group: "lipid",
   },
   alt: {
@@ -188,7 +189,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 12,
     referenceRange: "7 – 55 U/L",
-    favourable: "lower",
+    rangeBounds: { low: 7, high: 55 },
     group: "other",
   },
   ast: {
@@ -199,7 +200,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 12,
     referenceRange: "8 – 48 U/L",
-    favourable: "lower",
+    rangeBounds: { low: 8, high: 48 },
     group: "other",
   },
   hemoglobin: {
@@ -210,7 +211,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 1,
     noise: 0.8,
     referenceRange: "13.5 – 17.5 (M) / 12.0 – 15.5 (F) g/dL",
-    favourable: "range",
+    rangeBounds: (sex: Sex) => (sex === "male" ? { low: 13.5, high: 17.5 } : { low: 12.0, high: 15.5 }),
     group: "other",
   },
   tsh: {
@@ -221,7 +222,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 2,
     noise: 0.8,
     referenceRange: "0.4 – 4.0 mIU/L",
-    favourable: "range",
+    rangeBounds: { low: 0.4, high: 4.0 },
     group: "other",
   },
   vitaminB12: {
@@ -232,7 +233,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 60,
     referenceRange: "200 – 900 pg/mL",
-    favourable: "range",
+    rangeBounds: { low: 200, high: 900 },
     group: "other",
   },
   vitaminD: {
@@ -243,7 +244,7 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
     decimals: 0,
     noise: 6,
     referenceRange: "30 – 100 ng/mL",
-    favourable: "higher",
+    rangeBounds: { low: 30, high: 100 },
     group: "other",
   },
 };
@@ -257,7 +258,6 @@ export const VITAL_META = {
     unit: "kg",
     decimals: 1,
     noise: 2,
-    favourable: "context" as const,
     group: "other" as const,
   },
   systolic: {
@@ -268,7 +268,7 @@ export const VITAL_META = {
     decimals: 0,
     noise: 5,
     referenceRange: "< 130 mmHg (ADA target)",
-    favourable: "lower" as const,
+    rangeBounds: { high: 130 },
     group: "other" as const,
   },
   diastolic: {
@@ -279,7 +279,7 @@ export const VITAL_META = {
     decimals: 0,
     noise: 5,
     referenceRange: "< 80 mmHg (ADA target)",
-    favourable: "lower" as const,
+    rangeBounds: { high: 80 },
     group: "other" as const,
   },
   bmi: {
@@ -289,7 +289,6 @@ export const VITAL_META = {
     unit: "kg/m²",
     decimals: 1,
     noise: 0.7,
-    favourable: "context" as const,
     group: "other" as const,
   },
 };
@@ -303,7 +302,7 @@ export function parameterMeta(key: string): {
   decimals: number;
   noise: number;
   referenceRange?: string;
-  favourable: "lower" | "higher" | "range" | "context";
+  rangeBounds?: RangeBounds | ((sex: Sex) => RangeBounds);
   axis?: [number, number];
 } {
   if (key in ANALYTES) return ANALYTES[key as LabKey];
@@ -314,8 +313,25 @@ export function parameterMeta(key: string): {
     unit: "",
     decimals: 1,
     noise: 0,
-    favourable: "context",
   };
+}
+
+/**
+ * Where this analyte has a fixed reference/target range, positions the value
+ * relative to it. Purely descriptive — never used to imply the value is good
+ * or bad, only where it sits relative to the range shown.
+ */
+export function rangeStatus(
+  key: string,
+  value: number,
+  sex: Sex,
+): "above-range" | "within-range" | "below-range" | undefined {
+  const meta = parameterMeta(key);
+  if (!meta.rangeBounds) return undefined;
+  const bounds = typeof meta.rangeBounds === "function" ? meta.rangeBounds(sex) : meta.rangeBounds;
+  if (bounds.low !== undefined && value < bounds.low) return "below-range";
+  if (bounds.high !== undefined && value > bounds.high) return "above-range";
+  return "within-range";
 }
 
 export function formatValue(key: string, value: number | undefined): string {

@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 const STEPS = [
   { id: "overview", label: "Patient data", icon: UserSearch },
   { id: "history", label: "Patient history", icon: History },
-  { id: "trends", label: "AI analysis & trends", icon: BrainCircuit },
+  { id: "trends", label: "Trends & patterns", icon: BrainCircuit },
   { id: "medications", label: "Medication insights", icon: Sparkles },
   { id: "labs", label: "New labs & evidence", icon: BookMarked },
   { id: "assistant", label: "Doctor review", icon: Stethoscope },

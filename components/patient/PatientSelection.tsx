@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, PlusCircle, Search, Sparkles, Stethoscope } from "lucide-react";
+import { PlusCircle, Search, Sparkles, Stethoscope } from "lucide-react";
 import { useAppStore, ensureSeeded } from "@/lib/store";
 import { runEngine } from "@/lib/clinical/engine";
 import { ageAt } from "@/lib/clinical/derive";
@@ -23,9 +23,8 @@ export function PatientSelection() {
   const rows = useMemo(() => {
     return patients.map((p) => {
       const engine = runEngine(p);
-      const attentionCount = engine.insights.filter((i) => i.severity === "attention").length;
-      const watchCount = engine.insights.filter((i) => i.severity === "watch").length;
-      return { patient: p, engine, attentionCount, watchCount };
+      const flaggedCount = engine.insights.filter((i) => i.kind === "flagged-for-review").length;
+      return { patient: p, engine, flaggedCount };
     });
   }, [patients]);
 
@@ -51,7 +50,7 @@ export function PatientSelection() {
             <Stethoscope className="h-6 w-6 text-brand-500" />
             <div>
               <h1 className="text-lg font-semibold text-ink">Diabetes Care Assistant</h1>
-              <p className="text-xs text-muted">Clinical decision support for doctors</p>
+              <p className="text-xs text-muted">Record-review assistant. You interpret; the record and guidelines are shown.</p>
             </div>
           </div>
           <button
@@ -80,7 +79,7 @@ export function PatientSelection() {
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map(({ patient, engine, attentionCount, watchCount }) => {
+            {filtered.map(({ patient, engine, flaggedCount }) => {
               const latest = engine.derived.latestVisit;
               return (
                 <button
@@ -95,19 +94,9 @@ export function PatientSelection() {
                         {patient.mrn} · {ageAt(patient.dob, new Date().toISOString().slice(0, 10))} · {patient.sex}
                       </div>
                     </div>
-                    {attentionCount > 0 ? (
-                      <span className="flex items-center gap-1 rounded-full bg-status-critical/10 px-2 py-0.5 text-[11px] font-semibold text-status-critical">
-                        <AlertTriangle className="h-3 w-3" /> {attentionCount}
-                      </span>
-                    ) : watchCount > 0 ? (
-                      <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-[11px] font-semibold text-[#8a5c00]">
-                        {watchCount} to watch
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-status-good/10 px-2 py-0.5 text-[11px] font-semibold text-status-good">
-                        Stable
-                      </span>
-                    )}
+                    <span className="rounded-full bg-page px-2 py-0.5 text-[11px] font-medium text-ink-secondary">
+                      {flaggedCount > 0 ? `${flaggedCount} flagged for review` : "No items flagged"}
+                    </span>
                   </div>
 
                   <div className="text-xs capitalize text-ink-secondary">

@@ -132,7 +132,7 @@ export function makeInsight(input: {
 export const KIND_LABEL: Record<InsightKind, string> = {
   observation: "Observed change",
   trend: "Detected trend",
-  "possible-significance": "Possible clinical significance",
+  "flagged-for-review": "Flagged for review",
 };
 
 export const KIND_DESCRIPTION: Record<InsightKind, string> = {
@@ -140,8 +140,8 @@ export const KIND_DESCRIPTION: Record<InsightKind, string> = {
     "A value or change that is simply true of this record. No interpretation applied.",
   trend:
     "A directional pattern across ≥3 measurements that exceeded this analyte's measurement-variability threshold.",
-  "possible-significance":
-    "An interpretation flagged for your review because it may change management. Requires clinical confirmation.",
+  "flagged-for-review":
+    "Surfaced because it may be relevant to management. Not a diagnosis or a recommendation — read alongside the record and guideline citation shown, and decide accordingly.",
 };
 
 export const CONFIDENCE_LABEL: Record<Confidence, string> = {
