@@ -1,11 +1,13 @@
-import { Sparkles } from "lucide-react";
-import type { EngineResult, Patient } from "@/lib/types";
+import { Sparkles, Droplet, Flame, Scale, HeartPulse, Waves, FlaskConical, CalendarClock, FileText, ChevronRight } from "lucide-react";
+import type { EngineResult, Patient, ParameterSeriesPoint } from "@/lib/types";
 import { ageAt } from "@/lib/clinical/derive";
 import { formatWithUnit } from "@/lib/clinical/units";
 import { InsightList } from "@/components/shared/InsightCard";
 import { insightsForScope } from "@/lib/clinical/engine";
 import { AiMarker } from "@/components/shared/Badges";
 import { GuidelineCitation } from "@/components/shared/GuidelineCitation";
+import { Sparkline } from "@/components/shared/Sparkline";
+import { cn } from "@/lib/cn";
 
 const COMORBIDITY_LABEL: Record<string, string> = {
   hypertension: "Hypertension",
@@ -21,12 +23,34 @@ const COMORBIDITY_LABEL: Record<string, string> = {
   depression: "Depression",
 };
 
-function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatTile({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  tint,
+  points,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: typeof Droplet;
+  tint: string;
+  points?: ParameterSeriesPoint[];
+}) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div className="text-lg font-semibold tabular-nums text-ink">{value}</div>
-      {sub && <div className="text-xs text-ink-secondary">{sub}</div>}
+    <div className={cn("rounded-xl border p-3", tint)}>
+      <div className="flex items-center gap-1.5 text-xs font-medium">
+        <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+        {label}
+      </div>
+      <div className="mt-1.5 flex items-end justify-between gap-2">
+        <div>
+          <div className="text-lg font-semibold tabular-nums text-ink">{value}</div>
+          {sub && <div className="text-xs text-ink-secondary">{sub}</div>}
+        </div>
+        {points && points.length >= 2 && <Sparkline points={points} />}
+      </div>
     </div>
   );
 }
@@ -36,131 +60,189 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
   const latestVisit = derived.latestVisit;
   const overviewInsights = insightsForScope(engine.insights, "overview");
 
+  const recentReports = [...patient.labReports].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+
   return (
-    <div className="space-y-5">
-      {/* AI summary */}
-      <div className="rounded-xl border border-brand-300/60 bg-brand-100/25 p-4">
-        <div className="mb-2 flex items-center gap-2">
-          <AiMarker label="AI summary" />
-          <span className="text-xs text-muted">Generated from this record — every claim below traces to data on the right.</span>
-        </div>
-        <h2 className="text-base font-semibold text-ink">{summary.headline}</h2>
-        <div className="mt-2 space-y-2">
-          {summary.paragraphs.map((p, i) => (
-            <p key={i} className="text-sm leading-relaxed text-ink-secondary">
-              {p}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      {/* Demographics + status */}
-      <div className="grid gap-4">
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h3 className="mb-3 text-sm font-semibold text-ink">Patient information</h3>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
-            <div>
-              <dt className="text-xs text-muted">Age / sex</dt>
-              <dd className="text-ink">
-                {ageAt(patient.dob, new Date().toISOString().slice(0, 10))} · {patient.sex}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">MRN</dt>
-              <dd className="text-ink">{patient.mrn}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Diabetes type</dt>
-              <dd className="text-ink capitalize">{patient.diabetesType.replace("-", " ")}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Diagnosed</dt>
-              <dd className="text-ink">
-                {patient.diagnosisDate} ({derived.diabetesDurationYears.toFixed(1)} y)
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Smoking</dt>
-              <dd className="text-ink capitalize">{patient.smoking}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Comorbidities</dt>
-              <dd className="text-ink">
-                {patient.comorbidities.length > 0
-                  ? patient.comorbidities.map((c) => COMORBIDITY_LABEL[c] ?? c).join(", ")
-                  : "None recorded"}
-              </dd>
-            </div>
-          </dl>
-
-          <h3 className="mb-2 mt-4 text-sm font-semibold text-ink">Current medications</h3>
-          <p className="text-sm text-ink-secondary">
-            {latestVisit && latestVisit.medications.length > 0
-              ? latestVisit.medications.map((m) => `${m.name} ${m.dose}${m.unit} ${m.frequency}`).join(", ")
-              : "None recorded"}
-          </p>
-        </div>
-      </div>
-
-      {/* Latest measurements */}
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-ink">Latest measurements {latestVisit && `(${latestVisit.date})`}</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          <StatTile label="HbA1c" value={formatWithUnit("hba1c", latestVisit?.labs.hba1c)} />
-          <StatTile label="Fasting glucose" value={formatWithUnit("fastingGlucose", latestVisit?.labs.fastingGlucose)} />
-          <StatTile label="Weight" value={latestVisit?.vitals.weightKg ? `${latestVisit.vitals.weightKg.toFixed(1)} kg` : "—"} sub={derived.bmi ? `BMI ${derived.bmi.toFixed(1)}` : undefined} />
-          <StatTile
-            label="Blood pressure"
-            value={latestVisit?.vitals.systolic ? `${latestVisit.vitals.systolic}/${latestVisit.vitals.diastolic}` : "—"}
-          />
-          <StatTile label="eGFR" value={derived.egfr ? `${derived.egfr.toFixed(0)}` : "—"} sub={derived.ckdStage} />
-          <StatTile label="UACR" value={formatWithUnit("uacr", latestVisit?.labs.uacr)} sub={derived.albuminuriaStage} />
-        </div>
-      </div>
-
-      {/* Recent reports */}
-      {patient.labReports.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-ink">Recent lab reports</h3>
-          <ul className="space-y-1 text-sm text-ink-secondary">
-            {[...patient.labReports]
-              .sort((a, b) => b.date.localeCompare(a.date))
-              .slice(0, 4)
-              .map((r) => (
-                <li key={r.id} className="flex items-center gap-2">
-                  <span className="tabular-nums">{r.date}</span>
-                  <span>·</span>
-                  <span>{r.fileName ?? "Manual entry"}</span>
-                  <span className="text-xs text-muted">({r.values.length} values{r.acknowledged ? "" : ", pending review"})</span>
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Overview-level AI insights */}
-      <div>
-        <div className="mb-2 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-brand-500" />
-          <h3 className="text-sm font-semibold text-ink">AI insights — overview</h3>
-        </div>
-        <InsightList insights={overviewInsights} />
-      </div>
-
-      {summary.guidelines.length > 0 && (
-        <div>
-          <h3 className="mb-1 text-sm font-semibold text-ink">Relevant Reference Information</h3>
-          <p className="mb-2 text-xs text-muted">
-            General guideline statements related to the values shown above — not a personalised recommendation for
-            this patient.
-          </p>
-          <div className="space-y-2">
-            {summary.guidelines.map((g) => (
-              <GuidelineCitation key={g.id} guideline={g} />
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-5">
+        {/* AI summary */}
+        <div className="rounded-xl border border-brand-300/60 bg-brand-100/25 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <AiMarker label="AI summary" />
+            <span className="text-xs text-muted">Generated from this record — every claim below traces to data on the right.</span>
+          </div>
+          <h2 className="text-base font-semibold text-ink">{summary.headline}</h2>
+          <div className="mt-2 space-y-2">
+            {summary.paragraphs.map((p, i) => (
+              <p key={i} className="text-sm leading-relaxed text-ink-secondary">
+                {p}
+              </p>
             ))}
           </div>
         </div>
-      )}
+
+        {/* Latest measurements */}
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Latest measurements {latestVisit && `(${latestVisit.date})`}</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatTile
+              label="HbA1c"
+              value={formatWithUnit("hba1c", latestVisit?.labs.hba1c)}
+              icon={Droplet}
+              tint="border-rose-200/60 bg-rose-50 text-rose-700"
+              points={engine.trends.hba1c?.points}
+            />
+            <StatTile
+              label="Fasting glucose"
+              value={formatWithUnit("fastingGlucose", latestVisit?.labs.fastingGlucose)}
+              icon={Flame}
+              tint="border-amber-200/60 bg-amber-50 text-amber-700"
+              points={engine.trends.fastingGlucose?.points}
+            />
+            <StatTile
+              label="Weight"
+              value={latestVisit?.vitals.weightKg ? `${latestVisit.vitals.weightKg.toFixed(1)} kg` : "—"}
+              sub={derived.bmi ? `BMI ${derived.bmi.toFixed(1)}` : undefined}
+              icon={Scale}
+              tint="border-violet-200/60 bg-violet-50 text-violet-700"
+              points={engine.trends.weightKg?.points}
+            />
+            <StatTile
+              label="Blood pressure"
+              value={latestVisit?.vitals.systolic ? `${latestVisit.vitals.systolic}/${latestVisit.vitals.diastolic}` : "—"}
+              icon={HeartPulse}
+              tint="border-sky-200/60 bg-sky-50 text-sky-700"
+              points={engine.trends.systolic?.points}
+            />
+            <StatTile
+              label="eGFR"
+              value={derived.egfr ? `${derived.egfr.toFixed(0)}` : "—"}
+              sub={derived.ckdStage}
+              icon={Waves}
+              tint="border-emerald-200/60 bg-emerald-50 text-emerald-700"
+              points={engine.trends.egfr?.points}
+            />
+            <StatTile
+              label="UACR"
+              value={formatWithUnit("uacr", latestVisit?.labs.uacr)}
+              sub={derived.albuminuriaStage}
+              icon={FlaskConical}
+              tint="border-teal-200/60 bg-teal-50 text-teal-700"
+              points={engine.trends.uacr?.points}
+            />
+          </div>
+        </div>
+
+        {/* Demographics + status */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <h3 className="mb-3 text-sm font-semibold text-ink">Patient information</h3>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <dt className="text-xs text-muted">Age / sex</dt>
+                <dd className="text-ink">
+                  {ageAt(patient.dob, new Date().toISOString().slice(0, 10))} · {patient.sex}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">MRN</dt>
+                <dd className="text-ink">{patient.mrn}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Diabetes type</dt>
+                <dd className="text-ink capitalize">{patient.diabetesType.replace("-", " ")}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Diagnosed</dt>
+                <dd className="text-ink">
+                  {patient.diagnosisDate} ({derived.diabetesDurationYears.toFixed(1)} y)
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Smoking</dt>
+                <dd className="text-ink capitalize">{patient.smoking}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Comorbidities</dt>
+                <dd className="text-ink">
+                  {patient.comorbidities.length > 0
+                    ? patient.comorbidities.map((c) => COMORBIDITY_LABEL[c] ?? c).join(", ")
+                    : "None recorded"}
+                </dd>
+              </div>
+            </dl>
+
+            <h3 className="mb-2 mt-4 text-sm font-semibold text-ink">Current medications</h3>
+            <p className="text-sm text-ink-secondary">
+              {latestVisit && latestVisit.medications.length > 0
+                ? latestVisit.medications.map((m) => `${m.name} ${m.dose}${m.unit} ${m.frequency}`).join(", ")
+                : "None recorded"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-brand-500" />
+              <h3 className="text-sm font-semibold text-ink">AI insights — overview</h3>
+            </div>
+            <InsightList insights={overviewInsights} />
+          </div>
+        </div>
+      </div>
+
+      {/* Right rail */}
+      <aside className="space-y-5">
+        {latestVisit && (
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-1 flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-brand-500" />
+              <h3 className="text-sm font-semibold text-ink">Last updated</h3>
+            </div>
+            <p className="text-sm text-ink-secondary">{latestVisit.date}</p>
+          </div>
+        )}
+
+        {recentReports.length > 0 && (
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-brand-500" />
+                <h3 className="text-sm font-semibold text-ink">Recent lab reports</h3>
+              </div>
+              <a href="#labs" className="flex items-center gap-0.5 text-xs font-medium text-brand-600 hover:underline">
+                View all <ChevronRight className="h-3 w-3" />
+              </a>
+            </div>
+            <ul className="space-y-2 text-sm text-ink-secondary">
+              {recentReports.map((r) => (
+                <li key={r.id} className="border-t border-gridline pt-2 first:border-t-0 first:pt-0">
+                  <div className="flex items-center gap-2">
+                    <span className="tabular-nums text-ink">{r.date}</span>
+                  </div>
+                  <div className="text-xs text-muted">
+                    {r.fileName ?? "Manual entry"} · {r.values.length} values{r.acknowledged ? "" : ", pending review"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {summary.guidelines.length > 0 && (
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <h3 className="mb-1 text-sm font-semibold text-ink">Relevant reference information</h3>
+            <p className="mb-2 text-xs text-muted">
+              General guideline statements related to the values shown — not a personalised recommendation for this
+              patient.
+            </p>
+            <div className="space-y-2">
+              {summary.guidelines.map((g) => (
+                <GuidelineCitation key={g.id} guideline={g} />
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

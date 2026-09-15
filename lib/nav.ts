@@ -26,5 +26,5 @@ export const SECTIONS: SectionDef[] = [
   { id: "comparison", label: "Test comparison", description: "Previous visit vs. most recent results", icon: ArrowLeftRight },
   { id: "medications", label: "Medication insights", description: "Drug therapy timeline", icon: Sparkles },
   { id: "labs", label: "New labs & evidence", description: "Upload and compare a new report", icon: BookMarked },
-  { id: "assistant", label: "Doctor review", description: "Grounded Q&A assistant", icon: Stethoscope },
+  { id: "assistant", label: "AI Assistant", description: "Grounded Q&A assistant", icon: Stethoscope },
 ];

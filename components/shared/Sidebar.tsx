@@ -11,15 +11,7 @@ import { cn } from "@/lib/cn";
  * this sidebar just tracks scroll position and lets a click jump straight to
  * a section, rather than swapping out what's mounted.
  */
-export function Sidebar({
-  onBack,
-  patientName,
-  patientMeta,
-}: {
-  onBack: () => void;
-  patientName: string;
-  patientMeta: string;
-}) {
+export function Sidebar({ onBack }: { onBack: () => void }) {
   const [activeId, setActiveId] = useState(SECTIONS[0].id);
 
   useEffect(() => {
@@ -50,13 +42,10 @@ export function Sidebar({
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <Stethoscope className="h-4 w-4 shrink-0 text-brand-500" />
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
+          <Stethoscope className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </span>
         <span className="hidden truncate text-sm font-semibold text-ink md:inline">Care Assistant</span>
-      </div>
-
-      <div className="hidden border-b border-gridline px-5 py-4 md:block">
-        <div className="truncate text-sm font-semibold text-ink">{patientName}</div>
-        <div className="mt-0.5 truncate text-xs text-muted">{patientMeta}</div>
       </div>
 
       <nav className="flex-1 px-2 py-3 md:px-3" aria-label="Patient record sections">
