@@ -6,6 +6,7 @@ import type {
   LabKey,
   LabReport,
   Patient,
+  Visit,
 } from "@/lib/types";
 import { ANALYTES, parameterMeta, rangeStatus } from "../units";
 import { analyseTrend } from "../stats";
@@ -90,6 +91,72 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
         ? "No changes exceeding measurement variability since the previous result."
         : `${notableCount} notable change${notableCount === 1 ? "" : "s"} since the previous result.`,
   };
+}
+
+/**
+ * Visit-to-visit comparison: the patient's most recent recorded visit against the
+ * one before it. Same comparison shape as `compareReport`, but drawn straight from
+ * the longitudinal record rather than a newly ingested report — for a doctor who
+ * wants the previous-vs-new picture without walking the full visit timeline.
+ */
+export function compareVisits(patient: Patient): {
+  currentVisit?: Visit;
+  previousVisit?: Visit;
+  rows: LabComparisonRow[];
+} {
+  const visits = sortedVisits(patient);
+  const currentVisit = visits[visits.length - 1];
+  const previousVisit = visits[visits.length - 2];
+
+  if (!currentVisit) return { currentVisit: undefined, previousVisit: undefined, rows: [] };
+
+  const series = buildSeries(visits);
+  const keys = (Object.keys(ANALYTES) as LabKey[]).filter(
+    (key) => currentVisit.labs[key] !== undefined || previousVisit?.labs[key] !== undefined,
+  );
+
+  const rows: LabComparisonRow[] = keys.map((key) => {
+    const meta = ANALYTES[key];
+    const current = currentVisit.labs[key];
+    const previous = previousVisit?.labs[key];
+    const delta = current !== undefined && previous !== undefined ? current - previous : undefined;
+    const percentDelta = delta !== undefined && previous ? (delta / previous) * 100 : undefined;
+
+    let direction: ChangeDirection = "same";
+    if (delta !== undefined) {
+      direction = Math.abs(delta) < 1e-9 ? "same" : delta > 0 ? "up" : "down";
+    }
+
+    const notable = delta !== undefined ? Math.abs(delta) >= meta.noise : false;
+    const trend = analyseTrend(key, series[key] ?? []);
+
+    return {
+      key,
+      label: meta.label,
+      unit: meta.unit,
+      current,
+      previous,
+      previousDate: previousVisit?.date,
+      delta,
+      percentDelta,
+      direction,
+      notable,
+      rangeStatus: current !== undefined ? rangeStatus(key, current, patient.sex) : undefined,
+      trendDirection: trend.direction,
+      trendSummary: trend.summary,
+      referenceRange: meta.referenceRange,
+      evidence: [
+        ...(current !== undefined
+          ? [labValueEvidence(key, current, currentVisit.date, { visitId: currentVisit.id, note: "Most recent visit" })]
+          : []),
+        ...(previous !== undefined && previousVisit
+          ? [labValueEvidence(key, previous, previousVisit.date, { visitId: previousVisit.id, note: "Previous visit" })]
+          : []),
+      ],
+    };
+  });
+
+  return { currentVisit, previousVisit, rows };
 }
 
 function buildComparisonInsights(

@@ -5,6 +5,7 @@ import type { Insight, Medication, Visit } from "@/lib/types";
 import { TrendChart } from "@/components/trends/TrendChart";
 import { InsightList } from "@/components/shared/InsightCard";
 import { buildSeries } from "@/lib/clinical/context";
+import { cn } from "@/lib/cn";
 
 interface MedRow {
   med: Medication;
@@ -74,38 +75,52 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
           <p className="text-sm text-muted">No medications recorded.</p>
         ) : (
           <div className="space-y-3">
-            {rows.map((r) => (
-              <div key={r.med.id}>
-                <div className="mb-1 flex items-baseline justify-between">
-                  <span className="text-sm font-medium text-ink">
-                    {r.med.name} <span className="text-xs text-muted">({r.med.medClass.replace(/-/g, " ")})</span>
-                  </span>
-                  <span className="text-xs tabular-nums text-ink-secondary">
-                    {r.med.dose}
-                    {r.med.unit} {r.med.frequency}
-                    {r.med.endDate ? ` · stopped ${r.med.endDate}` : ""}
-                  </span>
-                </div>
-                <div className="relative h-3 rounded-full bg-page">
-                  <div
-                    className="absolute h-3 rounded-full bg-brand-300"
-                    style={{ left: `${r.startPct}%`, width: `${Math.max(1, r.endPct - r.startPct)}%` }}
-                  />
-                  {r.changeMarks.map((c, i) => (
-                    <span
-                      key={i}
-                      title={c.label}
-                      className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-brand-700"
-                      style={{ left: `${c.pct}%` }}
+            {rows.map((r) => {
+              const isCurrent = !r.med.endDate;
+              return (
+                <div key={r.med.id}>
+                  <div className="mb-1 flex items-baseline justify-between">
+                    <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                      <span
+                        className={cn("h-2 w-2 shrink-0 rounded-full", isCurrent ? "bg-status-good" : "bg-status-critical")}
+                        title={isCurrent ? "Current medication" : "Past medication"}
+                        aria-label={isCurrent ? "Current medication" : "Past medication"}
+                      />
+                      {r.med.name} <span className="text-xs text-muted">({r.med.medClass.replace(/-/g, " ")})</span>
+                    </span>
+                    <span className="text-xs tabular-nums text-ink-secondary">
+                      {r.med.dose}
+                      {r.med.unit} {r.med.frequency}
+                      {r.med.endDate ? ` · stopped ${r.med.endDate}` : ""}
+                    </span>
+                  </div>
+                  <div className="relative h-3 rounded-full bg-page">
+                    <div
+                      className={cn("absolute h-3 rounded-full", isCurrent ? "bg-brand-300" : "bg-border")}
+                      style={{ left: `${r.startPct}%`, width: `${Math.max(1, r.endPct - r.startPct)}%` }}
                     />
-                  ))}
+                    {r.changeMarks.map((c, i) => (
+                      <span
+                        key={i}
+                        title={c.label}
+                        className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-brand-700"
+                        style={{ left: `${c.pct}%` }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
-        <p className="mt-3 text-xs text-muted">
-          Darker dots mark a dose change, start, or stop. Hover a dot for details.
+        <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+          <span>Darker dots mark a dose change, start, or stop. Hover a dot for details.</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-status-good" /> Current medication
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-status-critical" /> Past medication
+          </span>
         </p>
       </div>
 

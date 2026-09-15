@@ -125,6 +125,9 @@ export function generatePatient(opts: GenerateOptions): Patient {
 
     // Apply scripted medication events for this visit index.
     const changes: MedicationChange[] = [];
+    // Medications stopped during this visit's events — still recorded on this visit
+    // (with endDate set) even though they're removed from `activeMeds` going forward.
+    const stoppedThisVisit: Medication[] = [];
     const eventsHere = archetype.medEvents.filter((e) => e.atVisit === i);
     for (const ev of eventsHere) {
       if (ev.type === "start") {
@@ -154,6 +157,7 @@ export function generatePatient(opts: GenerateOptions): Patient {
         if (existing) {
           existing.endDate = visitDate;
           activeMeds.delete(ev.name);
+          stoppedThisVisit.push(existing);
         }
         changes.push({
           id: `${patientId}-chg-${medIdCounter}-${ev.name}`,
@@ -219,7 +223,7 @@ export function generatePatient(opts: GenerateOptions): Patient {
         triglycerides,
         hemoglobin: Math.round(hemoglobin * 10) / 10,
       },
-      medications: Array.from(activeMeds.values()).map((m) => ({ ...m })),
+      medications: [...activeMeds.values(), ...stoppedThisVisit].map((m) => ({ ...m })),
       medicationChanges: changes,
       clinicianNote: pick(rng, archetype.noteTemplates),
     });

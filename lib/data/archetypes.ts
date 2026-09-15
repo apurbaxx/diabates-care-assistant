@@ -220,6 +220,16 @@ export const ARCHETYPES: Record<string, Archetype> = {
       { atVisit: 0, name: "Metformin", medClass: "biguanide", dose: 1000, unit: "mg", frequency: "twice daily", type: "start" },
       { atVisit: 0, name: "Glipizide", medClass: "sulfonylurea", dose: 5, unit: "mg", frequency: "twice daily", type: "start" },
       { atVisit: 0, name: "Atorvastatin", medClass: "statin", dose: 40, unit: "mg", frequency: "nightly", type: "start" },
+      {
+        atVisit: 7,
+        name: "Glipizide",
+        medClass: "sulfonylurea",
+        dose: 5,
+        unit: "mg",
+        frequency: "twice daily",
+        type: "stop",
+        reason: "De-intensified: recurrent hypoglycaemia in an elderly patient with limited life expectancy and tight historical control",
+      },
     ],
     noteTemplates: [
       "Two episodes of symptomatic hypoglycaemia reported since last visit.",
