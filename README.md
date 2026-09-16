@@ -1,8 +1,6 @@
 # Diabetes Care Assistant for Doctors
 
-A doctor-facing clinical decision-support (CDS) MVP for longitudinal diabetes
-management. See [`CLAUDE.md`](./CLAUDE.md) for the problem statement and
-non-negotiables, and [`plan.md`](./plan.md) for the full architecture.
+ClinIQ is an AI-assisted diabetes record management platform designed for doctors. It brings patient records, lab reports, medications, and other medical data into one place, helping doctors quickly compare records, review new reports, retrieve relevant reference information, and access source-linked summaries. The system focuses on faster information retrieval and clearer record review using AI and acting as a knowledge assistant for docotrs
 
 ## Running it
 
