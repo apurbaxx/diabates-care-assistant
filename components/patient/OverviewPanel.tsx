@@ -213,17 +213,20 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
 
         {summary.guidelines.length > 0 && (
           <div className="rounded-xl border border-border bg-surface p-4">
-            <h3 className="mb-1 text-sm font-semibold text-ink">Relevant reference information</h3>
-            <p className="mb-2 text-xs text-muted">
-              General guideline statements related to the values shown — not a personalised recommendation for this
-              patient.
-            </p>
-            <div className="space-y-2">
-              {summary.guidelines.map((g) => (
-                <GuidelineCitation key={g.id} guideline={g} />
-              ))}
-            </div>
-          </div>
+  <h3 className="mb-1 text-sm font-semibold text-ink">
+    Relevant reference information
+  </h3>
+
+  <p className="mb-2 text-xs text-muted">
+    General guideline statements related to the values shown — not a personalised recommendation for this patient.
+  </p>
+
+  <div className="space-y-2 lg:max-h-[500px] lg:overflow-y-auto lg:pr-1">
+    {summary.guidelines.map((g) => (
+      <GuidelineCitation key={g.id} guideline={g} />
+    ))}
+  </div>
+</div>
         )}
       </aside>
     </div>
