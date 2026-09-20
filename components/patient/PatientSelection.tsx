@@ -48,11 +48,9 @@ export function PatientSelection() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="" className="h-14 w-14 shrink-0 rounded-lg object-contain" />
+            <img src="/logo.png" alt="" className="h-20 w-20 shrink-0 rounded-lg object-contain" />
             <div>
-              <h1 className="text-lg font-semibold text-ink">Diabetes Care Assistant</h1>
-              <p className="text-xs text-muted">Record-review assistant. You interpret; the record and guidelines are shown.</p>
-            </div>
+              <h1 className="text-lg font-semibold text-ink">Diabetes Care Assistant</h1>            </div>
           </div>
           <button
             onClick={() => setShowGenerate(true)}

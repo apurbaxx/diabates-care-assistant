@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Stethoscope } from "lucide-react";
 import { SECTIONS } from "@/lib/nav";
 import { cn } from "@/lib/cn";
+import Image from "next/image";
 
 /**
  * Persistent left rail for the longitudinal chart. The record itself is one
@@ -42,11 +43,13 @@ export function Sidebar({ onBack }: { onBack: () => void }) {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
-          <Stethoscope className="h-3.5 w-3.5" strokeWidth={2.5} />
-        </span>
-        <span className="hidden truncate text-sm font-semibold text-ink md:inline">Care Assistant</span>
-      </div>
+        <Image
+  src="/logo.png"
+  alt="ClinIQ"
+  width={70}
+  height={70}
+  className="shrink-0 object-contain"
+/>      </div>
 
       <nav className="flex-1 px-2 py-3 md:px-3" aria-label="Patient record sections">
         <ul className="space-y-1">

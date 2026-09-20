@@ -92,9 +92,6 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h1 className="text-xl font-semibold text-ink">{patient.name}</h1>
-                      <span className="rounded-full bg-page px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
-                        {flaggedCount > 0 ? `${flaggedCount} flagged for review` : "No items flagged"}
-                      </span>
                     </div>
                     <p className="mt-0.5 text-sm text-muted">
                       {patient.mrn} · {age} · {patient.sex} · {patient.diabetesType.replace("-", " ")} ·{" "}
