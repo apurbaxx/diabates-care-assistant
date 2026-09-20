@@ -182,7 +182,6 @@ export function LabCheck({ patient }: { patient: Patient }) {
                 <th className="py-1.5">Analyte</th>
                 <th className="py-1.5">As reported</th>
                 <th className="py-1.5">Normalised</th>
-                <th className="py-1.5">Confidence</th>
                 <th className="py-1.5" />
               </tr>
             </thead>
@@ -203,18 +202,6 @@ export function LabCheck({ patient }: { patient: Patient }) {
                     </td>
                     <td className="py-1.5 tabular-nums font-semibold text-brand-700">
                       {v.value.toFixed(meta.decimals)} {meta.unit}
-                    </td>
-                    <td className="py-1.5">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs",
-                          v.confidence >= 0.85
-                            ? "bg-status-good/10 text-status-good"
-                            : "bg-status-warning/15 text-[#8a5c00]",
-                        )}
-                      >
-                        {Math.round(v.confidence * 100)}%
-                      </span>
                     </td>
                     <td className="py-1.5 text-right">
                       <button onClick={() => removeValue(v.key)} className="text-muted hover:text-status-critical">
