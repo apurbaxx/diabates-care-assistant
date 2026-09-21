@@ -47,7 +47,7 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
         scope: "trend",
         kind: "trend",
         severity: "info",
-        title: `HbA1c improving: ${sequence} %`,
+        title: `HbA1c falling: ${sequence} %`,
         statement: `HbA1c has fallen by ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)} (${sequence} %).`,
         detail: `Theil–Sen slope ${a1cTrend.slopePerYear.toFixed(2)} %/year.`,
         evidence: runPoints.map((p) =>
@@ -60,16 +60,16 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
     );
   } else if (a1cTrend.direction === "variable" && points.length >= 3) {
     const values = points.map((p) => p.value);
-    const spread = Math.max(...values) - Math.min(...values);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
     out.push(
       makeInsight({
         scope: "trend",
         kind: "observation",
         severity: "watch",
-        title: "HbA1c fluctuating without a consistent direction",
-        statement: `HbA1c has varied over a range of ${spread.toFixed(1)} percentage points across ${points.length} measurements without a sustained direction.`,
-        detail:
-          "Variability without a net direction can reflect changing adherence, intercurrent illness, or intermittent therapy changes. Glucose-based measures may characterise this better than HbA1c alone.",
+        title: `HbA1c: ${min.toFixed(1)}–${max.toFixed(1)} % across ${points.length} measurements`,
+        statement: `HbA1c ranged from ${min.toFixed(1)} % to ${max.toFixed(1)} % across ${points.length} measurements between ${points[0].date} and ${latest.date}.`,
+        detail: `Recorded values: ${points.map((p) => `${p.value.toFixed(1)} % (${p.date})`).join(", ")}.`,
         evidence: points.map((p) =>
           labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
         ),
@@ -84,10 +84,9 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
         scope: "trend",
         kind: "observation",
         severity: "info",
-        title: "HbA1c stable",
-        statement: `HbA1c has remained within ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points across ${points.length} measurements over ${describeSpan(points[0].date, latest.date)}.`,
-        detail:
-          "Net change is within the measurement-variability threshold for HbA1c (0.4 %), so this is reported as stability rather than as a change.",
+        title: `HbA1c: ${points[0].value.toFixed(1)} → ${latest.value.toFixed(1)} % across ${points.length} measurements`,
+        statement: `HbA1c changed from ${points[0].value.toFixed(1)} % (${points[0].date}) to ${latest.value.toFixed(1)} % (${latest.date}) across ${points.length} measurements over ${describeSpan(points[0].date, latest.date)} — a net change of ${a1cTrend.totalChange > 0 ? "+" : ""}${a1cTrend.totalChange.toFixed(1)} percentage points.`,
+        detail: `This analyte's measurement-variability threshold is 0.4 percentage points; the net change recorded here is ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points.`,
         evidence: points.map((p) =>
           labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
         ),

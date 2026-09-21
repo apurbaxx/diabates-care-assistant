@@ -52,8 +52,8 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
           detail:
             `KDIGO defines progression as a drop in GFR category accompanied by a ≥25 % decline from baseline. ` +
             (recentInitiation
-              ? `Because ${recentInitiation.name} was initiated ${Math.round(daysBetween(recentInitiation.date, latest.date))} days before this measurement, an early haemodynamic dip of up to ~30 % is anticipated and is not by itself a reason to stop therapy. Confirmation on a repeat measurement distinguishes the two.`
-              : `An apparent decline should be confirmed on a repeat measurement — acute, reversible falls are common (volume depletion, NSAIDs, contrast, intercurrent illness).`),
+              ? `Because ${recentInitiation.name} was initiated ${Math.round(daysBetween(recentInitiation.date, latest.date))} days before this measurement, an eGFR decline of up to ~30 % has been described with this drug class shortly after initiation. A repeat measurement distinguishes a reversible change from a sustained one.`
+              : `A repeat measurement distinguishes a sustained decline from a reversible one; reversible falls in eGFR are commonly associated with volume depletion, NSAIDs, contrast media, or intercurrent illness.`),
           evidence: [
             labValueEvidence("egfr", baseline.value, baseline.date, {
               visitId: baseline.visitId,
@@ -116,13 +116,15 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
         }),
       );
     } else if (trends.egfr.direction === "stable" && egfrPoints.length >= 3) {
+      const min = Math.min(...egfrPoints.map((p) => p.value));
+      const max = Math.max(...egfrPoints.map((p) => p.value));
       out.push(
         makeInsight({
           scope: "trend",
           kind: "observation",
           severity: "info",
-          title: "Kidney function stable",
-          statement: `eGFR has remained between ${Math.min(...egfrPoints.map((p) => p.value)).toFixed(0)} and ${Math.max(...egfrPoints.map((p) => p.value)).toFixed(0)} mL/min/1.73m² across ${egfrPoints.length} measurements over ${describeSpan(baseline.date, latest.date)}.`,
+          title: `eGFR: ${min.toFixed(0)}–${max.toFixed(0)} mL/min/1.73m² across ${egfrPoints.length} measurements`,
+          statement: `eGFR changed from ${baseline.value.toFixed(0)} mL/min/1.73m² (${baseline.date}) to ${latest.value.toFixed(0)} mL/min/1.73m² (${latest.date}), ranging between ${min.toFixed(0)} and ${max.toFixed(0)} across ${egfrPoints.length} measurements over ${describeSpan(baseline.date, latest.date)}.`,
           evidence: egfrPoints.map((p) =>
             labValueEvidence("egfr", p.value, p.date, { visitId: p.visitId }),
           ),
@@ -234,7 +236,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
           kind: "observation",
           severity: "watch",
           title: "UACR overdue",
-          statement: `The last UACR was ${Math.round(monthsBetween(lastUacr.date, lastVisitDate))} months ago (${lastUacr.date}); annual screening is recommended.`,
+          statement: `The last UACR on record was ${Math.round(monthsBetween(lastUacr.date, lastVisitDate))} months before the most recent visit (${lastUacr.date} → ${lastVisitDate}).`,
           evidence: [
             labValueEvidence("uacr", lastUacr.value, lastUacr.date, {
               visitId: lastUacr.visitId,

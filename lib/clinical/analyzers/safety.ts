@@ -33,7 +33,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
           title: `Metformin active at eGFR ${egfr.toFixed(0)} — below the ADA guideline threshold of 30`,
           statement: `${metformin.name} ${metformin.dose} ${metformin.unit} ${metformin.frequency} is on the active list. eGFR is ${egfr.toFixed(0)} mL/min/1.73m², below the threshold ADA's metformin guidance below addresses.`,
           detail:
-            "A single low eGFR value may reflect a reversible change (e.g. volume depletion, acute illness). A repeat measurement would confirm whether this is sustained.",
+            "A repeat measurement distinguishes a reversible change (e.g. volume depletion, acute illness) from a sustained one.",
           evidence: [
             medicationEvidence(
               lastVisit,
@@ -119,7 +119,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         title: `SGLT2 inhibitor active at eGFR ${egfr.toFixed(0)}`,
         statement: `${sglt2.name} is on the active list at an eGFR of ${egfr.toFixed(0)} mL/min/1.73m², below the ≥20 mL/min/1.73m² threshold referenced in ADA's SGLT2i-in-CKD guidance (cited below).`,
         detail:
-          "Continuation below the initiation threshold is sometimes appropriate for kidney protection; the glucose-lowering effect is minimal at this eGFR. Worth an explicit decision rather than a default.",
+          "The ADA-cited initiation threshold for this class is ≥20 mL/min/1.73m² (see citation); the glucose-lowering effect of this class is reported to be minimal at this eGFR.",
         evidence: [
           medicationEvidence(lastVisit, `${sglt2.name} active`, `${sglt2.dose} ${sglt2.unit}`),
           labValueEvidence("egfr", egfr, lastVisit.date, { visitId: lastVisit.id }),
@@ -146,7 +146,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         title: "Sulfonylurea and insulin prescribed together",
         statement: `${su.name} and ${insulin.name} are both on the active list. Combining a secretagogue with insulin stacks the two highest hypoglycaemia-risk classes.`,
         detail:
-          "Common in stepwise regimens and not necessarily wrong, but the combination is a recognised hypoglycaemia risk and is often reviewed once insulin is established.",
+          "ADA's guidance discusses hypoglycaemia risk when a secretagogue and insulin are both active (see citation).",
         evidence: [
           medicationEvidence(lastVisit, `${su.name}`, `${su.dose} ${su.unit} ${su.frequency}`),
           medicationEvidence(lastVisit, `${insulin.name}`, `${insulin.dose} ${insulin.unit} ${insulin.frequency}`),
@@ -174,7 +174,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         title: `Potassium ${potassium.toFixed(1)} mmol/L on ${ras.name}`,
         statement: `Serum potassium is ${potassium.toFixed(1)} mmol/L (${lastVisit.date}) while ${ras.name} is active${egfr !== undefined && egfr < 45 ? ` and eGFR is ${egfr.toFixed(0)}` : ""}.`,
         detail:
-          "KDIGO advises checking creatinine and potassium 2–4 weeks after initiating or up-titrating RAS blockade, and periodically thereafter. Hyperkalaemia is usually managed rather than treated by stopping an agent with proven kidney benefit.",
+          "KDIGO's cited guidance calls for checking creatinine and potassium 2–4 weeks after initiating or up-titrating RAS blockade, and periodically thereafter.",
         evidence: [
           labValueEvidence("potassium", potassium, lastVisit.date, { visitId: lastVisit.id }),
           medicationEvidence(lastVisit, `${ras.name} active`, `${ras.dose} ${ras.unit}`),
@@ -206,7 +206,6 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
           severity: "watch",
           title: `Two agents of the same class active: ${names.join(" + ")}`,
           statement: `${names.join(" and ")} are both on the active medication list and belong to the same therapeutic class (${cls.replace(/-/g, " ")}).`,
-          detail: "Usually a transcription artefact from a switch that was not closed off, but worth confirming.",
           evidence: names.map((n) => medicationEvidence(lastVisit, `${n} active`, undefined, `Class: ${cls}`)),
           parameters: [],
           visitIds: [lastVisit.id],

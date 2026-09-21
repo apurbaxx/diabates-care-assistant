@@ -62,7 +62,9 @@ export function analyseScreening(ctx: AnalysisContext): Insight[] {
         severity: "info",
         title: "No documented retinal examination",
         statement:
-          "No visit note in this record mentions a dilated eye or retinal examination. This may simply not be captured here — worth confirming directly with the patient.",
+          "No visit note in this record mentions a dilated eye or retinal examination.",
+        detail:
+          "This reflects clinician note text only and may not capture an exam that was performed but not documented here.",
         evidence: [
           computationEvidence(
             "Clinician notes scanned for eye exam mention",

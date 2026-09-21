@@ -150,39 +150,31 @@ export function analyseTrend(
     percentChange,
     exceedsNoise,
     points: sorted,
-    summary: summarise(parameter, direction, sorted, totalChange, run),
+    summary: summarise(parameter, sorted, totalChange),
   };
 }
 
+/**
+ * Purely factual: what the recorded values were and how they changed —
+ * never a characterisation of whether that change is good, bad, normal, or
+ * clinically significant. `direction`/`monotonicRun` remain on `TrendResult`
+ * for internal gating (e.g. deciding whether an insight fires at all); they
+ * are never turned into words like "stable" or "concerning" here.
+ */
 function summarise(
   parameter: string,
-  direction: TrendDirection,
   points: ParameterSeriesPoint[],
   totalChange: number,
-  run: { length: number; direction: "up" | "down" | "none" },
 ): string {
   const meta = parameterMeta(parameter);
   const n = points.length;
   const fmt = (v: number) => v.toFixed(meta.decimals);
-  const span = describeSpan(points[0].date, points[n - 1].date);
+  const first = points[0];
+  const last = points[n - 1];
+  const span = describeSpan(first.date, last.date);
   const magnitude = `${totalChange > 0 ? "+" : ""}${fmt(totalChange)} ${meta.unit}`;
 
-  switch (direction) {
-    case "rising":
-      return run.length >= 3
-        ? `Progressive increase across the last ${run.length} measurements (${magnitude} over ${span}).`
-        : `Increase of ${magnitude} over ${span} across ${n} measurements.`;
-    case "falling":
-      return run.length >= 3
-        ? `Progressive decrease across the last ${run.length} measurements (${magnitude} over ${span}).`
-        : `Decrease of ${magnitude} over ${span} across ${n} measurements.`;
-    case "variable":
-      return `Values fluctuate without a consistent direction across ${n} measurements over ${span}.`;
-    case "stable":
-      return `Stable across ${n} measurements over ${span}; net change ${magnitude} is within measurement variability.`;
-    default:
-      return "Not enough measurements to assess a trend.";
-  }
+  return `${meta.label} changed from ${fmt(first.value)} ${meta.unit} (${first.date}) to ${fmt(last.value)} ${meta.unit} (${last.date}) — a change of ${magnitude} across ${n} measurement${n === 1 ? "" : "s"} over ${span}.`;
 }
 
 export function describeSpan(fromIso: string, toIso: string): string {
