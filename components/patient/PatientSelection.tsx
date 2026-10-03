@@ -353,9 +353,6 @@ export function PatientSelection() {
                 { value: "date", label: "Last Visit" },
               ]}
             />
-            <button className="rounded-md border border-[#e2e8f0] bg-white p-2.5 text-[#6b7280] hover:bg-[#f8faff] hover:border-blue-200 transition-colors shadow-sm">
-              <ArrowUpDown className="h-4 w-4" />
-            </button>
           </div>
         </div>
 
