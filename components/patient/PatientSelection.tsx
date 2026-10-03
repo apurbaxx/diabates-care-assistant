@@ -290,7 +290,7 @@ export function PatientSelection() {
                 <circle cx="140" cy="58" r="4" fill="#64748b"/>
                 <circle cx="155" cy="58" r="4" fill="#64748b"/>
                 {/* Leaves */}
-                <ellipse cx="42" cy="110" rx="14" ry="22" rx="14" fill="#86efac" transform="rotate(-20 42 110)" opacity="0.7"/>
+                <ellipse cx="42" cy="110" rx="14" ry="22" fill="#86efac" transform="rotate(-20 42 110)" opacity="0.7"/>
                 <ellipse cx="165" cy="140" rx="12" ry="20" fill="#86efac" transform="rotate(15 165 140)" opacity="0.6"/>
               </svg>
             </div>
