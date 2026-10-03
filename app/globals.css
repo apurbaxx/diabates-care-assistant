@@ -48,3 +48,193 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* ─────────────────────────────────────────────
+   PRINT / PDF EXPORT
+   These rules fire when the user opens the browser
+   print dialog (Ctrl+P / ⌘+P) or clicks Print/Export.
+   Goals:
+     1. Remove all interactive chrome (header, tabs, buttons, sidebar).
+     2. Collapse the two-column layout to a single column.
+     3. Prevent charts, cards, and table rows from being
+        split across page breaks.
+     4. Reset every overflow:hidden/scroll so no content is clipped.
+     5. Force background colours so tinted stat tiles remain readable.
+   ───────────────────────────────────────────── */
+@media print {
+  /* --- Page setup --- */
+  @page {
+    size: A4 portrait;
+    margin: 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #0b0b0b !important;
+    font-size: 11pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* --- Hide interactive / navigation chrome --- */
+  /* Top sticky header */
+  header.sticky,
+  /* Tab nav bar inside the patient hero */
+  nav[aria-label="Patient record sections"],
+  /* Breadcrumb */
+  nav[aria-label="Breadcrumb"],
+  /* Print / Export + Generate AI summary buttons */
+  header.sticky button,
+  /* Safety footer */
+  footer {
+    display: none !important;
+  }
+
+  /* --- Remove sticky positioning so header doesn't repeat --- */
+  .sticky {
+    position: static !important;
+  }
+
+  /* --- Collapse the outer flex wrapper — no horizontal scroll --- */
+  .flex-1.overflow-y-auto {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* --- Reset ALL overflow containers so nothing is clipped --- */
+  *[class*="overflow-y-auto"],
+  *[class*="overflow-x-auto"],
+  *[class*="overflow-hidden"],
+  *[class*="overflow-y-scroll"] {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* --- Collapse two-column layout (main + right-rail) to one column --- */
+  .grid.lg\\:grid-cols-\\[minmax\\(0\\,1fr\\)_340px\\] {
+    display: block !important;
+  }
+
+  /* --- The right rail prints below the main content --- */
+  aside {
+    position: static !important;
+    margin-top: 16pt !important;
+  }
+
+  /* --- Patient hero: remove bottom-border-only card shape --- */
+  .rounded-t-xl {
+    border-radius: 8pt !important;
+    border-bottom: 1px solid #e1e0d9 !important;
+    margin-bottom: 8pt !important;
+  }
+
+  /* --- Section cards: avoid page break inside, allow break before --- */
+  section,
+  .rounded-xl {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* Give sections a little breathing room between pages */
+  section + section,
+  section.mt-6 {
+    margin-top: 12pt !important;
+    break-before: auto;
+    page-break-before: auto;
+  }
+
+  /* --- Stat tiles grid: keep each tile together --- */
+  .grid.sm\\:grid-cols-2.lg\\:grid-cols-3 > div,
+  .grid.grid-cols-2 > div,
+  .grid.md\\:grid-cols-2 > div {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* --- Charts: give them a fixed height and prevent splitting --- */
+  /* Recharts ResponsiveContainer wrapper */
+  .h-64 {
+    height: 180pt !important;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* Sparklines don't need to be large */
+  .h-8.w-16 {
+    height: 20pt !important;
+    width: 48pt !important;
+  }
+
+  /* --- Tables: header repeats, rows don't split --- */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* --- Timeline items: each visit card stays together --- */
+  .relative.space-y-3 > .relative {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+    margin-bottom: 8pt;
+  }
+
+  /* --- Collapse accordions: show all visit content when printing --- */
+  /* The visit detail panels use conditional rendering so nothing extra
+     is needed here — only what's currently open will print. */
+
+  /* --- Guideline citations in right rail --- */
+  .max-h-\\[600px\\] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* --- Insight cards --- */
+  [class*="InsightCard"],
+  .space-y-2 > a,
+  .space-y-2 > div {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* --- AI Summary card: always keep together --- */
+  .border-brand-300\\/60 {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  /* --- Remove hover/interactive states --- */
+  button,
+  a {
+    text-decoration: none !important;
+  }
+
+  /* --- Background-color preservation for tinted tiles --- */
+  /* Rose (HbA1c) */
+  .bg-rose-50 { background-color: #fff1f2 !important; }
+  /* Amber (glucose) */
+  .bg-amber-50 { background-color: #fffbeb !important; }
+  /* Sky (blood pressure) */
+  .bg-sky-50 { background-color: #f0f9ff !important; }
+  /* Emerald (eGFR) */
+  .bg-emerald-50 { background-color: #ecfdf5 !important; }
+  /* Teal (UACR) */
+  .bg-teal-50 { background-color: #f0fdfa !important; }
+  /* Violet (weight) */
+  .bg-violet-50 { background-color: #f5f3ff !important; }
+  /* Brand (AI summary) */
+  .bg-brand-100\\/25 { background-color: #eef6fe !important; }
+  /* Page background */
+  .bg-page { background-color: #f6f7f6 !important; }
+  .bg-surface { background-color: #fcfcfb !important; }
+}

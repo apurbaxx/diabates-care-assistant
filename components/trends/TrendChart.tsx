@@ -58,7 +58,11 @@ export function TrendChart({
   const pad = (max - min) * 0.15 || max * 0.1 || 1;
 
   return (
-    <div className="h-64 w-full" role="img" aria-label={`Trend chart for ${meta.label}`}>
+    <div
+      className="h-64 w-full print:break-inside-avoid print:overflow-visible"
+      role="img"
+      aria-label={`Trend chart for ${meta.label}`}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 12, right: 16, left: 4, bottom: 4 }}>
           <CartesianGrid stroke="var(--color-gridline)" strokeDasharray="0" vertical={false} />

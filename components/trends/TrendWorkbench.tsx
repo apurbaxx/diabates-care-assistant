@@ -53,7 +53,7 @@ export function TrendWorkbench({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="mb-4 flex flex-wrap gap-1.5 print:hidden">
         {TABS.map((t) => {
           const hasData = (trends[t.key]?.points.length ?? 0) > 0;
           const isActive = active === t.key;
@@ -83,8 +83,8 @@ export function TrendWorkbench({
         })}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] print:block">
+        <div className="rounded-xl border border-border bg-surface p-4 print:break-inside-avoid">
           <div className="mb-2 flex items-baseline justify-between">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
               <style.icon className="h-4 w-4 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
@@ -132,7 +132,7 @@ export function TrendWorkbench({
               ))}
             </div>
           )}
-          <p className="mt-2 text-xs text-muted">Hover an insight to highlight its measurements on the chart.</p>
+          <p className="mt-2 text-xs text-muted print:hidden">Hover an insight to highlight its measurements on the chart.</p>
         </div>
       </div>
     </div>

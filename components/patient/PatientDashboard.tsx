@@ -108,7 +108,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
     <EvidenceProvider>
       <div className="flex min-h-screen flex-col bg-page">
         {/* ── Top header bar ── */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8 print:hidden">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/")}
@@ -134,7 +134,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
               className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
               <Sparkles className="h-4 w-4" />
-              Generate AI summary
+              AI ASSISTANT
             </button>
           </div>
         </header>
@@ -145,7 +145,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
             {/* Patient hero section */}
             <div className="mb-0 rounded-t-xl border border-b-0 border-gridline bg-surface px-6 pt-6">
               {/* Breadcrumb */}
-              <nav className="mb-4 flex items-center gap-1.5 text-sm text-muted" aria-label="Breadcrumb">
+              <nav className="mb-4 flex items-center gap-1.5 text-sm text-muted print:hidden" aria-label="Breadcrumb">
                 <button onClick={() => router.push("/")} className="hover:text-ink hover:underline">
                   Patients
                 </button>
@@ -179,7 +179,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
               </div>
 
               {/* Tab navigation */}
-              <nav className="flex gap-1 overflow-x-auto" aria-label="Patient record sections">
+              <nav className="flex gap-1 overflow-x-auto print:hidden" aria-label="Patient record sections">
                 {TAB_SECTIONS.map((id) => (
                   <button
                     key={id}
