@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Sparkles } from "lucide-react";
+import { ArrowLeft, Printer, Sparkles, BookOpen } from "lucide-react";
+import Link from "next/link";
+
 import { useAppStore, ensureSeeded } from "@/lib/store";
 import { runEngine } from "@/lib/clinical/engine";
 import { sortedVisits, ageAt } from "@/lib/clinical/derive";
@@ -121,6 +123,14 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/knowledge-assistant"
+              className="flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-100/40 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-500 hover:text-white"
+              title="Search official clinical guidelines"
+            >
+              <BookOpen className="h-4 w-4" />
+              Knowledge Explorer
+            </Link>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-ink-secondary transition hover:bg-page hover:text-ink"
@@ -137,6 +147,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
               AI ASSISTANT
             </button>
           </div>
+
         </header>
 
         {/* ── Scrollable content ── */}
@@ -263,8 +274,9 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
   );
 }
 
-import { CalendarClock, BookOpen, ChevronRight } from "lucide-react";
+import { CalendarClock, ChevronRight } from "lucide-react";
 import type { EngineResult } from "@/lib/types";
+
 import { GuidelineCitation } from "@/components/shared/GuidelineCitation";
 
 function RightRail({ engine }: { engine: EngineResult }) {

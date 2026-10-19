@@ -14,7 +14,10 @@ import {
   CalendarDays,
   ArrowRight,
   SlidersHorizontal,
+  BookOpen,
 } from "lucide-react";
+import Link from "next/link";
+
 import { useAppStore, ensureSeeded } from "@/lib/store";
 import { runEngine } from "@/lib/clinical/engine";
 import { ageAt, sortedVisits } from "@/lib/clinical/derive";
@@ -221,16 +224,26 @@ export function PatientSelection() {
               <div className="text-xs text-[#64748b]">Diabetes Care Assistant</div>
             </div>
           </div>
-          <button
-            onClick={() => setShowGenerate(true)}
-            className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors duration-200"
-            style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#0f172a"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, #3b82f6, #2563eb)"; }}
-          >
-            <PlusCircle className="h-4 w-4" />
-            Generate synthetic patient
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/knowledge-assistant"
+              className="flex items-center gap-2 rounded-md border border-[#bfdbfe] bg-white px-3.5 py-2 text-sm font-semibold text-[#1e40af] shadow-sm hover:bg-[#eff6ff] transition-colors"
+            >
+              <BookOpen className="h-4 w-4 text-[#2563eb]" />
+              Knowledge Explorer
+            </Link>
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors duration-200"
+              style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#0f172a"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, #3b82f6, #2563eb)"; }}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Generate synthetic patient
+            </button>
+          </div>
+
         </div>
       </header>
 
