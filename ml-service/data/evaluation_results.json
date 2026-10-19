@@ -2,10 +2,10 @@
   "baseline_rerank": {
     "mode": "baseline_rerank",
     "mean_recall_at_5": 0.6,
-    "mean_mrr": 0.7976,
-    "mean_ndcg_at_5": 0.5807,
+    "mean_mrr": 0.7071,
+    "mean_ndcg_at_5": 0.6737,
     "mean_precision_at_5": 0.6,
-    "avg_latency_ms": 760.36,
+    "avg_latency_ms": 1897.26,
     "negative_query_rejected": true,
     "per_query": [
       {
@@ -17,19 +17,19 @@
         "relevance_scores": [
           0,
           0,
+          0,
           1,
-          2,
-          0
+          1
         ],
         "metrics": {
           "precision_at_5": 0.4,
           "recall_at_5": 0.4,
-          "mrr": 0.3333,
-          "ndcg_at_5": 0.3663
+          "mrr": 0.25,
+          "ndcg_at_5": 0.1671
         },
-        "latency_ms": 902.84,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] Recommendations for Glycosyla ted hemoglobin for monitoring",
-        "top_excerpt": "the mean HbA1c in patients with controlled diabetes with Iron Deficiency Anemia (IDA) was considerably higher than in th"
+        "latency_ms": 1900.54,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Abnormal hemoglobin levels are known to affect HbA1c values in a way that can significantly alter the results concerni"
       },
       {
         "id": "q2_diagnostic_threshold",
@@ -41,18 +41,18 @@
           0,
           0,
           0,
-          2,
+          0,
           2
         ],
         "metrics": {
-          "precision_at_5": 0.4,
-          "recall_at_5": 0.4,
-          "mrr": 0.25,
-          "ndcg_at_5": 0.5013
+          "precision_at_5": 0.2,
+          "recall_at_5": 0.2,
+          "mrr": 0.2,
+          "ndcg_at_5": 0.3869
         },
-        "latency_ms": 753.58,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.3] Recommendations",
-        "top_excerpt": "Background The diagnostic criteria of diabetes have constantly been evolving. Both type 1 and type 2 diabetes mellitus a"
+        "latency_ms": 1990.55,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.2] Recommendations",
+        "top_excerpt": "Standardization of measurement techniques and laboratories is poorly practiced across India.11 Also, in several countrie"
       },
       {
         "id": "q3_monitoring_frequency",
@@ -61,21 +61,21 @@
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
-          1,
-          1,
+          0,
+          2,
           0,
           0,
           0
         ],
         "metrics": {
-          "precision_at_5": 0.4,
-          "recall_at_5": 0.4,
-          "mrr": 1.0,
-          "ndcg_at_5": 0.3333
+          "precision_at_5": 0.2,
+          "recall_at_5": 0.2,
+          "mrr": 0.5,
+          "ndcg_at_5": 0.6309
         },
-        "latency_ms": 840.0,
-        "top_result": "[RSSDI Expert Consensus for Optimal Glucose Monitoring in Diabetes Mellitus in India and Recommendations for Clinical Practice p.8] Table 3. Recommended Care and Limited Care Recommendations by RSSDI Experts for Frequency/Timing of Various Glucose Monitoring",
-        "top_excerpt": "Table 3. Recommended Care and Limited Care Recommendations by RSSDI Experts for Frequency/Timing of Various Glucose Moni"
+        "latency_ms": 1935.36,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Measure HbA1c every three to six months depending on level, stability of blood glucose control, and changes in therapy"
       },
       {
         "id": "q4_anemia_interference",
@@ -95,9 +95,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 701.64,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] Recommendations for Glycosyla ted hemoglobin for monitoring",
-        "top_excerpt": "the mean HbA1c in patients with controlled diabetes with Iron Deficiency Anemia (IDA) was considerably higher than in th"
+        "latency_ms": 1924.54,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Abnormal hemoglobin levels are known to affect HbA1c values in a way that can significantly alter the results concerni"
       },
       {
         "id": "q5_time_in_range",
@@ -116,8 +116,8 @@
           "mrr": 1.0,
           "ndcg_at_5": 0.5307
         },
-        "latency_ms": 837.69,
-        "top_result": "[RSSDI Expert Consensus for Optimal Glucose Monitoring in Diabetes Mellitus in India and Recommendations for Clinical Practice p.4] Time-in-range (TIR)",
+        "latency_ms": 1905.68,
+        "top_result": "[RSSDI Expert Consensus for Optimal Glucose Monitoring in Diabetes Mellitus in India and Recommendations for Clinical Practice p.1] Clinical Guidelines",
         "top_excerpt": "4 International Journal of Clinical Metabolism and Diabetes TIR is the percentage of time the glucose level is within th"
       },
       {
@@ -125,21 +125,23 @@
         "category": "Diabetes and Kidney Disease",
         "query": "Find guidance about diabetes and kidney disease.",
         "is_medical": true,
-        "results_count": 3,
+        "results_count": 5,
         "relevance_scores": [
-          1,
-          1,
-          1
+          2,
+          2,
+          2,
+          2,
+          2
         ],
         "metrics": {
-          "precision_at_5": 0.6,
-          "recall_at_5": 0.6,
+          "precision_at_5": 1.0,
+          "recall_at_5": 1.0,
           "mrr": 1.0,
-          "ndcg_at_5": 0.3333
+          "ndcg_at_5": 1.0
         },
-        "latency_ms": 673.55,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.36] Recommendations",
-        "top_excerpt": "be confirmed with additional spot urine tests over the next three to six months. The Kidney Disease Outcomes Quality Ini"
+        "latency_ms": 1647.71,
+        "top_result": "[11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes\u20142026 p.7] Recommendations",
+        "top_excerpt": "Selection of Glucose-Lowering Medications for People With Chronic Kidney Disease For people with type 2 diabetes and est"
       },
       {
         "id": "q7_retinopathy_screening",
@@ -160,9 +162,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 681.08,
-        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] screening strategies for diabetic retinopathy. Such programs need to provide pathways for timely referral for a",
-        "top_excerpt": "current therapies can not only prevent vision loss but also help improve vision for many individuals. Prompt diagnosis a"
+        "latency_ms": 1920.42,
+        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
+        "top_excerpt": "Diabetic retinopathy screening should be performed using validated approaches and methodologies. Children and adolescent"
       },
       {
         "id": "q8_out_of_domain",
@@ -177,7 +179,7 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 692.48,
+        "latency_ms": 1953.29,
         "top_result": "REJECTED (0 results)",
         "top_excerpt": "N/A"
       }
@@ -185,11 +187,11 @@
   },
   "hybrid_rerank": {
     "mode": "hybrid_rerank",
-    "mean_recall_at_5": 0.9143,
+    "mean_recall_at_5": 0.9429,
     "mean_mrr": 1.0,
-    "mean_ndcg_at_5": 0.8704,
-    "mean_precision_at_5": 0.9143,
-    "avg_latency_ms": 1833.63,
+    "mean_ndcg_at_5": 0.9325,
+    "mean_precision_at_5": 0.9429,
+    "avg_latency_ms": 3220.87,
     "negative_query_rejected": true,
     "per_query": [
       {
@@ -201,17 +203,17 @@
         "relevance_scores": [
           2,
           2,
+          2,
           1,
-          0,
           1
         ],
         "metrics": {
-          "precision_at_5": 0.8,
-          "recall_at_5": 0.8,
+          "precision_at_5": 1.0,
+          "recall_at_5": 1.0,
           "mrr": 1.0,
-          "ndcg_at_5": 0.7521
+          "ndcg_at_5": 0.8152
         },
-        "latency_ms": 2997.88,
+        "latency_ms": 3249.68,
         "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.4] Recommendations",
         "top_excerpt": "Recommendations 6.3a An A1C goal of <7% (<53 mmol/ mol) is appropriate for many nonpregnant adults without severe hypogl"
       },
@@ -226,17 +228,17 @@
           2,
           2,
           2,
-          2
+          0
         ],
         "metrics": {
-          "precision_at_5": 1.0,
-          "recall_at_5": 1.0,
+          "precision_at_5": 0.8,
+          "recall_at_5": 0.8,
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 1816.74,
+        "latency_ms": 3183.18,
         "top_result": "[2. Diagnosis and Classification of Diabetes: Standards of Care in Diabetes\u20142026 p.2] Table 2.1\u2014Criteria for the diagnosis of diabetes in nonpregnant individuals",
-        "top_excerpt": "Table 2.1\u2014Criteria for the diagnosis of diabetes in nonpregnant individuals A1C \u22656.5% (\u226548 mmol/mol). The test should be"
+        "top_excerpt": "Table 2.1\u2014Criteria for the diagnosis of diabetes in nonpregnant individuals\nA1C \u22656.5% (\u226548 mmol/mol). The test should be"
       },
       {
         "id": "q3_monitoring_frequency",
@@ -257,31 +259,32 @@
           "mrr": 1.0,
           "ndcg_at_5": 0.8551
         },
-        "latency_ms": 1456.7,
-        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
-        "top_excerpt": "may only need A1C testing twice a year. Individuals with less stable glucose levels, those with intensive care plans, or"
+        "latency_ms": 3250.73,
+        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.1] Recommendations",
+        "top_excerpt": "B Fructosamine or CGM can be used for glycemic monitoring when an alternative to A1C is required. B 6.2 Assess glycemic "
       },
       {
         "id": "q4_anemia_interference",
         "category": "HbA1c in Iron Deficiency Anemia",
         "query": "How does iron deficiency anemia affect HbA1c interpretation?",
         "is_medical": true,
-        "results_count": 4,
+        "results_count": 5,
         "relevance_scores": [
+          2,
           2,
           2,
           2,
           2
         ],
         "metrics": {
-          "precision_at_5": 0.8,
-          "recall_at_5": 0.8,
+          "precision_at_5": 1.0,
+          "recall_at_5": 1.0,
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 1714.94,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] Recommendations for Glycosyla ted hemoglobin for monitoring",
-        "top_excerpt": "the mean HbA1c in patients with controlled diabetes with Iron Deficiency Anemia (IDA) was considerably higher than in th"
+        "latency_ms": 3126.7,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Abnormal hemoglobin levels are known to affect HbA1c values in a way that can significantly alter the results concerni"
       },
       {
         "id": "q5_time_in_range",
@@ -290,21 +293,21 @@
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
-          1,
           2,
           1,
           2,
-          1
+          2,
+          2
         ],
         "metrics": {
           "precision_at_5": 1.0,
           "recall_at_5": 1.0,
           "mrr": 1.0,
-          "ndcg_at_5": 0.5734
+          "ndcg_at_5": 0.8573
         },
-        "latency_ms": 2100.61,
-        "top_result": "[RSSDI Expert Consensus for Optimal Glucose Monitoring in Diabetes Mellitus in India and Recommendations for Clinical Practice p.4] Time-in-range (TIR)",
-        "top_excerpt": "4 International Journal of Clinical Metabolism and Diabetes TIR is the percentage of time the glucose level is within th"
+        "latency_ms": 3221.72,
+        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.3] Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes",
+        "top_excerpt": "Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes\nMetric Interpretation "
       },
       {
         "id": "q6_kidney_disease",
@@ -325,9 +328,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 1675.47,
+        "latency_ms": 3308.22,
         "top_result": "[11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes\u20142026 p.10] Recommendation",
-        "top_excerpt": "Recommendation 11.9 Simultaneous initiation of an SGLT2 inhibitor and a nonsteroidal MRA (finerenone) can be considered "
+        "top_excerpt": "The recent CONFIDENCE (Combination Effect of Finerenone and Empagliflozin in Participants With Chronic Kidney Disease an"
       },
       {
         "id": "q7_retinopathy_screening",
@@ -340,17 +343,17 @@
           2,
           2,
           2,
-          1
+          2
         ],
         "metrics": {
           "precision_at_5": 1.0,
           "recall_at_5": 1.0,
           "mrr": 1.0,
-          "ndcg_at_5": 0.9125
+          "ndcg_at_5": 1.0
         },
-        "latency_ms": 1514.19,
-        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] screening strategies for diabetic retinopathy. Such programs need to provide pathways for timely referral for a",
-        "top_excerpt": "as not meeting glycemic goals, advanced retinopathy, or DME are present. Retinal photography with remote reading by expe"
+        "latency_ms": 3209.43,
+        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
+        "top_excerpt": "Diabetic retinopathy screening should be performed using validated approaches and methodologies. Children and adolescent"
       },
       {
         "id": "q8_out_of_domain",
@@ -365,7 +368,7 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 1392.54,
+        "latency_ms": 3217.29,
         "top_result": "REJECTED (0 results)",
         "top_excerpt": "N/A"
       }
@@ -373,11 +376,11 @@
   },
   "keyword_only": {
     "mode": "keyword_only",
-    "mean_recall_at_5": 0.6,
-    "mean_mrr": 0.6,
-    "mean_ndcg_at_5": 0.5006,
-    "mean_precision_at_5": 0.6,
-    "avg_latency_ms": 4.53,
+    "mean_recall_at_5": 0.6571,
+    "mean_mrr": 0.7143,
+    "mean_ndcg_at_5": 0.5629,
+    "mean_precision_at_5": 0.6571,
+    "avg_latency_ms": 5.94,
     "negative_query_rejected": false,
     "per_query": [
       {
@@ -387,21 +390,21 @@
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
-          0,
           1,
-          2,
+          1,
+          1,
           0,
           1
         ],
         "metrics": {
-          "precision_at_5": 0.6,
-          "recall_at_5": 0.6,
-          "mrr": 0.5,
-          "ndcg_at_5": 0.3938
+          "precision_at_5": 0.8,
+          "recall_at_5": 0.8,
+          "mrr": 1.0,
+          "ndcg_at_5": 0.3276
         },
-        "latency_ms": 6.38,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.68] Screening for hyperglycemia at presentation",
-        "top_excerpt": "undiagnosed diabetic individuals or insulin secretory defects and increased insulin resistance resulting from a severe i"
+        "latency_ms": 7.71,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.18] Recommendations",
+        "top_excerpt": "HbA1c targets must be determined as criteria set for individualized therapy efficacy of each agent as combination therap"
       },
       {
         "id": "q2_diagnostic_threshold",
@@ -422,9 +425,9 @@
           "mrr": 0.0,
           "ndcg_at_5": 0.0
         },
-        "latency_ms": 6.0,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.9] Table 3: Summary of recommendations on use of metformin for",
-        "top_excerpt": "\u201cprovided that this is not due to complications, comorbid conditions or concomitant therapy\u201d78. They have also proposed "
+        "latency_ms": 8.16,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.2] Recommendations",
+        "top_excerpt": "**Using a method that is National Glycohemoglobin Standardization Program (NGSP) certified. For more on HbA1c and NGSP, "
       },
       {
         "id": "q3_monitoring_frequency",
@@ -437,22 +440,91 @@
           0,
           0,
           0,
-          1
+          0
         ],
         "metrics": {
-          "precision_at_5": 0.2,
-          "recall_at_5": 0.2,
-          "mrr": 0.2,
-          "ndcg_at_5": 0.129
+          "precision_at_5": 0.0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_5": 0.0
         },
-        "latency_ms": 4.07,
+        "latency_ms": 4.52,
         "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
-        "top_excerpt": "hemoglobinopathies, fructosamine may be used as a surrogate. \u2022 Point-of-care capillary blood glucose meters should be us"
+        "top_excerpt": "\u2022 When prescribing continuous glucose monitoring or ambulatory glucose profile (CGM/AGP), robust diabetes education, tra"
       },
       {
         "id": "q4_anemia_interference",
         "category": "HbA1c in Iron Deficiency Anemia",
         "query": "How does iron deficiency anemia affect HbA1c interpretation?",
+        "is_medical": true,
+        "results_count": 5,
+        "relevance_scores": [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "metrics": {
+          "precision_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 1.0
+        },
+        "latency_ms": 5.0,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Abnormal hemoglobin levels are known to affect HbA1c values in a way that can significantly alter the results concerni"
+      },
+      {
+        "id": "q5_time_in_range",
+        "category": "Time in Range Targets",
+        "query": "What glucose range and targets are used for Time in Range?",
+        "is_medical": true,
+        "results_count": 5,
+        "relevance_scores": [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        "metrics": {
+          "precision_at_5": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_5": 0.76
+        },
+        "latency_ms": 7.54,
+        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.3] Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes",
+        "top_excerpt": "Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes\nMetric Interpretation "
+      },
+      {
+        "id": "q6_kidney_disease",
+        "category": "Diabetes and Kidney Disease",
+        "query": "Find guidance about diabetes and kidney disease.",
+        "is_medical": true,
+        "results_count": 5,
+        "relevance_scores": [
+          2,
+          2,
+          1,
+          0,
+          2
+        ],
+        "metrics": {
+          "precision_at_5": 0.8,
+          "recall_at_5": 0.8,
+          "mrr": 1.0,
+          "ndcg_at_5": 0.8528
+        },
+        "latency_ms": 5.08,
+        "top_result": "[11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes\u20142026 p.11] Recommendation",
+        "top_excerpt": "Referral to a Nephrologist Health care professionals should consider referral to a nephrologist if the individual with d"
+      },
+      {
+        "id": "q7_retinopathy_screening",
+        "category": "Diabetic Retinopathy Screening",
+        "query": "Find information about diabetic retinopathy screening.",
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
@@ -469,77 +541,8 @@
           "ndcg_at_5": 1.0
         },
         "latency_ms": 4.0,
-        "top_result": "[2. Diagnosis and Classification of Diabetes: Standards of Care in Diabetes\u20142026 p.3] Table 2.3\u2014Considerations related to the use and interpretation of laboratory measurements of glucose and A1C",
-        "top_excerpt": "needed Within-person variability High Low Acute factors that can affect levels Food intake, stress, recent illness, acti"
-      },
-      {
-        "id": "q5_time_in_range",
-        "category": "Time in Range Targets",
-        "query": "What glucose range and targets are used for Time in Range?",
-        "is_medical": true,
-        "results_count": 5,
-        "relevance_scores": [
-          2,
-          1,
-          1,
-          0,
-          1
-        ],
-        "metrics": {
-          "precision_at_5": 0.8,
-          "recall_at_5": 0.8,
-          "mrr": 1.0,
-          "ndcg_at_5": 0.5879
-        },
-        "latency_ms": 5.51,
-        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.3] Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes",
-        "top_excerpt": "complex/intermediate health)\u2021 TIR 70\u2013180 mg/dL (3.9\u201310.0 mmol/L) Percent of time in range >70% (most adults); >50% (olde"
-      },
-      {
-        "id": "q6_kidney_disease",
-        "category": "Diabetes and Kidney Disease",
-        "query": "Find guidance about diabetes and kidney disease.",
-        "is_medical": true,
-        "results_count": 5,
-        "relevance_scores": [
-          0,
-          1,
-          2,
-          0,
-          1
-        ],
-        "metrics": {
-          "precision_at_5": 0.6,
-          "recall_at_5": 0.6,
-          "mrr": 0.5,
-          "ndcg_at_5": 0.3938
-        },
-        "latency_ms": 3.0,
-        "top_result": "[5. Facilitating Positive Health Behaviors and Well-being to Improve Health Outcomes: Standards of Care in Diabetes\u20142026 p.21] Screening",
-        "top_excerpt": "(400,401), screening for suicidality may also be appropriate (402\u2013404). A list of age-ap propriate screening and evaluat"
-      },
-      {
-        "id": "q7_retinopathy_screening",
-        "category": "Diabetic Retinopathy Screening",
-        "query": "Find information about diabetic retinopathy screening.",
-        "is_medical": true,
-        "results_count": 5,
-        "relevance_scores": [
-          2,
-          2,
-          2,
-          2,
-          2
-        ],
-        "metrics": {
-          "precision_at_5": 1.0,
-          "recall_at_5": 1.0,
-          "mrr": 1.0,
-          "ndcg_at_5": 1.0
-        },
-        "latency_ms": 2.0,
-        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] screening strategies for diabetic retinopathy. Such programs need to provide pathways for timely referral for a",
-        "top_excerpt": "repeated annually for individuals without or with mild retinopathy. Exams every 1\u20132 years may be cost-effective after on"
+        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
+        "top_excerpt": "Diabetic retinopathy screening should be performed using validated approaches and methodologies. Children and adolescent"
       },
       {
         "id": "q8_out_of_domain",
@@ -560,9 +563,9 @@
           "mrr": 0.0,
           "ndcg_at_5": 0.0
         },
-        "latency_ms": 5.26,
+        "latency_ms": 5.51,
         "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.7] Recommendations",
-        "top_excerpt": "Recommendations 6.10 Review history of hypoglycemia at every clinical encounter for all individuals at risk for hypoglyc"
+        "top_excerpt": "Recommendations HYPOGLYCEMIA ASSESSMENT, PREVENTION, AND TREATMENT 6.10 Review history of hypoglycemia at every clinical"
       }
     ]
   },
@@ -570,9 +573,9 @@
     "mode": "hybrid",
     "mean_recall_at_5": 0.8857,
     "mean_mrr": 1.0,
-    "mean_ndcg_at_5": 0.8865,
+    "mean_ndcg_at_5": 0.8736,
     "mean_precision_at_5": 0.8857,
-    "avg_latency_ms": 23.82,
+    "avg_latency_ms": 29.22,
     "negative_query_rejected": false,
     "per_query": [
       {
@@ -583,18 +586,18 @@
         "results_count": 5,
         "relevance_scores": [
           2,
-          1,
-          1,
           2,
+          0,
+          1,
           0
         ],
         "metrics": {
-          "precision_at_5": 0.8,
-          "recall_at_5": 0.8,
+          "precision_at_5": 0.6,
+          "recall_at_5": 0.6,
           "mrr": 1.0,
-          "ndcg_at_5": 0.7057
+          "ndcg_at_5": 0.8327
         },
-        "latency_ms": 28.96,
+        "latency_ms": 34.33,
         "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.4] Recommendations",
         "top_excerpt": "Recommendations 6.3a An A1C goal of <7% (<53 mmol/ mol) is appropriate for many nonpregnant adults without severe hypogl"
       },
@@ -605,21 +608,21 @@
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
+          1,
           2,
-          0,
-          0,
           2,
-          2
+          2,
+          0
         ],
         "metrics": {
-          "precision_at_5": 0.6,
-          "recall_at_5": 0.6,
+          "precision_at_5": 0.8,
+          "recall_at_5": 0.8,
           "mrr": 1.0,
-          "ndcg_at_5": 0.8529
+          "ndcg_at_5": 0.7397
         },
-        "latency_ms": 28.72,
-        "top_result": "[2. Diagnosis and Classification of Diabetes: Standards of Care in Diabetes\u20142026 p.1] DIAGNOSTIC TESTS FOR DIABETES",
-        "top_excerpt": "DIAGNOSTIC TESTS FOR DIABETES Diabetes may be diagnosed based on A1C or plasma glucose criteria. Plasma glucose criteria"
+        "latency_ms": 35.54,
+        "top_result": "[2. Diagnosis and Classification of Diabetes: Standards of Care in Diabetes\u20142026 p.1] Recommendations",
+        "top_excerpt": "Recommendations 2.1a Diagnose diabetes based on A1C or plasma glucose criteria. Plasma glucose criteria include either f"
       },
       {
         "id": "q3_monitoring_frequency",
@@ -631,18 +634,18 @@
           2,
           2,
           2,
-          2,
-          0
+          0,
+          1
         ],
         "metrics": {
           "precision_at_5": 0.8,
           "recall_at_5": 0.8,
           "mrr": 1.0,
-          "ndcg_at_5": 1.0
+          "ndcg_at_5": 0.8822
         },
-        "latency_ms": 23.75,
+        "latency_ms": 30.0,
         "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.1] Recommendations",
-        "top_excerpt": "Recommendations 6.1 Assess glycemic status by A1C A and/or continuous glucose monitoring (CGM) metrics such as time in r"
+        "top_excerpt": "Recommendations Glycemic Assessment 6.1 Assess glycemic status by A1C A and/or continuous glucose monitoring (CGM) metri"
       },
       {
         "id": "q4_anemia_interference",
@@ -663,9 +666,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 22.04,
-        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] Recommendations for Glycosyla ted hemoglobin for monitoring",
-        "top_excerpt": "the mean HbA1c in patients with controlled diabetes with Iron Deficiency Anemia (IDA) was considerably higher than in th"
+        "latency_ms": 26.21,
+        "top_result": "[RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022 p.59] RECOMMENDATIONS",
+        "top_excerpt": "\u2022 Abnormal hemoglobin levels are known to affect HbA1c values in a way that can significantly alter the results concerni"
       },
       {
         "id": "q5_time_in_range",
@@ -674,21 +677,21 @@
         "is_medical": true,
         "results_count": 5,
         "relevance_scores": [
+          1,
           2,
           1,
-          1,
-          1,
+          2,
           2
         ],
         "metrics": {
           "precision_at_5": 1.0,
           "recall_at_5": 1.0,
           "mrr": 1.0,
-          "ndcg_at_5": 0.6469
+          "ndcg_at_5": 0.6608
         },
-        "latency_ms": 28.75,
-        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.3] Table 6.2\u2014CGM metrics for clinical care in nonpregnant individuals with type 1 or type 2 diabetes",
-        "top_excerpt": "complex/intermediate health)\u2021 TIR 70\u2013180 mg/dL (3.9\u201310.0 mmol/L) Percent of time in range >70% (most adults); >50% (olde"
+        "latency_ms": 46.53,
+        "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
+        "top_excerpt": "Use of CGM in type 2 diabetes (as well as in several other forms of diabetes) is growing, especially in people who are t"
       },
       {
         "id": "q6_kidney_disease",
@@ -709,9 +712,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 23.6,
-        "top_result": "[11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes\u20142026 p.4] Table 11.2\u2014Screening for selected complications of chronic kidney disease",
-        "top_excerpt": "in clinical trials of ACE inhibitor or ARB therapy in people with type 2 diabetes, reducing albuminuria to levels <300 m"
+        "latency_ms": 22.94,
+        "top_result": "[11. Chronic Kidney Disease and Risk Management: Standards of Care in Diabetes\u20142026 p.7] Recommendations",
+        "top_excerpt": "For people with type 2 diabetes and CKD, the selection of specific agents may depend on comorbidity and CKD stage. SGLT2"
       },
       {
         "id": "q7_retinopathy_screening",
@@ -732,9 +735,9 @@
           "mrr": 1.0,
           "ndcg_at_5": 1.0
         },
-        "latency_ms": 20.55,
-        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] screening strategies for diabetic retinopathy. Such programs need to provide pathways for timely referral for a",
-        "top_excerpt": "as not meeting glycemic goals, advanced retinopathy, or DME are present. Retinal photography with remote reading by expe"
+        "latency_ms": 22.4,
+        "top_result": "[12. Retinopathy, Neuropathy, and Foot Care: Standards of Care in Diabetes\u20142026 p.2] Recommendations",
+        "top_excerpt": "Screening 12.3 Adults with type 1 diabetes should have an initial dilated and comprehensive eye examination by an ophtha"
       },
       {
         "id": "q8_out_of_domain",
@@ -755,9 +758,9 @@
           "mrr": 0.0,
           "ndcg_at_5": 0.0
         },
-        "latency_ms": 14.16,
+        "latency_ms": 15.81,
         "top_result": "[6. Glycemic Goals, Hypoglycemia, and Hyperglycemic Crises: Standards of Care in Diabetes\u20142026 p.7] Recommendations",
-        "top_excerpt": "Recommendations 6.10 Review history of hypoglycemia at every clinical encounter for all individuals at risk for hypoglyc"
+        "top_excerpt": "Recommendations HYPOGLYCEMIA ASSESSMENT, PREVENTION, AND TREATMENT 6.10 Review history of hypoglycemia at every clinical"
       }
     ]
   }

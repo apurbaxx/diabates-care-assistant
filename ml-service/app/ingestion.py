@@ -94,13 +94,27 @@ BOILERPLATE_PATTERNS = [
     re.compile(r"^\d+\.\s+[A-Z\s,–—\-]{4,}$", re.MULTILINE),  # All-caps running section banners
 ]
 
+TABLE_TITLE_REGEX = re.compile(
+    r"^(Table\s+\d+[\.\d]*\s*[-–—:]\s*.+|Table\s+\d+[\.\d]*\.\s+[A-Z].+)",
+    re.IGNORECASE
+)
+
 HEADING_PATTERNS = [
-    re.compile(r"^(Recommendations?|Consensus Recommendations?|General Recommendations?)", re.IGNORECASE),
-    re.compile(r"^(Recommendation\s+\d+\.\d+[a-z]?)", re.IGNORECASE),
-    re.compile(r"^(Table\s+\d+[\.\d]*\s*[-–—:]?\s*.+)", re.IGNORECASE),
-    re.compile(r"^(\d+\.\s+[A-Z][A-Za-z0-9\s,\-–—\(\)]+)", re.IGNORECASE),
-    re.compile(r"^(Time-in-Range\s*\(TIR\)|Time in Range|Continuous Glucose Monitoring|Self-Monitoring of Blood Glucose|HbA1c Testing|Glycemic Targets|Screening|Diagnostic Tests)", re.IGNORECASE),
+    re.compile(r"^(?:Consensus\s+|General\s+)?Recommendations?(?:\s*[:–—]|\s*$)", re.IGNORECASE),
+    re.compile(r"^Recommendation\s+\d+\.\d+[a-z]?", re.IGNORECASE),
+    re.compile(r"^[1-9]\d?\.\s+[A-Z][A-Za-z\s,\-–—\(\)/]{3,70}$"),
+    re.compile(r"^(?:Glycemic Assessment by|Self-Monitoring of|Continuous Glucose Monitoring|Time-in-Range|Time in Range|HbA1c Testing|Glycemic Targets|Diagnostic Tests)(?:\s*[:–—]|\s*$)", re.IGNORECASE),
 ]
+
+FOOTNOTE_START_REGEX = re.compile(
+    r"^([*†‡§¶#]|\([a-z0-9]+\)|Adapted from|Source:|Note:|Notes:|Data are|Data in|For all|Values are|[A-Z]{2,6},\s+[a-zA-Z])",
+    re.IGNORECASE
+)
+
+ABBREVIATIONS = {
+    "vs.", "fig.", "tab.", "al.", "dr.", "prof.",
+    "vol.", "suppl.", "no.", "approx.", "ref.", "refs.", "p.", "min.", "max.", "etc."
+}
 
 
 def clean_page_text(raw_text: str) -> str:
@@ -109,8 +123,8 @@ def clean_page_text(raw_text: str) -> str:
     for pat in BOILERPLATE_PATTERNS:
         text = pat.sub("", text)
     
-    # Fix hyphenated words across lines (e.g., "glyce-\nmic" -> "glycemic")
-    text = re.sub(r"(\b[A-Za-z]+)-\n([A-Za-z]+\b)", r"\1\2", text)
+    # Fix hyphenated words across lines (e.g., "glyce-\nmic" -> "glycemic", "re -\ncent" -> "recent")
+    text = re.sub(r"(\b[A-Za-z]+)\s*-\n\s*([A-Za-z]+\b)", r"\1\2", text)
     # Fix broken hyphen spaces (e.g., "alterna - tive" -> "alternative")
     text = re.sub(r"(\b[A-Za-z]{3,})\s+-\s+([A-Za-z]{3,}\b)", r"\1\2", text)
     
@@ -120,21 +134,60 @@ def clean_page_text(raw_text: str) -> str:
     return text
 
 
+def is_sentence_end(line_s: str) -> bool:
+    """Determines if a line cleanly ends a sentence or complete clinical statement."""
+    if not line_s:
+        return False
+    if not re.search(r"[\.\?!][\"'”’\)]?$", line_s):
+        return False
+    words = line_s.split()
+    if words:
+        clean_word = words[-1].lower().strip("()[]\"'”’")
+        # Check single letter + dot like 'e.' or 'a.'
+        if re.match(r"^[a-z]\.$", clean_word):
+            return False
+        # Check multiple single letters + dots like 'u.s.' or 'e.g.' or 'i.e.'
+        if re.match(r"^(?:[a-z]\.)+$", clean_word):
+            return False
+        if clean_word in ABBREVIATIONS:
+            return False
+        if re.search(r"\d+\.\d*$", clean_word):
+            return False
+    return True
+
+
+def is_major_heading(line: str) -> bool:
+    """Checks whether line matches a prominent heading without matching in-sentence text."""
+    is_head, _ = detect_section_header(line)
+    return is_head and not TABLE_TITLE_REGEX.match(line.strip())
+
 
 def detect_section_header(line: str) -> Tuple[bool, str]:
     """Detects whether a line represents a prominent heading or recommendation title."""
     s = line.strip()
-    if len(s) < 4 or len(s) > 160:
+    if len(s) < 3 or len(s) > 100:
+        return False, ""
+    if not (s[0].isupper() or s[0].isdigit()):
+        return False, ""
+    if TABLE_TITLE_REGEX.match(s):
+        return True, s
+    if s.endswith("."):
         return False, ""
     for pat in HEADING_PATTERNS:
-        m = pat.match(s)
-        if m:
+        if pat.match(s):
+            # Exclude running sentences that match section pattern but contain mid-sentence verbs
+            if any(w in s.lower() for w in [" is ", " are ", " was ", " were ", " has ", " have ", " had ", " should ", " can "]):
+                return False, ""
             return True, s
     return False, ""
 
 
-def extract_passages_from_pdf(pdf_path: str, doc_info: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[str]]:
-    """Extracts structured, coherent passages with accurate metadata from a guideline PDF."""
+def extract_passages_from_pdf(pdf_path: str, doc_info: Dict[str, Any], target_chars: int = 400) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """
+    Extracts structured, coherent passages with accurate metadata from a guideline PDF.
+    Preserves table structure, table captions, and footnotes together as complete units.
+    Reconstitutes sentences cleanly across column and page boundaries to prevent broken excerpts.
+    """
     errors = []
     passages = []
     try:
@@ -150,9 +203,8 @@ def extract_passages_from_pdf(pdf_path: str, doc_info: Dict[str, Any]) -> Tuple[
     official_url = doc_info["official_url"]
     ref_start_page = doc_info.get("ref_start_page", 9999)
 
-    current_section = doc_title.split(":")[0] if ":" in doc_title else "Clinical Guidelines"
-    passage_counter = 0
-
+    # 1. Collect clean stream of lines associated with accurate page numbers
+    stream: List[Tuple[str, int, bool]] = []
     for page_idx, page in enumerate(reader.pages):
         page_num = page_idx + 1
         is_bib = page_num >= ref_start_page
@@ -164,95 +216,184 @@ def extract_passages_from_pdf(pdf_path: str, doc_info: Dict[str, Any]) -> Tuple[
             continue
 
         clean_text = clean_page_text(raw_text)
-        if not clean_text.strip():
+        for l in clean_text.splitlines():
+            ls = l.strip()
+            if ls:
+                stream.append((ls, page_num, is_bib))
+
+    default_section = doc_title.split(":")[0] if ":" in doc_title else "Clinical Guidelines"
+    current_section = default_section
+    current_type = "narrative"
+    passage_counter = 0
+
+    i = 0
+    N = len(stream)
+
+    current_sentences: List[str] = []
+    current_block_page = 1
+    current_block_bib = False
+
+    def flush_narrative(keep_last_sentence: bool = False):
+        nonlocal passage_counter, current_sentences, current_block_page, current_block_bib, current_section, current_type
+        if not current_sentences:
+            return
+
+        # If the last sentence is incomplete, hold it back from flushing
+        pending_to_hold = ""
+        sentences_to_flush = current_sentences
+        if not is_sentence_end(current_sentences[-1]):
+            if len(current_sentences) > 1:
+                sentences_to_flush = current_sentences[:-1]
+                pending_to_hold = current_sentences[-1]
+            else:
+                return
+
+        block_text = " ".join(sentences_to_flush).strip()
+        if len(block_text) >= 50:
+            passage_counter += 1
+            passages.append({
+                "passage_id": f"{doc_id}-p{current_block_page}-{passage_counter:03d}",
+                "doc_id": doc_id,
+                "doc_title": doc_title,
+                "source_org": source_org,
+                "year": year,
+                "section": current_section,
+                "page_number": current_block_page,
+                "official_url": official_url,
+                "content_type": current_type,
+                "text": block_text,
+                "is_bibliography": current_block_bib,
+            })
+
+        if pending_to_hold:
+            current_sentences = [pending_to_hold]
+        elif keep_last_sentence and len(sentences_to_flush) > 1:
+            current_sentences = [sentences_to_flush[-1]]
+        else:
+            current_sentences = []
+
+    pending_incomplete_sentence = ""
+    while i < N:
+        line_text, line_page, line_bib = stream[i]
+
+        # --- A. Table Processing: Preserve table header, rows, and footnotes together ---
+        if TABLE_TITLE_REGEX.match(line_text):
+            if current_sentences and not is_sentence_end(current_sentences[-1]):
+                pending_incomplete_sentence = current_sentences.pop()
+            flush_narrative(keep_last_sentence=False)
+            table_title = line_text
+            table_page = line_page
+            table_bib = line_bib
+            table_lines = [line_text]
+            i += 1
+
+            in_fn = False
+            while i < N:
+                nl, np, nb = stream[i]
+                if TABLE_TITLE_REGEX.match(nl) or is_major_heading(nl):
+                    break
+                if FOOTNOTE_START_REGEX.match(nl):
+                    in_fn = True
+
+                # Unwrap multi-line footnote text so full footnote statements are continuous
+                if in_fn and table_lines and not FOOTNOTE_START_REGEX.match(nl):
+                    table_lines[-1] = table_lines[-1] + " " + nl
+                else:
+                    table_lines.append(nl)
+
+                # If inside footnote block and footnote sentence cleanly terminates
+                if in_fn and is_sentence_end(nl):
+                    if i + 1 < N:
+                        after_l, after_p, after_b = stream[i+1]
+                        if TABLE_TITLE_REGEX.match(after_l) or is_major_heading(after_l):
+                            i += 1
+                            break
+                        if not FOOTNOTE_START_REGEX.match(after_l):
+                            i += 1
+                            break
+                i += 1
+
+            table_full_text = "\n".join(table_lines).strip()
+            
+            passage_counter += 1
+            passages.append({
+                "passage_id": f"{doc_id}-p{table_page}-{passage_counter:03d}",
+                "doc_id": doc_id,
+                "doc_title": doc_title,
+                "source_org": source_org,
+                "year": year,
+                "section": table_title,
+                "page_number": table_page,
+                "official_url": official_url,
+                "content_type": "table",
+                "text": table_full_text,
+                "is_bibliography": table_bib,
+            })
             continue
 
-        # Split into blocks / paragraphs
-        raw_paragraphs = [p.strip() for p in clean_text.split("\n\n") if p.strip()]
-        if len(raw_paragraphs) <= 1:
-            raw_paragraphs = [p.strip() for p in clean_text.split("\n") if p.strip()]
-
-        current_block = []
-        current_type = "narrative"
-
-        for p in raw_paragraphs:
-            is_head, head_text = detect_section_header(p)
-            if is_head:
-                # Flush existing block if ready
-                if current_block:
-                    block_text = " ".join(current_block).strip()
-                    if len(block_text) >= 60:
-                        passage_counter += 1
-                        passages.append({
-                            "passage_id": f"{doc_id}-p{page_num}-{passage_counter:03d}",
-                            "doc_id": doc_id,
-                            "doc_title": doc_title,
-                            "source_org": source_org,
-                            "year": year,
-                            "section": current_section,
-                            "page_number": page_num,
-                            "official_url": official_url,
-                            "content_type": current_type,
-                            "text": block_text,
-                            "is_bibliography": is_bib,
-                        })
-                    current_block = []
-
-                current_section = head_text
-                if "recommendation" in head_text.lower():
-                    current_type = "recommendation"
-                elif "table" in head_text.lower():
-                    current_type = "table"
-                elif "consensus" in head_text.lower():
-                    current_type = "consensus"
-                else:
-                    current_type = "narrative"
-                current_block.append(head_text)
-                continue
-
-            current_block.append(p)
-            current_len = sum(len(x) for x in current_block)
-
-            # Target passage size: ~600 to 1400 characters (coherent 100-300 words)
-            if current_len >= 750:
-                block_text = " ".join(current_block).strip()
-                passage_counter += 1
-                passages.append({
-                    "passage_id": f"{doc_id}-p{page_num}-{passage_counter:03d}",
-                    "doc_id": doc_id,
-                    "doc_title": doc_title,
-                    "source_org": source_org,
-                    "year": year,
-                    "section": current_section,
-                    "page_number": page_num,
-                    "official_url": official_url,
-                    "content_type": current_type,
-                    "text": block_text,
-                    "is_bibliography": is_bib,
-                })
-                current_block = []
+        # --- B. Section Heading Detection ---
+        is_head, head_text = detect_section_header(line_text)
+        if is_head:
+            if current_sentences and not is_sentence_end(current_sentences[-1]):
+                pending_incomplete_sentence = current_sentences.pop()
+            flush_narrative(keep_last_sentence=False)
+            current_section = head_text
+            if "recommendation" in head_text.lower():
+                current_type = "recommendation"
+            elif "consensus" in head_text.lower():
+                current_type = "consensus"
+            else:
                 current_type = "narrative"
+            current_block_page = line_page
+            current_block_bib = line_bib
+            current_sentences.append(head_text)
+            i += 1
+            continue
 
-        # Flush remaining block on the page
-        if current_block:
-            block_text = " ".join(current_block).strip()
-            if len(block_text) >= 60:
-                passage_counter += 1
-                passages.append({
-                    "passage_id": f"{doc_id}-p{page_num}-{passage_counter:03d}",
-                    "doc_id": doc_id,
-                    "doc_title": doc_title,
-                    "source_org": source_org,
-                    "year": year,
-                    "section": current_section,
-                    "page_number": page_num,
-                    "official_url": official_url,
-                    "content_type": current_type,
-                    "text": block_text,
-                    "is_bibliography": is_bib,
-                })
+        # --- C. Narrative Text Processing with Sentence Boundary Integrity ---
+        if not current_sentences:
+            current_block_page = line_page
+            current_block_bib = line_bib
 
-    return passages, errors
+        if pending_incomplete_sentence:
+            line_text = pending_incomplete_sentence + " " + line_text
+            pending_incomplete_sentence = ""
+
+        # Group lines until sentence boundary completes
+        sent_lines = [line_text]
+        while i + 1 < N and not is_sentence_end(sent_lines[-1]):
+            next_l, next_p, next_b = stream[i+1]
+            if TABLE_TITLE_REGEX.match(next_l) or is_major_heading(next_l):
+                break
+            sent_lines.append(next_l)
+            i += 1
+
+        sentence_str = " ".join(sent_lines).strip()
+        current_sentences.append(sentence_str)
+
+        # Chunk threshold with 1-sentence overlap to preserve boundary context
+        current_len = sum(len(s) for s in current_sentences)
+        if current_len >= target_chars and is_sentence_end(current_sentences[-1]):
+            flush_narrative(keep_last_sentence=True)
+            current_type = "narrative"
+
+        i += 1
+
+    flush_narrative(keep_last_sentence=False)
+
+    # Post-process: merge any fragment that starts mid-sentence into the preceding narrative passage
+    cleaned_passages = []
+    bullet_re = re.compile(r"^(?:[ivx]+\)|\([ivx]+\)|[a-z]\)|\([a-z]\))\s+")
+    for p in passages:
+        t = p["text"].strip()
+        first_c = t[0] if t else ""
+        starts_bad = (first_c.islower() or first_c in ")]},;:") and not bullet_re.match(t) and not t.startswith("eGFR")
+        if starts_bad and cleaned_passages and cleaned_passages[-1]["content_type"] != "table":
+            cleaned_passages[-1]["text"] = cleaned_passages[-1]["text"].rstrip() + " " + t
+        else:
+            cleaned_passages.append(p)
+
+    return cleaned_passages, errors
 
 
 def deduplicate_passages(passages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
