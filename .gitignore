@@ -71,3 +71,5 @@ Thumbs.db
 .pyright/
 .ruff_cache/
 .dmypy.json
+
+ml-service/data/embeddings.npy
