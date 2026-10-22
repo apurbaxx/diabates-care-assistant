@@ -27,6 +27,10 @@ RUN pip install --no-cache-dir \
 # ── Copy ML service source ────────────────────────────────────────────────────
 COPY ml-service/ ./ml-service/
 
+# ── Pre-cache Hugging Face Models into Docker Image ───────────────────────────
+ENV HF_HOME=/root/.cache/huggingface
+RUN python -c "from sentence_transformers import SentenceTransformer, CrossEncoder; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+
 # ── Copy built Next.js app from builder stage ─────────────────────────────────
 COPY --from=nextjs-builder /app/.next ./.next
 COPY --from=nextjs-builder /app/node_modules ./node_modules

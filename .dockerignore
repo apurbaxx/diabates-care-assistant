@@ -8,3 +8,6 @@ ml-service/tests/__pycache__/
 *.pyo
 .env
 .env.local
+__pycache__/
+*.py[cod]
+*$py.class

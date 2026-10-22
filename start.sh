@@ -3,7 +3,7 @@ set -e
 
 echo ">>> Starting ML service on port 8000..."
 cd /app/ml-service
-uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 ML_PID=$!
 
 echo ">>> Starting Next.js on port ${PORT:-3000}..."
