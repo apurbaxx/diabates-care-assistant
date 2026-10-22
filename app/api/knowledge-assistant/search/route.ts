@@ -28,10 +28,12 @@ export async function POST(req: NextRequest) {
 
     // ── 1. If Supabase pgvector is configured, route search directly to Supabase ──
     if (isSupabaseConfigured()) {
+      console.log(`[Knowledge Assistant Search] 🟢 Routing query to SUPABASE PGVECTOR: "${query}"`);
       try {
         const { results, latency_ms } = await searchWithSupabase(query, limit);
         return NextResponse.json({
           query,
+          engine: "supabase_pgvector",
           total_results: results.length,
           results,
           semantic_retrieval_executed: true,
@@ -52,6 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 2. Fallback to local Python ML Service ──
+    console.log(`[Knowledge Assistant Search] 🟡 SUPABASE_URL not configured. Using local Python ML Service (${ML_SERVICE_URL}) for query: "${query}"`);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -87,7 +90,10 @@ export async function POST(req: NextRequest) {
     }
 
     const searchResponse = await backendRes.json();
-    return NextResponse.json(searchResponse);
+    return NextResponse.json({
+      ...searchResponse,
+      engine: "local_python",
+    });
   } catch (err: unknown) {
     const isAbort = err instanceof Error && err.name === "AbortError";
     const errorMessage = isAbort

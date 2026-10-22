@@ -6,13 +6,21 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 export async function GET() {
   // If Supabase pgvector is configured, health is verified directly against Supabase
   if (isSupabaseConfigured()) {
+    console.log("[Knowledge Assistant Health] 🟢 Checking health via SUPABASE PGVECTOR...");
     const health = await checkSupabaseHealth();
-    return NextResponse.json(health, {
-      status: health.status === "ready" ? 200 : 503,
-    });
+    return NextResponse.json(
+      {
+        ...health,
+        engine: "supabase_pgvector",
+      },
+      {
+        status: health.status === "ready" ? 200 : 503,
+      }
+    );
   }
 
   // Fallback to local Python ML service
+  console.log(`[Knowledge Assistant Health] 🟡 SUPABASE_URL not configured. Checking local Python ML Service (${ML_SERVICE_URL})...`);
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -34,13 +42,17 @@ export async function GET() {
           status: "degraded",
           message: `ML service returned status ${res.status}`,
           index_ready: false,
+          engine: "local_python",
         },
         { status: res.status }
       );
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json({
+      ...data,
+      engine: "local_python",
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Service unreachable";
     return NextResponse.json(
@@ -55,6 +67,7 @@ export async function GET() {
         total_documents: 0,
         device: "unknown",
         version: "1.0.0",
+        engine: "local_python",
       },
       { status: 503 }
     );
