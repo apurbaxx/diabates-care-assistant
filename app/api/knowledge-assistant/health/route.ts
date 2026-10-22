@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { isSupabaseConfigured, checkSupabaseHealth } from "@/lib/supabase";
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 
 export async function GET() {
+  // If Supabase pgvector is configured, health is verified directly against Supabase
+  if (isSupabaseConfigured()) {
+    const health = await checkSupabaseHealth();
+    return NextResponse.json(health, {
+      status: health.status === "ready" ? 200 : 503,
+    });
+  }
+
+  // Fallback to local Python ML service
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);

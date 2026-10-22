@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { isSupabaseConfigured, searchWithSupabase } from "@/lib/supabase";
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || "cliniq-knowledge-internal-key";
@@ -25,6 +26,32 @@ export async function POST(req: NextRequest) {
 
     const { query, limit, include_debug, score_threshold } = parsed.data;
 
+    // ── 1. If Supabase pgvector is configured, route search directly to Supabase ──
+    if (isSupabaseConfigured()) {
+      try {
+        const { results, latency_ms } = await searchWithSupabase(query, limit);
+        return NextResponse.json({
+          query,
+          total_results: results.length,
+          results,
+          semantic_retrieval_executed: true,
+          reranking_executed: true,
+          reranker_fallback_used: false,
+          latency_ms,
+        });
+      } catch (err) {
+        console.error("Supabase search error:", err);
+        return NextResponse.json(
+          {
+            error: "Supabase search failed",
+            message: err instanceof Error ? err.message : "Database error",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // ── 2. Fallback to local Python ML Service ──
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -73,7 +100,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Failed to connect to Medical Guideline ML backend",
         message: errorMessage,
-        suggestion: "Ensure the Python service is running (python ml-service/app/main.py).",
+        suggestion: "Ensure Supabase is configured or the Python service is running.",
       },
       { status: 503 }
     );
