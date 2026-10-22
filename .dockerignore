@@ -1,0 +1,10 @@
+.next/
+node_modules/
+ml-service/__pycache__/
+ml-service/app/__pycache__/
+ml-service/.pytest_cache/
+ml-service/tests/__pycache__/
+*.pyc
+*.pyo
+.env
+.env.local
