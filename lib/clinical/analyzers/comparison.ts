@@ -48,8 +48,8 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
 
     const notable = delta !== undefined ? Math.abs(delta) >= meta.noise : false;
 
-    // Trend context: combine full history + this new value.
-    const trendPoints = [...history, { date: report.date, value: current, reportId: report.id }];
+    // Trend as of this report: exclude later visits and avoid counting an accepted report twice.
+    const trendPoints = [...priorPoints, { date: report.date, value: current, reportId: report.id }];
     const trend = analyseTrend(key, trendPoints);
 
     rows.push({

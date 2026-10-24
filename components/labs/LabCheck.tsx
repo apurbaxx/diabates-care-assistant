@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Sparkles, Trash2, UploadCloud } from "lucide-react";
 import type { LabComparison, LabReport, ParsedLabValue, Patient } from "@/lib/types";
 import { parseLabCsv, parseLabText } from "@/lib/labs/parser";
@@ -11,6 +11,8 @@ import { useAppStore } from "@/lib/store";
 import { InsightList } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
 
+import { saveReportFile, downloadReportFile } from "@/lib/report-files";
+
 type Stage = "input" | "review" | "comparison";
 
 const SAMPLES = [
@@ -19,6 +21,8 @@ const SAMPLES = [
 ];
 
 export function LabCheck({ patient }: { patient: Patient }) {
+  const [sourceFile, setSourceFile] = useState<File>();
+  const [storageError, setStorageError] = useState("");
   const [stage, setStage] = useState<Stage>("input");
   const [rawText, setRawText] = useState("");
   const [fileName, setFileName] = useState<string | undefined>();
@@ -27,10 +31,37 @@ export function LabCheck({ patient }: { patient: Patient }) {
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [comparison, setComparison] = useState<LabComparison | undefined>();
   const [pendingReportId, setPendingReportId] = useState<string | undefined>();
+  const openedReport = useRef<string | undefined>(undefined);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addLabReport = useAppStore((s) => s.addLabReport);
   const acknowledgeLabReport = useAppStore((s) => s.acknowledgeLabReport);
+
+  // Worklist links identify a specific stored report, not a new upload.
+  useEffect(() => {
+    const reportId = new URLSearchParams(window.location.search).get("report");
+    if (!reportId || openedReport.current === `${patient.id}:${reportId}`) return;
+    const report = patient.labReports.find(r => r.id === reportId && r.patientId === patient.id);
+    openedReport.current = `${patient.id}:${reportId}`;
+    if (!report) {
+      setStorageError("This report is no longer available for this patient.");
+      return;
+    }
+    setPendingReportId(report.id);
+    setComparison(compareReport(patient, report));
+    setStage("comparison");
+    document.getElementById("labs")?.scrollIntoView({block:"start"});
+  }, [patient]);
+
+  function reviewReport(report: LabReport) {
+    setPendingReportId(report.id);
+    setComparison(compareReport(patient, report));
+    setStage("comparison");
+    setStorageError("");
+  }
+
+  const activeReport = patient.labReports.find(r => r.id === pendingReportId);
 
   async function handleFile(file: File) {
     if (file.name.toLowerCase().endsWith(".pdf")) {
@@ -39,6 +70,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
       );
       return;
     }
+    setSourceFile(file);
     const text = await file.text();
     setFileName(file.name);
     setRawText(text);
@@ -56,6 +88,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
     fetch(path)
       .then((r) => r.text())
       .then((text) => {
+        setSourceFile(undefined);
         setRawText(text);
         setFileName(label);
       });
@@ -65,9 +98,11 @@ export function LabCheck({ patient }: { patient: Patient }) {
     setValues((vs) => vs.filter((v) => v.key !== key));
   }
 
-  function analyze() {
+  async function analyze() {
+    if (isSaving) return;
+    setIsSaving(true);
     const report: LabReport = {
-      id: `report-${Date.now()}`,
+      id: `report-${crypto.randomUUID()}`,
       patientId: patient.id,
       date: reportDate,
       source: "upload",
@@ -77,7 +112,11 @@ export function LabCheck({ patient }: { patient: Patient }) {
       unmatchedLines: unmatched,
       acknowledged: false,
     };
-    addLabReport(patient.id, report);
+    try {
+      await saveReportFile(report.id, patient.id, sourceFile ?? new Blob([rawText], {type:"text/plain"}), sourceFile?.name ?? `${report.id}.txt`);
+      addLabReport(patient.id, report);
+    } catch { setStorageError("Could not save report in browser storage. Free space and try again."); return; }
+    finally { setIsSaving(false); }
     setPendingReportId(report.id);
     setComparison(compareReport(patient, report));
     setStage("comparison");
@@ -95,6 +134,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
   }
 
   function reset() {
+    setSourceFile(undefined);
     setStage("input");
     setRawText("");
     setFileName(undefined);
@@ -106,9 +146,22 @@ export function LabCheck({ patient }: { patient: Patient }) {
 
   return (
     <div className="space-y-4">
+      {storageError && <p role="alert" className="text-red-700">{storageError}</p>}
+      {patient.labReports.length > 0 && <details className="saved-reports" open={stage === "input"}>
+        <summary>Saved reports <span>({patient.labReports.length})</span></summary>
+        <div className="saved-report-list">
+          {[...patient.labReports].sort((a,b)=>b.date.localeCompare(a.date)).map(report => <article key={report.id} className={`saved-report-card ${pendingReportId === report.id ? "active-report" : ""}`}>
+            <div className="workflow-heading"><div><h3>{report.fileName ?? "Laboratory report"}</h3><p>{report.date} · {report.source}</p></div><span className={`report-status ${report.acknowledged ? "verified" : "pending"}`}>{report.acknowledged ? "Verified" : "Awaiting verification"}</span></div>
+            <dl className="report-values">{report.values.map(value => { const meta = ANALYTES[value.key]; return <div key={value.key}><dt>{meta.shortLabel}</dt><dd>{value.value.toFixed(meta.decimals)} <span>{meta.unit}</span></dd></div>; })}</dl>
+            <div className="report-actions"><button className="primary" onClick={() => reviewReport(report)}>{report.acknowledged ? "View report" : "Review report"}</button>
+              <button onClick={()=>downloadReportFile(report.id,patient.id).catch(()=>{if(report.rawText){const url=URL.createObjectURL(new Blob([report.rawText],{type:"text/plain"}));const a=document.createElement("a");a.href=url;a.download=`${report.id}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}else setStorageError("This legacy report has no saved source attachment. Structured values remain available.");})}>Download source</button>
+            </div>
+          </article>)}
+        </div>
+      </details>}
       {stage === "input" && (
         <div className="rounded-xl border border-border bg-surface p-4">
-          <h3 className="mb-1 text-sm font-semibold text-ink">Upload or paste a new laboratory report</h3>
+          <h3 className="mb-1 text-sm font-semibold text-ink">Upload or paste a synthetic laboratory report</h3>
           <p className="mb-3 text-sm text-muted">
             Accepts .txt / .csv, or paste the report text directly. PDF text-layer extraction is not supported in
             this MVP — copy the text from the PDF instead.
@@ -172,8 +225,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
         <div className="rounded-xl border border-border bg-surface p-4">
           <h3 className="mb-1 text-sm font-semibold text-ink">Confirm extracted values</h3>
           <p className="mb-3 text-sm text-muted">
-            Review before this is analysed against the patient's history. Nothing is added to the record until you
-            confirm on the next screen.
+            Review before this is analysed against the patient's history. A pending report is saved for verification on the next screen. Values enter the visit history only after you confirm.
           </p>
 
           <table className="w-full text-sm">
@@ -232,7 +284,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
               Start over
             </button>
             <button
-              disabled={values.length === 0}
+              disabled={values.length === 0 || isSaving}
               onClick={analyze}
               className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
             >
@@ -243,7 +295,8 @@ export function LabCheck({ patient }: { patient: Patient }) {
       )}
 
       {stage === "comparison" && comparison && (
-        <div className="space-y-4">
+        <div className="space-y-4 report-review" aria-label="Report verification">
+          <div className="workflow-heading"><div><h3 className="text-lg font-semibold">{activeReport?.fileName ?? "Laboratory report"}</h3><p className="text-sm text-muted">{patient.name} · {activeReport?.date ?? comparison.reportDate} · {activeReport?.acknowledged ? "Verified" : "Awaiting verification"}</p></div><button className="outline-button" onClick={reset}>Back to reports / new upload</button></div>
           <div className="rounded-xl border border-brand-300/60 bg-brand-100/25 p-4">
             <div className="mb-1 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-brand-600" />
@@ -312,7 +365,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
             <InsightList insights={comparison.insights} />
           </div>
 
-          <div className="flex justify-between">
+          {!activeReport?.acknowledged && <div className="report-actions justify-between">
             <button
               onClick={discard}
               className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink-secondary hover:bg-page"
@@ -325,7 +378,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
             >
               <CheckCircle2 className="h-4 w-4" /> Confirm &amp; add to patient record
             </button>
-          </div>
+          </div>}
         </div>
       )}
     </div>
