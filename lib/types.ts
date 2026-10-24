@@ -131,6 +131,10 @@ export interface MedicationChange {
 }
 
 export interface Visit {
+  /** False for an encounter without medication reconciliation. */
+  medicationsRecorded?: boolean;
+  kind?: "encounter" | "lab-report";
+  sourceReportId?: string;
   id: string;
   patientId: string;
   /** ISO date */
@@ -147,6 +151,8 @@ export interface Visit {
 export type LabReportSource = "upload" | "manual" | "synthetic";
 
 export interface ParsedLabValue {
+  id?: string;
+  date?: string;
   key: LabKey;
   value: number;
   /** Unit as reported by the source document, before normalisation. */
@@ -158,6 +164,13 @@ export interface ParsedLabValue {
 }
 
 export interface LabReport {
+  uploadedAt?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  fingerprint?: string;
+  originalFileId?: string;
+  status?: "pending" | "verified" | "rejected";
+  audit?: { at: string; actor: string; action: string }[];
   id: string;
   patientId: string;
   /** ISO date of specimen collection / report */
@@ -202,6 +215,7 @@ export interface Patient {
 // ---------------------------------------------------------------------------
 
 export type EvidenceKind =
+  | "patient"
   | "measurement"
   | "visit"
   | "medication"
@@ -351,6 +365,7 @@ export interface EngineResult {
 export type ChangeDirection = "up" | "down" | "same";
 
 export interface LabComparisonRow {
+  currentDate?: string;
   key: LabKey;
   label: string;
   unit: string;

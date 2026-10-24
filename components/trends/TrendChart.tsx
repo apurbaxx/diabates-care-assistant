@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import type { ParameterSeriesPoint } from "@/lib/types";
 import { parameterMeta } from "@/lib/clinical/units";
+import { measurementId } from "@/lib/workflow/timeline";
 
 export interface ReferenceMark {
   value: number;
@@ -123,10 +124,16 @@ export function TrendChart({
                   fill={isHighlighted ? "var(--color-status-critical)" : color}
                   stroke={isHighlighted ? "var(--color-surface)" : "none"}
                   strokeWidth={isHighlighted ? 2 : 0}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${meta.label} ${props.payload.value} on ${props.payload.date} in timeline`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => { if (props.payload.visitId) location.hash = `event=${encodeURIComponent(measurementId(props.payload.visitId, parameter))}`; }}
+                  onKeyDown={(_props, e) => { if ((e.key === "Enter" || e.key === " ") && props.payload.visitId) { e.preventDefault(); location.hash = `event=${encodeURIComponent(measurementId(props.payload.visitId, parameter))}`; } }}
                 />
               );
             }}
-            activeDot={{ r: 6, fill: color }}
+            activeDot={false}
             isAnimationActive={false}
           />
         </LineChart>

@@ -1,7 +1,8 @@
 import { User, Droplets, Calendar, Cigarette, ClipboardList, Syringe, Pill, ChevronRight } from "lucide-react";
 import type { EngineResult, Patient, ParameterSeriesPoint } from "@/lib/types";
-import { ageAt } from "@/lib/clinical/derive";
-import { formatWithUnit } from "@/lib/clinical/units";
+import { ageAt, sortedVisits } from "@/lib/clinical/derive";
+import { formatWithUnit, parameterMeta } from "@/lib/clinical/units";
+import { activeMedicationsAt } from "@/lib/clinical/context";
 import { paramStyle } from "@/lib/clinical/paramStyle";
 import { AiMarker } from "@/components/shared/Badges";
 import { Sparkline } from "@/components/shared/Sparkline";
@@ -71,46 +72,11 @@ function StatTile({
 
 export function OverviewPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
   const { derived, summary } = engine;
-  const latestVisit = derived.latestVisit;
-  const prevVisit = derived.previousVisit;
 
   const age = ageAt(patient.dob, new Date().toISOString().slice(0, 10));
 
-  // Build "Previous: X" labels
-  function prevHba1c() {
-    const v = prevVisit?.labs.hba1c;
-    const d = prevVisit?.date;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("hba1c", v)}${d ? ` (${d})` : ""}`;
-  }
-  function prevGlucose() {
-    const v = prevVisit?.labs.fastingGlucose;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("fastingGlucose", v)}`;
-  }
-  function prevBP() {
-    if (!prevVisit?.vitals.systolic) return undefined;
-    return `Previous: ${prevVisit.vitals.systolic}/${prevVisit.vitals.diastolic} mmHg`;
-  }
-  function prevEgfr() {
-    if (!prevVisit) return undefined;
-    const prev = engine.trends.egfr?.points?.slice(-2, -1)[0]?.value;
-    if (!prev) return undefined;
-    return `Previous: ${prev.toFixed(0)}`;
-  }
-  function prevUacr() {
-    const v = prevVisit?.labs.uacr;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("uacr", v)}`;
-  }
-  function prevWeight() {
-    const v = prevVisit?.vitals.weightKg;
-    if (!v) return undefined;
-    return `Previous: ${v.toFixed(1)} kg`;
-  }
-
-  // Medications from latest visit
-  const currentMeds = latestVisit?.medications ?? [];
+  // A laboratory-only record does not replace medication reconciliation.
+  const currentMeds = activeMedicationsAt(sortedVisits(patient));
   const insulinMeds = currentMeds.filter(
     (m) => m.medClass === "basal-insulin" || m.medClass === "bolus-insulin" || m.medClass === "premix-insulin",
   );
@@ -141,64 +107,17 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
       {/* ── Metric tiles: 3 columns × 2 rows ── */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-ink">
-          Latest measurements{latestVisit ? ` (${latestVisit.date})` : ""}
+          Latest recorded measurements
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <StatTile
-            label="HbA1c"
-            value={latestVisit?.labs.hba1c != null ? `${latestVisit.labs.hba1c}` : "—"}
-            unit={latestVisit?.labs.hba1c != null ? "%" : undefined}
-            paramKey="hba1c"
-            points={engine.trends.hba1c?.points}
-            previousLabel={prevHba1c()}
-          />
-          <StatTile
-            label="Fasting glucose"
-            value={latestVisit?.labs.fastingGlucose != null ? `${latestVisit.labs.fastingGlucose}` : "—"}
-            unit={latestVisit?.labs.fastingGlucose != null ? "mg/dL" : undefined}
-            paramKey="fastingGlucose"
-            points={engine.trends.fastingGlucose?.points}
-            previousLabel={prevGlucose()}
-          />
-          <StatTile
-            label="Blood pressure"
-            value={
-              latestVisit?.vitals.systolic
-                ? `${latestVisit.vitals.systolic}/${latestVisit.vitals.diastolic}`
-                : "—"
-            }
-            unit={latestVisit?.vitals.systolic ? "mmHg" : undefined}
-            paramKey="systolic"
-            points={engine.trends.systolic?.points}
-            previousLabel={prevBP()}
-          />
-          <StatTile
-            label="eGFR"
-            value={derived.egfr ? `${derived.egfr.toFixed(0)}` : "—"}
-            unit={derived.egfr ? "mL/min/1.73m²" : undefined}
-            sub={derived.ckdStage}
-            paramKey="egfr"
-            points={engine.trends.egfr?.points}
-            previousLabel={prevEgfr()}
-          />
-          <StatTile
-            label="UACR"
-            value={latestVisit?.labs.uacr != null ? `${latestVisit.labs.uacr}` : "—"}
-            unit={latestVisit?.labs.uacr != null ? "mg/g" : undefined}
-            sub={derived.albuminuriaStage}
-            paramKey="uacr"
-            points={engine.trends.uacr?.points}
-            previousLabel={prevUacr()}
-          />
-          <StatTile
-            label="Weight / BMI"
-            value={latestVisit?.vitals.weightKg ? `${latestVisit.vitals.weightKg.toFixed(1)}` : "—"}
-            unit={latestVisit?.vitals.weightKg ? "kg" : undefined}
-            sub={derived.bmi ? `BMI ${derived.bmi.toFixed(1)}` : undefined}
-            paramKey="weightKg"
-            points={engine.trends.weightKg?.points}
-            previousLabel={prevWeight()}
-          />
+          {["hba1c", "fastingGlucose", "systolic", "egfr", "uacr", "weightKg"].filter(key => engine.trends[key]?.points.length).map(key => {
+            const points = engine.trends[key].points;
+            const current = points[points.length - 1];
+            const previous = points[points.length - 2];
+            const meta = parameterMeta(key);
+            return <div key={key}><StatTile label={meta.label} value={current.value.toFixed(meta.decimals)} unit={meta.unit} paramKey={key} points={points} sub={`Recorded ${current.date}`} previousLabel={previous ? `Previous: ${formatWithUnit(key, previous.value)} (${previous.date})` : undefined} /><a className="mt-1 block text-xs text-brand-700 underline" href={`#event=${encodeURIComponent(`measurement:${current.visitId}:${key}`)}`}>View source measurement</a></div>;
+          })}
+          {!Object.values(engine.trends).some(t => t.points.length) && <p className="text-sm text-muted">No measurements recorded.</p>}
         </div>
       </div>
 

@@ -16,10 +16,12 @@ export interface SectionDef {
   icon: LucideIcon;
 }
 
-export type SectionId = "overview" | "history" | "trends" | "comparison" | "medications" | "labs" | "assistant";
+export type SectionId = "overview" | "history" | "trends" | "comparison" | "medications" | "labs" | "assistant" | "timeline" | "summaries";
 
 /** Single source of truth for the sidebar nav and the section headings it drives. */
 export const SECTIONS: SectionDef[] = [
+  { id: "timeline", label: "Clinical timeline", description: "Unified clinical events", icon: History },
+  { id: "summaries", label: "Visit summaries", description: "Draft, review and export", icon: BookMarked },
   { id: "overview", label: "Patient data", description: "Demographics, status and AI summary", icon: UserSearch },
   { id: "history", label: "Patient history", description: "Longitudinal visit record", icon: History },
   { id: "trends", label: "Trends & patterns", description: "Parameter trajectories over time", icon: BrainCircuit },

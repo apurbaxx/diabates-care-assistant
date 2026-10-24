@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./workspace.css";
+import { StorageStatus } from "@/components/workflow/StorageStatus";
 
 export const metadata: Metadata = {
   title: "Diabetes Care Assistant for Doctors",
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-page text-ink antialiased">{children}</body>
+      <body className="min-h-screen bg-page text-ink antialiased"><StorageStatus />{children}</body>
     </html>
   );
 }

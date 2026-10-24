@@ -31,23 +31,7 @@ export interface AnalysisContext {
   today: string;
 }
 
-export const TRACKED_PARAMETERS: string[] = [
-  "hba1c",
-  "fastingGlucose",
-  "postprandialGlucose",
-  "creatinine",
-  "egfr",
-  "uacr",
-  "ldl",
-  "hdl",
-  "triglycerides",
-  "potassium",
-  "hemoglobin",
-  "weightKg",
-  "systolic",
-  "diastolic",
-  "bmi",
-];
+export const TRACKED_PARAMETERS: string[] = [...Object.keys(ANALYTES), ...Object.keys(VITAL_META)];
 
 export function buildSeries(visits: Visit[]): Record<string, ParameterSeriesPoint[]> {
   const series: Record<string, ParameterSeriesPoint[]> = {};
@@ -57,7 +41,7 @@ export function buildSeries(visits: Visit[]): Record<string, ParameterSeriesPoin
     for (const key of Object.keys(ANALYTES) as LabKey[]) {
       const value = visit.labs[key];
       if (value !== undefined && series[key]) {
-        series[key].push({ date: visit.date, value, visitId: visit.id });
+        series[key].push({ date: visit.date, value, visitId: visit.id, reportId: visit.sourceReportId });
       }
     }
     for (const key of Object.keys(VITAL_META)) {
@@ -86,7 +70,7 @@ export function buildTrends(
 }
 
 export function activeMedicationsAt(visits: Visit[]): Medication[] {
-  const last = visits[visits.length - 1];
+  const last = [...visits].reverse().find(v => v.kind !== "lab-report" && v.medicationsRecorded !== false);
   return last ? last.medications.filter((m) => !m.endDate) : [];
 }
 

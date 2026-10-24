@@ -9,6 +9,8 @@ import type {
 import { ARCHETYPES, type Checkpoint } from "./archetypes";
 import { mulberry32, randInt, randRange, gaussian, clamp, pick, hashSeedFromString, type Rng } from "./rng";
 import { ckdEpi2021, ageAt } from "@/lib/clinical/derive";
+import { ANALYTES } from "@/lib/clinical/units";
+import type { LabKey } from "@/lib/types";
 
 const FIRST_NAMES_M = ["James", "Robert", "Michael", "David", "Arun", "Wei", "Carlos", "Ahmed", "Peter", "George"];
 const FIRST_NAMES_F = ["Mary", "Patricia", "Linda", "Priya", "Fatima", "Elena", "Sarah", "Grace", "Nina", "Olivia"];
@@ -21,6 +23,8 @@ export interface GenerateOptions {
   seed: number;
   name?: string;
   patientIndex?: number;
+  /** Optional anchor for deterministic fixtures and reproducible cohorts. */
+  asOf?: string;
 }
 
 function interpolateCheckpoints(checkpoints: Checkpoint[], t: number): Checkpoint {
@@ -63,7 +67,7 @@ export function generatePatient(opts: GenerateOptions): Patient {
   const age = randInt(rng, archetype.ageRange[0], archetype.ageRange[1]);
   const diagnosisYearsAgo = randRange(rng, archetype.diagnosisYearsAgoRange[0], archetype.diagnosisYearsAgoRange[1]);
 
-  const now = new Date();
+  const now = opts.asOf ? new Date(`${opts.asOf}T12:00:00Z`) : new Date();
   const dob = new Date(now);
   dob.setFullYear(dob.getFullYear() - age);
   dob.setMonth(randInt(rng, 0, 11));
@@ -84,8 +88,10 @@ export function generatePatient(opts: GenerateOptions): Patient {
     const d = new Date(start);
     d.setMonth(d.getMonth() + opts.visitIntervalMonths * i);
     d.setDate(d.getDate() + randInt(rng, -6, 6));
-    visitDates.push(d);
+    visitDates.push(d > now ? new Date(now) : d);
   }
+  // Generated diabetic medication histories cannot precede diagnosis.
+  if (diagnosisDate > visitDates[0]) diagnosisDate.setTime(visitDates[0].getTime());
 
   const patientId = `p-${opts.archetypeId}-${opts.seed}`;
 
@@ -244,7 +250,15 @@ export function generatePatient(opts: GenerateOptions): Patient {
     hypoglycemiaHistory: !!archetype.hypoglycemiaHistory,
     limitedLifeExpectancy: !!archetype.limitedLifeExpectancy,
     visits,
-    labReports: [],
+    labReports: visits.length ? [{
+      id: `${patientId}-synthetic-report`, patientId, date: visits[visits.length - 1].date,
+      source: "synthetic", fileName: "Generated demonstration laboratory panel", acknowledged: false, status: "pending",
+      values: (Object.entries(visits[visits.length - 1].labs) as [LabKey, number][]).filter(([,value]) => value !== undefined).map(([key,value]) => ({
+        id: `${patientId}-synthetic-report:${key}`, key, date: visits[visits.length - 1].date,
+        value, reportedValue: value, reportedUnit: ANALYTES[key].unit, confidence: 1,
+        sourceLine: `${ANALYTES[key].label}: ${value} ${ANALYTES[key].unit}`,
+      })), unmatchedLines: [],
+    }] : [],
     archetype: archetype.id,
     seed: opts.seed,
   };

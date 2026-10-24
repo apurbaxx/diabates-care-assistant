@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Insight, TrendResult } from "@/lib/types";
 import { TrendChart, type ReferenceMark } from "./TrendChart";
 import { parameterMeta } from "@/lib/clinical/units";
@@ -8,17 +8,6 @@ import { paramStyle } from "@/lib/clinical/paramStyle";
 import { insightsForParameter } from "@/lib/clinical/engine";
 import { InsightCard } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
-
-const TABS: { key: string; label: string }[] = [
-  { key: "hba1c", label: "HbA1c" },
-  { key: "fastingGlucose", label: "Fasting glucose" },
-  { key: "weightKg", label: "Weight" },
-  { key: "systolic", label: "Blood pressure" },
-  { key: "creatinine", label: "Creatinine" },
-  { key: "egfr", label: "eGFR" },
-  { key: "uacr", label: "UACR" },
-  { key: "ldl", label: "LDL cholesterol" },
-];
 
 /** General KDIGO staging boundaries only — never a personalised treatment target. */
 function referenceMarksFor(parameter: string): ReferenceMark[] {
@@ -44,6 +33,10 @@ export function TrendWorkbench({
 }) {
   const [active, setActive] = useState("hba1c");
   const [highlighted, setHighlighted] = useState<string[]>([]);
+  useEffect(() => {
+    const navigate = () => { const p = new URLSearchParams(location.hash.slice(1)); const key = p.get("parameter"); const visit = p.get("measurement"); if (key && visit) { setActive(key); setHighlighted([visit]); } };
+    navigate(); window.addEventListener("hashchange", navigate); return () => window.removeEventListener("hashchange", navigate);
+  }, []);
 
   const trend = trends[active];
   const meta = parameterMeta(active);
@@ -54,7 +47,7 @@ export function TrendWorkbench({
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-1.5 print:hidden">
-        {TABS.map((t) => {
+        {Object.keys(trends).filter(key => trends[key].points.length > 0).map(key => ({ key, label: parameterMeta(key).label })).map((t) => {
           const hasData = (trends[t.key]?.points.length ?? 0) > 0;
           const isActive = active === t.key;
           const tabStyle = paramStyle(t.key);

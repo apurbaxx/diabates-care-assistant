@@ -186,7 +186,7 @@ export function AssistantPanel({ patient, engine }: { patient: Patient; engine: 
         ))}
         {history.length === 0 && !loading && (
           <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
-            Ask a question above, or pick a suggestion. Answers separate what's in this patient's record from
+            Ask a question above, or pick a suggestion. Answers separate what&apos;s in this patient&apos;s record from
             general guideline context, and every patient-specific claim links to its evidence.
           </p>
         )}

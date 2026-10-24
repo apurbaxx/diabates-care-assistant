@@ -1,0 +1,155 @@
+﻿import { test, expect } from "@playwright/test";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import { readFile } from "node:fs/promises";
+import { ANALYTES } from "../../lib/clinical/units";
+
+test("integrated appointment, PDF review, timeline, summary and browser persistence", async ({ page }) => {
+  await page.setViewportSize({ width: 1672, height: 1000 });
+  const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  const initial = await page.evaluate(() => JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state);
+  const patient = initial.patients[0];
+  expect(initial.patients.length).toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Create appointment", exact: true }).click();
+  await page.getByLabel("Appointment patient").selectOption(patient.id);
+  const today = new Date();
+  const localDay = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  await page.getByLabel("Appointment time").fill(`${localDay}T15:17`);
+  await page.getByLabel("Appointment reason").fill("Synthetic workflow appointment");
+  await page.getByRole("button", { name: "Save appointment", exact: true }).click();
+  await expect(page.getByText("Appointment saved", { exact: true })).toBeVisible();
+  await expect(page.locator("#appointments").getByText("Synthetic workflow appointment", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator("#appointments").getByText("Synthetic workflow appointment", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/workspace-desktop.png", fullPage: true });
+
+  await page.goto(`/patient/${patient.id}#labs`);
+  await expect(page.getByRole("heading", { name: "New labs & evidence" })).toBeVisible();
+  const source = patient.labReports[0].values.find((v: {key: string}) => v.key === "hba1c");
+  const specimen = new Date(`${patient.visits.at(-1).date}T12:00:00Z`); specimen.setUTCDate(specimen.getUTCDate()+1);
+  const reportDate = specimen.toISOString().slice(0,10);
+  const doc = await PDFDocument.create(); const font = await doc.embedFont(StandardFonts.Helvetica); const sheet = doc.addPage();
+  sheet.drawText(`Synthetic demonstration report\nCollected: ${reportDate}\n${ANALYTES.hba1c.label}: ${source.value} %`, { x: 40, y: 700, font, size: 12, lineHeight: 24 });
+  await page.getByLabel("Upload laboratory report").setInputFiles({ name: "synthetic-laboratory.pdf", mimeType: "application/pdf", buffer: Buffer.from(await doc.save()) });
+  await expect(page.getByLabel("Report text")).toHaveValue(new RegExp(ANALYTES.hba1c.label));
+  await page.getByText("This report contains synthetic demonstration data only", { exact: true }).click();
+  await page.getByRole("button", { name: "Extract and save for review", exact: true }).click();
+  await expect(page.getByLabel("Value 1", { exact: true })).toHaveValue(String(source.value));
+  const pending = await page.evaluate(() => JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state);
+  expect(pending.patients[0].visits.length).toBe(patient.visits.length);
+  await page.getByLabel("Reviewer name (local audit only)").fill("Workflow test clinician");
+  await page.getByRole("button", { name: "Verify and import", exact: true }).click();
+  await expect(page.getByText("Verified measurements saved.", { exact: false })).toBeVisible();
+  const verified = await page.evaluate(() => JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state.patients[0]);
+  const report = verified.labReports.find((r: {fileName: string}) => r.fileName === "synthetic-laboratory.pdf");
+  expect(report.acknowledged).toBe(true);
+  const imported = verified.visits.find((v: {sourceReportId: string}) => v.sourceReportId === report.id);
+  expect(imported.labs.hba1c).toBe(source.value); expect(imported.vitals).toEqual({});
+  await page.goto(`/patient/${patient.id}#event=${encodeURIComponent(`measurement:${imported.id}:hba1c`)}`);
+  await expect(page.getByRole("link", { name: "View associated chart measurement" })).toBeVisible();
+  await page.getByRole("link", { name: "View associated chart measurement" }).click();
+  await expect(page).toHaveURL(/measurement=/);
+  await page.locator("#trends").getByRole("button", { name: new RegExp(`View HbA1c ${source.value} on ${reportDate}`) }).click();
+  await expect(page).toHaveURL(/event=/);
+
+  await page.getByRole("button", { name: "Generate Visit Summary", exact: true }).first().click();
+  await expect(page.getByLabel("Clinician notes", { exact: true })).toBeVisible();
+  const editedNote = "Reviewed synthetic clinical records during the workflow test.";
+  await page.getByLabel("Clinician notes", { exact: true }).fill(editedNote);
+  await page.getByLabel("Summary clinician name").fill("Workflow test clinician");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page.getByText("Summary saved", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Clinician notes", { exact: true })).toHaveValue(editedNote);
+  await page.getByLabel("Summary clinician name").fill("Workflow test clinician");
+  await page.getByRole("button", { name: "Approve summary", exact: true }).click();
+  await expect(page.getByText("Reviewed summary approved and saved", { exact: true })).toBeVisible();
+  const popup = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Export reviewed PDF", exact: true }).click();
+  const printPage = await popup;
+  await expect(printPage.getByText(editedNote, { exact: true })).toBeVisible();
+  await printPage.close();
+  const download = page.waitForEvent("download");
+  await page.getByText("Browser storage and backups", { exact: true }).click();
+  await page.getByRole("button", { name: "Download complete backup", exact: true }).click();
+  const backup = await download;
+  expect(backup.suggestedFilename()).toContain("cliniq-backup");
+  const backupPath = await backup.path();
+  expect(backupPath).toBeTruthy();
+  const restoredContext = await page.context().browser()!.newContext();
+  const restoredPage = await restoredContext.newPage();
+  await restoredPage.goto("/");
+  await expect(restoredPage.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  await restoredPage.getByText("Browser storage and backups", { exact: true }).click();
+  await restoredPage.getByLabel("Restore ClinIQ backup").setInputFiles(backupPath!);
+  await expect(restoredPage.getByText("Backup merged.", { exact: false })).toBeVisible();
+  await restoredPage.goto(`/patient/${patient.id}#report=${encodeURIComponent(report.id)}`);
+  await expect(restoredPage.getByRole("button", { name: "Download original", exact: true })).toBeVisible();
+  const original = restoredPage.waitForEvent("download");
+  await restoredPage.getByRole("button", { name: "Download original", exact: true }).click();
+  const originalPath = await (await original).path();
+  expect((await readFile(originalPath!)).subarray(0,5).toString()).toBe("%PDF-");
+  await restoredContext.close();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/patient/${patient.id}#summaries`);
+  await expect(page.getByRole("heading", { name: "Visit summaries", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: "test-results/patient-mobile.png", fullPage: false });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: "test-results/worklist-mobile.png", fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test("legacy browser patients are preserved and empty workflows remain meaningful", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  const legacy = await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state;
+    const p = state.patients[0]; p.labReports = [];
+    const legacy = { patients: [p],dismissedInsightIds: [] };
+    localStorage.setItem("diabetes-care-assistant-store",JSON.stringify({ state: legacy,version: 0 }));
+    return p;
+  });
+  await page.reload();
+  await expect(page.getByText("No reports awaiting verification.", { exact: true })).toBeVisible();
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state);
+  expect(stored.patients).toEqual([legacy]); expect(stored.summaries).toEqual([]);
+  await page.goto(`/patient/${legacy.id}#timeline`);
+  await page.getByLabel("Timeline event type").selectOption("note");
+  expect(await page.locator('[id^="clinical-"]').count()).toBe(legacy.visits.filter((v: {clinicianNote: string}) => v.clinicianNote).length);
+  await page.getByLabel("Timeline from").fill("2099-01-01");
+  await expect(page.getByText("No recorded events match these filters.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+  expect(await page.locator('[id^="clinical-"]').count()).toBeGreaterThan(0);
+});
+
+test("invalid files and scanned PDFs report errors without creating records", async ({ page }) => {
+  await page.goto("/"); await expect(page.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  const id = await page.evaluate(() => JSON.parse(localStorage.getItem("diabetes-care-assistant-store")!).state.patients[0].id);
+  await page.goto(`/patient/${id}#labs`);
+  await page.getByLabel("Upload laboratory report").setInputFiles({ name: "invalid.pdf",mimeType: "application/pdf",buffer: Buffer.from("invalid PDF") });
+  await expect(page.locator("#labs").getByRole("alert")).toHaveText("Invalid PDF file signature");
+  const document = await PDFDocument.create(); document.addPage();
+  await page.getByLabel("Upload laboratory report").setInputFiles({ name: "no-text.pdf",mimeType: "application/pdf",buffer: Buffer.from(await document.save()) });
+  await expect(page.locator("#labs").getByRole("alert")).toContainText("no extractable text");
+});
+
+test("corrupt browser storage is surfaced without overwriting it with seed data", async ({ page }) => {
+  await page.goto("/"); await expect(page.getByRole("heading", { name: "Doctor workspace" })).toBeVisible();
+  const invalid = "corrupted-storage-test";
+  await page.evaluate(value => localStorage.setItem("diabetes-care-assistant-store",value),invalid);
+  await page.reload();
+  await expect(page.getByRole("alert").first()).toContainText("could not be loaded");
+  expect(await page.evaluate(() => localStorage.getItem("diabetes-care-assistant-store"))).toBe(invalid);
+});
+
+test("validation endpoint rejects unsupported units and cross-origin requests", async ({ request }) => {
+  const response = await request.post("/api/labs/validate", { data: { patientId: "test", reportId: "test", actor: "Test", values: [] } });
+  expect(response.status()).toBe(400);
+  const crossOrigin = await request.post("/api/labs/validate", { headers: { Origin: "https://unrelated.example" }, data: {} });
+  expect(crossOrigin.status()).toBe(403);
+});
+

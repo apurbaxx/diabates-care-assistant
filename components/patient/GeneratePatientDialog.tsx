@@ -12,9 +12,11 @@ export function GeneratePatientDialog({ onClose, onCreated }: { onClose: () => v
   const [interval, setInterval_] = useState(3);
   const [seedText, setSeedText] = useState("");
   const [name, setName] = useState("");
+  const [error, setError] = useState("");
   const addGeneratedPatient = useAppStore((s) => s.addGeneratedPatient);
 
   function create() {
+    try {
     const seed = seedText.trim() ? hashSeedFromString(seedText.trim()) : Math.floor(Math.random() * 1_000_000);
     const patient = addGeneratedPatient({
       archetypeId,
@@ -24,6 +26,7 @@ export function GeneratePatientDialog({ onClose, onCreated }: { onClose: () => v
       name: name.trim() || undefined,
     });
     onCreated(patient.id);
+    } catch (e) { setError((e as Error).message); }
   }
 
   const selected = ARCHETYPE_LIST.find((a) => a.id === archetypeId)!;
@@ -45,6 +48,7 @@ export function GeneratePatientDialog({ onClose, onCreated }: { onClose: () => v
         </div>
 
         <div className="space-y-3">
+          {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-secondary">Clinical archetype</label>
             <select

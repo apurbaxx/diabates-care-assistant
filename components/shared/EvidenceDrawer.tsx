@@ -7,6 +7,7 @@ import { GuidelineCitation } from "./GuidelineCitation";
 import { KIND_DESCRIPTION } from "@/lib/clinical/context";
 
 const EVIDENCE_ICON: Record<EvidenceRef["kind"], typeof FlaskConical> = {
+  patient: FileText,
   measurement: FlaskConical,
   visit: Calendar,
   medication: Pill,

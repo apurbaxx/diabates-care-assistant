@@ -123,7 +123,7 @@ export function retrieve(
     }
 
     case "medication-review": {
-      const last = visits[visits.length - 1];
+      const last = [...visits].reverse().find(v => v.kind !== "lab-report" && v.medicationsRecorded !== false);
       if (last) {
         patientFindings.push(
           fact(

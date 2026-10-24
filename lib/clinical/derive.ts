@@ -129,8 +129,9 @@ export function deriveState(patient: Patient, asOf?: string): DerivedState {
   const diabetesDurationYears =
     Math.round(yearsBetween(patient.diagnosisDate, referenceDate) * 10) / 10;
 
-  const weight = latestVisit?.vitals.weightKg;
-  const height = latestVisit?.vitals.heightCm;
+  const latestWeightVisit = [...visits].reverse().find(v => v.vitals.weightKg !== undefined && v.vitals.heightCm !== undefined);
+  const weight = latestWeightVisit?.vitals.weightKg;
+  const height = latestWeightVisit?.vitals.heightCm;
   const bmiValue = weight && height ? bmi(weight, height) : undefined;
 
   const creat = latestLab(patient, "creatinine");

@@ -65,7 +65,7 @@ const ORDERED_KEYS: LabKey[] = [
 
 const NUMBER_RE = /(-?\d+(?:\.\d+)?)/;
 const UNIT_RE =
-  /(mmol\/mol|mmol\/l|umol\/l|µmol\/l|mg\/dl|mg\/g|mg\/mmol|ng\/ml|pg\/ml|miu\/l|u\/l|g\/dl|%)/i;
+  /(mL\/min\/1\.73\s*m(?:\^?2|²)|mmol\/mol|mmol\/l|umol\/l|[µμ]mol\/l|mg\/dl|mg\/mmol|mg\/g|ng\/ml|pg\/ml|miu\/l|u\/l|g\/dl|%)/i;
 
 export interface ParseResult {
   values: ParsedLabValue[];
@@ -80,15 +80,17 @@ export function parseLabText(raw: string): ParseResult {
 
   const values: ParsedLabValue[] = [];
   const unmatched: string[] = [];
-  const claimedKeys = new Set<LabKey>();
+  const claimedKeys = new Set<string>();
 
   for (const line of lines) {
+    const measurementDate = extractReportDate(line);
+    const analyteLine = line.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").replace(/\b\d{1,2}[/.]\d{1,2}[/.]\d{4}\b/g, "");
     let matchedKey: LabKey | undefined;
     let labelMatch: RegExpMatchArray | undefined;
     for (const key of ORDERED_KEYS) {
       const syn = SYNONYMS.find((s) => s.key === key)!;
       for (const p of syn.patterns) {
-        const m = line.match(p);
+        const m = analyteLine.match(p);
         if (m) {
           matchedKey = key;
           labelMatch = m;
@@ -102,7 +104,8 @@ export function parseLabText(raw: string): ParseResult {
       unmatched.push(line);
       continue;
     }
-    if (claimedKeys.has(matchedKey)) {
+    const claim = `${measurementDate || ""}:${matchedKey}`;
+    if (claimedKeys.has(claim)) {
       // Duplicate line for an already-parsed analyte (e.g. a repeated header) —
       // keep the first, surface the rest as unmatched for visibility.
       unmatched.push(line);
@@ -112,12 +115,14 @@ export function parseLabText(raw: string): ParseResult {
     // Search for the number in the line with the matched label blanked out —
     // labels like "HbA1c" or "Vitamin B12" contain digits that would otherwise
     // be mistaken for the reported value.
-    const searchLine =
+    const searchLine = (
       labelMatch && labelMatch.index !== undefined
-        ? line.slice(0, labelMatch.index) +
-          " ".repeat(labelMatch[0].length) +
-          line.slice(labelMatch.index + labelMatch[0].length)
-        : line;
+        ? analyteLine.slice(labelMatch.index + labelMatch[0].length)
+        : analyteLine).replace(/\([^)]*\)/g, " ").replace(UNIT_RE, " ");
+
+    // Inequalities are bounds, not exact measurements. Keep them unmatched
+    // for explicit transcription rather than turning '<5' into a fact of 5.
+    if (/[<>≤≥]/.test(searchLine.split(/ref(?:erence)?/i)[0])) { unmatched.push(line); continue; }
 
     const numMatch = searchLine.match(NUMBER_RE);
     if (!numMatch) {
@@ -137,24 +142,59 @@ export function parseLabText(raw: string): ParseResult {
     if (converted) confidence -= 0.02; // conversions carry a hair more uncertainty
 
     values.push({
+      date: measurementDate,
       key: matchedKey,
       value,
-      reportedUnit: reportedUnit || "(assumed canonical)",
+      reportedUnit,
       reportedValue,
       confidence: Math.max(0.5, Math.round(confidence * 100) / 100),
       sourceLine: line + (note ? ` [converted: ${note}]` : ""),
     });
-    claimedKeys.add(matchedKey);
+    claimedKeys.add(claim);
   }
 
   return { values, unmatchedLines: unmatched };
 }
 
+/** ISO or named-month dates; ambiguous numeric dates require review. */
+export function extractReportDate(raw: string): string | undefined {
+  const iso = raw.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  const named = raw.match(/\b(\d{1,2})[-\s](Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[-\s](\d{4})\b/i);
+  let date = iso?.[1];
+  if (!date && named) {
+    const month = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"].indexOf(named[2].slice(0,3).toLowerCase()) + 1;
+    date = `${named[3]}-${String(month).padStart(2,"0")}-${named[1].padStart(2,"0")}`;
+  }
+  if (!date) return undefined;
+  const d = new Date(`${date}T12:00:00Z`);
+  return Number.isFinite(d.getTime()) && d.toISOString().slice(0,10) === date ? date : undefined;
+}
+
+/** Never use an unrelated date (such as DOB) as a specimen date. */
+export function extractSpecimenDate(raw: string): string | undefined {
+  const dates = raw.split(/\r?\n/).filter(line => /specimen|collect(?:ed|ion)|sample\s*date|report\s*date|date\s*of\s*(?:collection|report)|^\s*date\s*:/i.test(line)).map(extractReportDate).filter((date): date is string => !!date);
+  const unique = [...new Set(dates)];
+  return unique.length === 1 ? unique[0] : undefined;
+}
+
 /** Parse a .csv with header row `analyte,value,unit` or `analyte,value`. */
 export function parseLabCsv(raw: string): ParseResult {
-  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const records: string[][] = [];
+  let fields: string[] = [], field = "", quoted = false;
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === '"') {
+      if (quoted && raw[i+1] === '"') { field += '"'; i++; } else quoted = !quoted;
+    } else if (ch === "," && !quoted) { fields.push(field); field = ""; }
+    else if ((ch === "\n" || ch === "\r") && !quoted) {
+      if (ch === "\r" && raw[i+1] === "\n") i++;
+      fields.push(field); if (fields.some(f => f.trim())) records.push(fields); fields = []; field = "";
+    } else field += ch;
+  }
+  fields.push(field); if (fields.some(f => f.trim())) records.push(fields);
+  const lines = records.map(row => row.join(" "));
   const asLines = lines
     .slice(lines[0]?.toLowerCase().includes("analyte") ? 1 : 0)
-    .map((l) => l.split(",").join(" "));
+    .map((l) => l.trim());
   return parseLabText(asLines.join("\n"));
 }

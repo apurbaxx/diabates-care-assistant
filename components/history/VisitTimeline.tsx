@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Insight, Visit } from "@/lib/types";
 import { formatWithUnit } from "@/lib/clinical/units";
@@ -28,6 +28,10 @@ const BpIcon = bpStyle.icon;
 export function VisitTimeline({ visits, insights }: { visits: Visit[]; insights: Insight[] }) {
   const chronological = [...visits].sort((a, b) => b.date.localeCompare(a.date));
   const [openId, setOpenId] = useState<string | undefined>(chronological[0]?.id);
+  useEffect(() => {
+    const navigate = () => { const id = new URLSearchParams(location.hash.slice(1)).get("source-visit"); if (id) { setOpenId(id); requestAnimationFrame(() => document.getElementById(`visit-source-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })); } };
+    navigate(); window.addEventListener("hashchange", navigate); return () => window.removeEventListener("hashchange", navigate);
+  }, []);
 
   return (
     <div className="relative space-y-3 pl-5">
@@ -38,7 +42,7 @@ export function VisitTimeline({ visits, insights }: { visits: Visit[]; insights:
         const hasChanges = visit.medicationChanges.some((c) => c.type !== "unchanged");
 
         return (
-          <div key={visit.id} className="relative">
+          <div id={`visit-source-${visit.id}`} key={visit.id} className="relative scroll-mt-28">
             <span
               className={cn(
                 "absolute -left-5 top-1.5 h-3 w-3 rounded-full border-2 border-surface",

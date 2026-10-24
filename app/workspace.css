@@ -1,0 +1,256 @@
+/* Reference dashboard styling, scoped to the patient-management workspace. */
+.doctor-workspace {
+  --workspace-ink: #101a3d;
+  --workspace-muted: #7485a8;
+  --workspace-blue: #0755ff;
+  --workspace-border: #e4ebf5;
+  min-height: 100vh;
+  color: var(--workspace-ink);
+  background: radial-gradient(ellipse at 46% 0%, #e8f3ff 0%, #eef6ff 58%, #f3f8ff 100%);
+  font-size: 13px;
+}
+.doctor-workspace button, .doctor-workspace a, .doctor-workspace input, .doctor-workspace select { -webkit-tap-highlight-color: transparent; }
+.doctor-workspace button, .doctor-workspace select, .doctor-workspace summary { cursor: pointer; }
+.doctor-workspace button:disabled { cursor: not-allowed; opacity: .5; }
+.doctor-workspace :is(a, button, input, select, summary):focus-visible { outline: 3px solid #a9caff; outline-offset: 3px; }
+.workspace-loading { display: grid; place-items: center; color: #526788; }
+.workspace-header { background: #ffffffed; border-bottom: 1px solid #dfe9f6; }
+.workspace-header-inner { max-width: 1584px; min-height: 64px; margin: auto; padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.workspace-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+.workspace-brand img { height: 43px; width: 43px; object-fit: contain; }
+.workspace-brand strong { display: block; font-size: 21px; letter-spacing: -.7px; font-weight: 750; line-height: 1.15; }
+.workspace-brand small { display: block; margin-top: 2px; font-size: 12px; color: #7584a4; }
+.workspace-header-actions { display: flex; align-items: center; gap: 10px; }
+.workspace-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; min-height: 36px; padding: 8px 13px; border: 1px solid #d7e3f5; border-radius: 6px; background: #fff; color: var(--workspace-blue); font-size: 12px; font-weight: 550; line-height: 1.3; box-shadow: 0 1px 2px #172c5310; text-decoration: none; transition: background .15s, border-color .15s, box-shadow .15s; }
+.workspace-button:hover { background: #f2f7ff; border-color: #adcaff; box-shadow: 0 2px 5px #1536600d; }
+.workspace-button-primary { background: #0755ff; border-color: #0755ff; color: white; box-shadow: 0 2px 4px #0755ff24; }
+.workspace-button-primary:hover { background: #0646d6; border-color: #0646d6; }
+.workspace-button-small { min-height: 32px; padding: 6px 10px; font-size: 11.5px; gap: 6px; }
+.workspace-button.is-active { background: #edf4ff; border-color: #d7e7ff; color: #0755ff; }
+.workspace-local-profile { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #e8f3f7; color: #45617e; margin-left: 12px; }
+.workspace-main { max-width: 1584px; margin: auto; padding: 18px 24px 30px; }
+.workspace-intro { padding: 0 24px; margin-bottom: 14px; }
+.workspace-intro h1 { margin: 0 0 3px; font-size: 33px; letter-spacing: -.9px; line-height: 1.25; font-weight: 750; color: #0a1235; }
+.workspace-intro p { margin: 0; color: #526586; font-size: 13px; line-height: 1.6; }
+.workspace-intro p > span { padding: 0 7px; color: #7c8eac; }
+.workspace-current-date { display: flex; align-items: center; gap: 9px; margin-top: 5px; color: #53698c; font-size: 12.5px; }
+.workspace-current-date svg { color: #0755ff; }
+.workspace-metrics { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; padding: 0 24px; margin-bottom: 20px; }
+.workspace-metric { display: flex; align-items: center; gap: 15px; min-width: 0; padding: 15px; border: 1px solid; border-radius: 10px; text-decoration: none; box-shadow: 0 2px 6px #13245403; transition: transform .15s, box-shadow .15s; }
+.workspace-metric:hover { transform: translateY(-2px); box-shadow: 0 5px 14px #17335c0c; }
+.workspace-metric strong { display: block; font-size: 28px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.8px; }
+.workspace-metric div > span { display: block; margin-top: 5px; color: #526487; font-size: 12px; line-height: 1.3; }
+.workspace-icon { display: inline-grid; place-items: center; flex: 0 0 auto; width: 32px; height: 34px; border-radius: 7px; color: #0755ff; background: #edf4ff; }
+.workspace-metric > .workspace-icon { width: 48px; height: 48px; border-radius: 10px; }
+.workspace-metric > .workspace-icon svg { width: 25px; height: 25px; }
+.workspace-metric-blue { background: linear-gradient(120deg,#f5f9ff,#f0f6ff); border-color: #d1e2ff; }
+.workspace-metric-blue .workspace-icon { background: #e5efff; color: #0755ff; }
+.workspace-metric-green { background: linear-gradient(120deg,#f0fcf8,#eafbf7); border-color: #d2f1e8; }
+.workspace-metric-green .workspace-icon { background: #dbf8ee; color: #04b67d; }
+.workspace-metric-amber { background: linear-gradient(120deg,#fffaf2,#fffaf5); border-color: #f8e9d5; }
+.workspace-metric-amber .workspace-icon { background: #fff2dc; color: #bf790a; }
+.workspace-metric-violet { background: linear-gradient(120deg,#f8f5ff,#f7f5ff); border-color: #e8e0ff; }
+.workspace-metric-violet .workspace-icon { background: #eee7ff; color: #6a35d9; }
+.workspace-metric-pink { background: linear-gradient(120deg,#fff6f9,#fff7f9); border-color: #f8e4eb; }
+.workspace-metric-pink .workspace-icon { background: #ffe4ec; color: #f01662; }
+.workspace-columns { display: grid; grid-template-columns: minmax(0,2.4fr) minmax(350px,1fr); align-items: start; gap: 14px; }
+.workspace-primary-column, .workspace-review-column { display: flex; flex-direction: column; min-width: 0; gap: 16px; }
+.workspace-panel { min-width: 0; border: 1px solid var(--workspace-border); border-radius: 11px; background: #ffffffed; box-shadow: 0 2px 6px #1b426703; padding: 14px; }
+.workspace-panel-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 2px 4px 14px; }
+.workspace-panel h2 { color: #101937; margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; letter-spacing: -.4px; }
+.workspace-panel-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.workspace-panel-actions > .workspace-button:not(.workspace-button-primary):not(.is-active) { color: #283959; }
+.workspace-count { display: inline-flex; align-items: center; justify-content: center; min-width: 23px; height: 23px; padding: 0 6px; background: #eaf1ff; color: #37588b; border-radius: 20px; font-size: 12px; font-weight: 650; }
+.workspace-anchor, .workspace-directory { scroll-margin-top: 20px; }
+.workspace-text-button { border: 0; padding: 4px 2px; background: transparent; color: #0755ff; font-size: 12px; font-weight: 550; white-space: nowrap; text-decoration: none; }
+.workspace-text-button:hover { text-decoration: underline; }
+.workspace-date-picker { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid #dce5f2; border-radius: 6px; color: #42597e; background: #fff; min-height: 32px; }
+.workspace-date-picker input { width: 106px; border: 0; padding: 0; background: transparent; color: #263959; font-size: 11px; outline: none; }
+.workspace-schedule-scroll { overflow-x: auto; }
+.workspace-schedule-table { width: 100%; text-align: left; border-collapse: collapse; font-size: 12px; }
+.workspace-schedule-table th { padding: 10px 11px; color: #54688b; background: #f6f8fb; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.workspace-schedule-table th:first-child { border-radius: 6px 0 0 0; }
+.workspace-schedule-table th:last-child { border-radius: 0 6px 0 0; }
+.workspace-schedule-table td { padding: 12px 11px; border-top: 1px solid #ecf0f6; vertical-align: middle; }
+.workspace-schedule-table td:first-child { white-space: nowrap; font-weight: 600; }
+.workspace-schedule-table td small { display: block; margin-top: 4px; font-size: 10.5px; color: var(--workspace-muted); font-weight: 400; }
+.workspace-schedule-patient { display: flex; align-items: center; gap: 10px; text-decoration: none; min-width: 170px; }
+.workspace-schedule-patient strong { font-size: 12px; font-weight: 650; }
+.workspace-schedule-patient .workspace-avatar { width: 37px; height: 37px; font-size: 12px; }
+.workspace-schedule-table td:nth-child(3) { min-width: 170px; }
+.workspace-schedule-table td:nth-child(3) > .workspace-diabetes-badge { margin-left: 8px; }
+.workspace-schedule-actions { display: flex; align-items: center; gap: 10px; }
+.workspace-row-menu summary { list-style: none; color: #61799e; padding: 4px; }
+.workspace-row-menu summary::-webkit-details-marker { display: none; }
+.workspace-row-menu > div { display: flex; flex-direction: column; gap: 4px; }
+.workspace-appointment-editor { border: 1px solid #dce8fb; border-radius: 8px; padding: 14px; background: #f6f9ff; margin-bottom: 14px; }
+.workspace-appointment-editor h3 { font-size: 14px; font-weight: 650; margin: 0 0 12px; }
+.workspace-appointment-editor label { font-size: 12px; color: #536989; }
+.workspace-appointment-editor label > :is(input,select) { margin-top: 5px; background: #fff; border-color: #dbe4f1; }
+.workspace-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 27px 18px; color: #7b8ca8; font-size: 12px; }
+.workspace-empty > svg { color: #8fadd9; }
+.workspace-empty p { max-width: 420px; margin: 0; line-height: 1.7; }
+.workspace-directory-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 1px 3px 17px; }
+.workspace-directory-title { display: flex; align-items: start; gap: 12px; }
+.workspace-directory-title p { margin: 3px 0 0; font-size: 12px; color: #7b8baa; }
+.workspace-directory-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+.workspace-search { min-width: 160px; max-width: 305px; flex: 1; display: flex; align-items: center; gap: 7px; border: 1px solid #dfe6f1; border-radius: 6px; height: 33px; padding: 0 9px; color: #7387a8; background: #fcfdff; }
+.workspace-search input { width: 100%; min-width: 0; border: 0; outline: none; background: transparent; color: #293c61; font-size: 11px; }
+.workspace-search input::placeholder { color: #8b99b4; }
+.workspace-select { display: flex; align-items: center; gap: 6px; border: 1px solid #dfe6f1; border-radius: 6px; height: 33px; padding: 0 9px; color: #7a8eae; background: #fcfdff; }
+.workspace-select select { appearance: none; max-width: 125px; min-width: 0; border: 0; outline: none; background: transparent; color: #243453; font-size: 10.5px; padding-right: 2px; }
+.workspace-select > svg { flex-shrink: 0; }
+.workspace-patient-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.workspace-patient-card { display: block; min-width: 0; border: 1px solid #e6ecf5; border-radius: 9px; background: linear-gradient(120deg,#fff,#fcfdff); box-shadow: 0 2px 4px #172e4e03; text-decoration: none; overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.workspace-patient-card:hover { border-color: #abcaff; box-shadow: 0 3px 12px #1f4c8d0a; }
+.workspace-patient-heading { padding: 13px 13px 10px; display: flex; align-items: center; gap: 11px; }
+.workspace-avatar { display: inline-grid; place-items: center; width: 45px; height: 45px; border-radius: 50%; flex-shrink: 0; font-size: 13px; font-weight: 650; }
+.workspace-avatar-violet { background: #f0e7fb; color: #7330a7; }
+.workspace-avatar-blue { background: #e9f2ff; color: #0755ff; }
+.workspace-avatar-amber { background: #fff5e6; color: #ab6d0b; }
+.workspace-avatar-pink { background: #f9eafa; color: #8c3ba0; }
+.workspace-patient-identity { min-width: 0; flex: 1; }
+.workspace-patient-identity h3 { margin: 0; font-size: 12.5px; font-weight: 650; line-height: 1.35; color: #111b3d; }
+.workspace-patient-identity p { margin: 4px 0 0; font-size: 10px; white-space: nowrap; color: #7a8baa; }
+.workspace-diabetes-badge { flex-shrink: 0; display: inline-block; border-radius: 4px; background: #edf4ff; color: #1656c8; padding: 4px 7px; font-size: 10px; line-height: 1.2; white-space: nowrap; }
+.workspace-patient-heading > .workspace-diabetes-badge { align-self: flex-start; }
+.workspace-type-one { color: #6940c9; background: #f1edff; }
+.workspace-patient-measures { margin: 0 13px 12px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px; }
+.workspace-patient-measures > div + div { padding-left: 15px; border-left: 1px solid #edf0f6; }
+.workspace-measure-label { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #6a7f9f; }
+.workspace-measure-label svg { color: #4e87dc; }
+.workspace-patient-measures > div:first-child .workspace-measure-label svg { color: #f61e62; }
+.workspace-a1c-value { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.workspace-a1c-value strong { font-size: 21px; color: #553094; font-weight: 700; line-height: 1.25; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.workspace-sparkline { width: 58px; height: 27px; color: #f41b60; flex-shrink: 1; }
+.workspace-sparkline-violet { color: #6635cf; }
+.workspace-kidney-stage { display: inline-block; margin-top: 4px; border-radius: 4px; padding: 3px 11px; font-size: 12px; line-height: 1.4; font-weight: 650; background: #edf3ff; color: #2e4673; }
+.workspace-kidney-G3a, .workspace-kidney-G3b { background: #dfe7f4; }
+.workspace-kidney-G4, .workspace-kidney-G5 { background: #d4deee; }
+.workspace-unavailable { display: inline-block; margin-top: 5px; font-size: 10px; color: #8a98af; }
+.workspace-patient-footer { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 12px; border-top: 1px solid #edf1f7; background: #fafcff; font-size: 10px; color: #8090ac; }
+.workspace-patient-footer > span { display: flex; align-items: center; gap: 5px; }
+.workspace-patient-open { color: #0755ff; white-space: nowrap; }
+.workspace-directory-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; font-size: 10px; color: #8998af; }
+.workspace-sort { display: flex; align-items: center; gap: 6px; }
+.workspace-sort select { background: transparent; color: #61769a; border: 0; padding: 2px; font-size: 10px; }
+.workspace-review-column .workspace-panel { padding: 14px 15px 7px; }
+.workspace-review-column .workspace-panel-heading { padding: 0 0 11px; gap: 7px; flex-wrap: nowrap; border-bottom: 1px solid #e9edf5; }
+.workspace-review-column .workspace-panel h2 { font-size: 14px; letter-spacing: -.3px; }
+.workspace-review-column .workspace-panel-heading .workspace-icon { width: 27px; height: 30px; background: #f1f6ff; }
+.workspace-review-column .workspace-panel-heading .workspace-icon svg { width: 19px; height: 19px; }
+.workspace-queue { margin: 0; padding: 0; list-style: none; max-height: 238px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #d3dfef transparent; }
+.workspace-queue-expanded { max-height: none; }
+.workspace-queue > li { display: flex; align-items: center; gap: 9px; padding: 11px 3px; border-bottom: 1px solid #edf1f6; }
+.workspace-queue > li:last-child { border-bottom: 0; }
+.workspace-queue > li > .workspace-icon { width: 29px; height: 31px; }
+.workspace-queue > li > .workspace-icon svg { width: 16px; height: 16px; }
+.workspace-queue-copy { min-width: 0; flex: 1; }
+.workspace-queue-copy > a { display: block; color: #152143; font-size: 11.5px; font-weight: 550; line-height: 1.4; text-decoration: none; }
+.workspace-queue-copy > a:hover { color: #0755ff; }
+.workspace-queue-copy p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 3px 0 0; font-size: 10.5px; color: #63799e; }
+.workspace-queue-copy small { display: block; margin-top: 3px; color: #7d8ead; font-size: 10px; line-height: 1.5; }
+.workspace-queue .workspace-button { padding: 6px 10px; min-height: 30px; font-size: 10.5px; }
+.workspace-status { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 5px 9px; border-radius: 20px; font-size: 10px; line-height: 1.25; white-space: nowrap; background: #fff7e9; color: #b47a21; }
+.workspace-status > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.workspace-status-completed, .workspace-status-approved { background: #e2f9ef; color: #05a56e; }
+.workspace-status-scheduled, .workspace-status-arrived { background: #edf4ff; color: #2562d6; }
+.workspace-status-pending-review, .workspace-status-draft { background: #f2edff; color: #7139d4; }
+.workspace-status-cancelled { background: #f1f3f7; color: #7c879b; }
+.workspace-status-in-progress { background: #edf4ff; color: #2562d6; }
+.workspace-queue-empty { padding: 24px 10px; text-align: center; color: #8a99b0; font-size: 11px; line-height: 1.7; }
+.workspace-task-toolbar { display: flex; justify-content: flex-end; padding: 6px 0 0; }
+.workspace-task-toolbar select { border: 0; background: transparent; color: #8191ab; font-size: 10px; }
+.workspace-task-queue { max-height: 223px; }
+.workspace-task-queue.workspace-queue-expanded { max-height: none; }
+.workspace-task-status { max-width: 110px; border: 0; border-radius: 15px; padding: 5px 4px 5px 7px; font-size: 10px; color: #b47a21; background: #fff7e9; }
+.workspace-task-status-completed { color: #05a56e; background: #e2f9ef; }
+.workspace-task-status-in-progress { color: #2562d6; background: #edf4ff; }
+.workspace-task-note { margin: 0; padding: 8px 3px 3px; border-top: 1px solid #edf1f6; color: #96a3b6; font-size: 9px; line-height: 1.5; }
+.workspace-quick-actions .workspace-panel-heading { padding-bottom: 10px; }
+.workspace-quick-actions .workspace-icon { color: #df901f; background: #fff9ed; }
+.workspace-quick-action-links { display: flex; flex-wrap: wrap; gap: 9px; }
+.workspace-quick-action-links .workspace-button { flex: 1 1 auto; border-radius: 20px; font-size: 11px; }
+.workspace-backups > details { border-color: #e2eaf5; background: #ffffffb3; color: #617697; box-shadow: none; }
+.workspace-backups > details > summary { font-size: 11px; font-weight: 500; }
+.doctor-workspace > footer { border-color: #e0eaf6; background: transparent; }
+.doctor-workspace > footer p { color: #8a9ab2; font-size: 10px; }
+@media (min-width: 1600px) { .workspace-directory-filters { gap: 8px; } .workspace-search { min-width: 265px; } }
+@media (max-width: 1350px) {
+  .workspace-columns { grid-template-columns: minmax(0,2fr) minmax(320px,1fr); }
+  .workspace-metric { padding: 13px 11px; gap: 10px; }
+  .workspace-metric div > span { font-size: 10.5px; }
+  .workspace-metric > .workspace-icon { width: 40px; height: 43px; }
+  .workspace-directory-filters { flex-basis: 100%; justify-content: flex-start; }
+  .workspace-search { max-width: none; }
+  .workspace-patient-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .workspace-panel-actions { gap: 5px; }
+  .workspace-queue > li { gap: 6px; }
+  .workspace-review-column .workspace-panel { padding-left: 11px; padding-right: 11px; }
+  .workspace-review-column .workspace-panel h2 { font-size: 12.5px; }
+  .workspace-queue > li > .workspace-icon { display: none; }
+  .workspace-queue .workspace-status { padding-left: 6px; padding-right: 6px; font-size: 9px; }
+}
+@media (max-width: 1000px) {
+  .workspace-columns { grid-template-columns: minmax(0,1fr); }
+  .workspace-review-column { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .workspace-review-column > :last-child { grid-column: 1 / -1; }
+  .workspace-metrics { padding: 0; gap: 9px; }
+  .workspace-intro { padding: 0; }
+  .workspace-metric { align-items: flex-start; gap: 8px; }
+  .workspace-metric > .workspace-icon { width: 31px; height: 34px; }
+  .workspace-metric > .workspace-icon svg { width: 19px; height: 19px; }
+  .workspace-metric strong { font-size: 24px; }
+  .workspace-metric div > span { font-size: 10px; }
+  .workspace-patient-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .workspace-directory-filters { flex-basis: auto; }
+  .workspace-header-inner, .workspace-main { padding-left: 20px; padding-right: 20px; }
+}
+@media (max-width: 760px) {
+  .workspace-header-inner { flex-wrap: wrap; padding: 10px 16px; gap: 10px; }
+  .workspace-header-actions { gap: 7px; flex-wrap: wrap; }
+  .workspace-header-actions .workspace-button { font-size: 10.5px; padding: 7px 10px; min-height: 33px; }
+  .workspace-local-profile { display: none; }
+  .workspace-main { padding: 20px 16px; }
+  .workspace-intro h1 { font-size: 29px; }
+  .workspace-intro p { font-size: 12px; }
+  .workspace-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .workspace-metric:last-child { grid-column: 1 / -1; }
+  .workspace-metric { align-items: center; padding: 12px; gap: 12px; }
+  .workspace-metric > .workspace-icon { width: 38px; height: 40px; }
+  .workspace-metric div > span { font-size: 11px; }
+  .workspace-patient-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .workspace-directory-filters { flex-basis: 100%; gap: 7px; }
+  .workspace-search { flex-basis: 100%; }
+  .workspace-select { flex: 1; }
+  .workspace-select select { flex: 1; max-width: none; }
+  .workspace-panel-heading { padding-left: 0; padding-right: 0; }
+  .workspace-panel h2 { font-size: 16px; }
+  .workspace-panel-actions { width: 100%; }
+  .workspace-date-picker { flex: 1; }
+  .workspace-date-picker input { width: 100%; }
+  .workspace-schedule-table { min-width: 680px; }
+  .workspace-review-column { display: flex; }
+  .workspace-review-column .workspace-panel h2 { font-size: 14px; }
+  .workspace-review-column .workspace-panel-actions { width: auto; }
+  .workspace-queue > li > .workspace-icon { display: inline-grid; }
+}
+@media (max-width: 470px) {
+  .workspace-patient-grid { grid-template-columns: minmax(0,1fr); }
+  .workspace-patient-identity h3 { font-size: 13px; }
+  .workspace-patient-identity p { font-size: 11px; }
+  .workspace-patient-footer { font-size: 10.5px; }
+  .workspace-panel-actions { gap: 6px; }
+  .workspace-panel-actions > .workspace-button-primary { width: 100%; }
+  .workspace-panel { padding: 12px; }
+  .workspace-queue > li { gap: 7px; }
+  .workspace-queue .workspace-status { font-size: 9px; }
+  .workspace-queue .workspace-button { padding: 5px 8px; }
+  .workspace-task-status { max-width: 91px; }
+}
+@media print {
+  .workspace-header, .workspace-quick-actions, .workspace-backups, .workspace-panel-actions, .workspace-directory-filters { display: none; }
+  .workspace-columns { display: block; }
+  .workspace-review-column { margin-top: 20px; }
+  .workspace-queue { max-height: none; overflow: visible; }
+}

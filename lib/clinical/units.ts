@@ -251,6 +251,8 @@ export const ANALYTES: Record<LabKey, AnalyteMeta> = {
 
 /** Vitals share the analyte metadata shape so charts/comparisons can treat them alike. */
 export const VITAL_META = {
+  heightCm: { key: "heightCm", label: "Height", shortLabel: "Height", unit: "cm", decimals: 1, noise: 1, group: "other" as const },
+  heartRate: { key: "heartRate", label: "Heart rate", shortLabel: "HR", unit: "bpm", decimals: 0, noise: 5, group: "other" as const },
   weightKg: {
     key: "weightKg",
     label: "Weight",
@@ -372,7 +374,7 @@ export function normaliseToCanonical(
   value: number,
   reportedUnit: string,
 ): { value: number; converted: boolean; note?: string } {
-  const u = reportedUnit.toLowerCase().replace(/\s+/g, "");
+  const u = reportedUnit.toLowerCase().replace(/\s+/g, "").replace(/μ/g, "µ");
 
   switch (key) {
     case "hba1c":

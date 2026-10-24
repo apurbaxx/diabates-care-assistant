@@ -17,6 +17,9 @@ import { VisitComparison } from "@/components/history/VisitComparison";
 import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
 import { MedicationTimeline } from "@/components/meds/MedicationTimeline";
 import { LabCheck } from "@/components/labs/LabCheck";
+import { ClinicalTimeline } from "@/components/history/ClinicalTimeline";
+import { VisitSummaries } from "@/components/workflow/VisitSummaries";
+import { BrowserStoragePanel } from "@/components/workflow/BrowserStoragePanel";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
 import Image from "next/image";
 import { cn } from "@/lib/cn";
@@ -29,6 +32,8 @@ function initials(name: string): string {
 // Tab configuration mapped to section ids
 const TAB_SECTIONS: SectionId[] = [
   "overview",
+  "timeline",
+  "summaries",
   "history",
   "trends",
   "medications",
@@ -37,6 +42,8 @@ const TAB_SECTIONS: SectionId[] = [
 ];
 
 const TAB_LABELS: Record<SectionId, string> = {
+  timeline: "Clinical timeline",
+  summaries: "Visit summaries",
   overview: "Overview",
   history: "History",
   trends: "Trends & Patterns",
@@ -56,6 +63,16 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
     if (hasHydrated) ensureSeeded();
   }, [hasHydrated]);
 
+  useEffect(() => {
+    const navigate = () => {
+      const params = new URLSearchParams(location.hash.slice(1));
+      const section = params.has("report") ? "labs" : params.has("summary") ? "summaries" : params.has("event") ? "timeline" : params.has("measurement") ? "trends" : params.has("source-visit") ? "history" : location.hash.slice(1);
+      if (section) requestAnimationFrame(() => document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    };
+    if (hasHydrated) navigate();
+    window.addEventListener("hashchange", navigate); return () => window.removeEventListener("hashchange", navigate);
+  }, [hasHydrated]);
+
   // Track active section via scroll
   useEffect(() => {
     const sections = SECTIONS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
@@ -71,7 +88,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
     );
     sections.forEach((s) => observer.observe(s));
     return () => observer.disconnect();
-  }, []);
+  }, [hasHydrated, patientId]);
 
   const engine = useMemo(() => (patient ? runEngine(patient) : undefined), [patient]);
 
@@ -110,8 +127,8 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
     <EvidenceProvider>
       <div className="flex min-h-screen flex-col bg-page">
         {/* ── Top header bar ── */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8 print:hidden">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-gridline bg-surface px-4 py-3 sm:px-8 print:hidden">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => router.push("/")}
               className="flex items-center justify-center rounded-lg p-1.5 text-muted transition hover:bg-page hover:text-ink"
@@ -122,7 +139,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
             <Image src="/logo.png" alt="ClinIQ" width={64} height={64} className="shrink-0 object-contain" />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:gap-3">
             <Link
               href="/knowledge-assistant"
               className="flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-100/40 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-500 hover:text-white"
@@ -139,6 +156,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
               <Printer className="h-4 w-4" />
               Print / Export
             </button>
+            <button onClick={() => { const visit = [...(patient.visits || [])].filter(v => v.kind !== "lab-report").sort((a,b) => b.date.localeCompare(a.date))[0]; if (visit) { const summary = useAppStore.getState().generateSummary(patient.id, visit.id); location.hash = `summary=${encodeURIComponent(summary.id)}`; } else scrollToSection("summaries"); }} className="rounded-lg border border-brand-300 px-3 py-2 text-sm font-medium text-brand-700">Generate Visit Summary</button>
             <button
               onClick={() => scrollToSection("assistant")}
               className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
@@ -177,6 +195,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
                     {patient.mrn} · {age} · {patient.sex.charAt(0).toUpperCase() + patient.sex.slice(1)} ·{" "}
                     {diabetesTypeLabel} · {engine.derived.diabetesDurationYears.toFixed(1)} years history
                   </p>
+                  <p className="mt-1 text-xs font-medium text-brand-700">Synthetic demonstration patient · Saved in this browser</p>
                   {/* Status badges */}
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
@@ -215,6 +234,15 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
                 {/* Overview */}
                 <section id="overview" className="scroll-mt-24 border border-t-0 border-gridline bg-surface px-6 py-6">
                   <OverviewPanel patient={patient} engine={engine} />
+                </section>
+
+                <section id="summaries" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-4 py-6 sm:px-6">
+                  <h2 className="mb-3 text-lg font-semibold text-ink">Visit summaries</h2>
+                  <VisitSummaries patient={patient} />
+                </section>
+                <section id="timeline" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-4 py-6 sm:px-6">
+                  <h2 className="mb-3 text-lg font-semibold text-ink">Unified clinical timeline</h2>
+                  <ClinicalTimeline patient={patient} engine={engine} />
                 </section>
 
                 {/* History */}
@@ -263,6 +291,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
               {/* Right rail — sticky */}
               <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
                 <RightRail engine={engine} />
+                <BrowserStoragePanel />
               </aside>
             </div>
           </div>

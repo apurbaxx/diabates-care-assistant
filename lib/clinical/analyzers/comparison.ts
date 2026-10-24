@@ -25,15 +25,15 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
   const visits = sortedVisits(patient);
   const series = buildSeries(visits);
 
-  const reportedKeys = report.values.map((v) => v.key);
   const rows: LabComparisonRow[] = [];
 
-  for (const key of reportedKeys) {
-    const parsed = report.values.find((v) => v.key === key)!;
+  for (const parsed of report.values) {
+    const key = parsed.key;
+    const measurementDate = parsed.date || report.date;
     const meta = ANALYTES[key];
-    const history = series[key] ?? [];
+    const history = (series[key] ?? []).filter(p => p.reportId !== report.id);
     // Previous = latest prior visit measurement, strictly before this report's date.
-    const priorPoints = history.filter((p) => p.date < report.date);
+    const priorPoints = history.filter((p) => p.date < measurementDate);
     const previous = priorPoints[priorPoints.length - 1];
 
     const current = parsed.value;
@@ -49,10 +49,11 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
     const notable = delta !== undefined ? Math.abs(delta) >= meta.noise : false;
 
     // Trend context: combine full history + this new value.
-    const trendPoints = [...history, { date: report.date, value: current, reportId: report.id }];
+    const trendPoints = [...history.filter(p => p.date <= measurementDate), { date: measurementDate, value: current, reportId: report.id }];
     const trend = analyseTrend(key, trendPoints);
 
     rows.push({
+      currentDate: measurementDate,
       key,
       label: meta.label,
       unit: meta.unit,
@@ -68,7 +69,7 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
       trendSummary: trend.summary,
       referenceRange: meta.referenceRange,
       evidence: [
-        labValueEvidence(key, current, report.date, { reportId: report.id, note: "New report" }),
+        labValueEvidence(key, current, measurementDate, { reportId: report.id, note: "New report" }),
         ...(previous
           ? [labValueEvidence(key, previous.value, previous.date, { visitId: previous.visitId, note: "Previous result" })]
           : []),
@@ -87,7 +88,7 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
     notableCount,
     insights,
     headline:
-      notableCount === 0
+      !rows.some(r => r.previous !== undefined) ? "No comparable prior results are recorded." : notableCount === 0
         ? "No changes exceeding measurement variability since the previous result."
         : `${notableCount} notable change${notableCount === 1 ? "" : "s"} since the previous result.`,
   };
@@ -166,6 +167,8 @@ function buildComparisonInsights(
 ): Insight[] {
   const out: Insight[] = [];
   const notable = rows.filter((r) => r.notable);
+  const comparable = rows.filter(r => r.previous !== undefined);
+  if (!comparable.length) return out;
 
   if (notable.length === 0) {
     out.push(
@@ -174,7 +177,7 @@ function buildComparisonInsights(
         kind: "observation",
         severity: "info",
         title: "New report consistent with previous results",
-        statement: `All ${rows.length} parameter${rows.length === 1 ? "" : "s"} in this report are within measurement variability of the previous result.`,
+        statement: `The ${comparable.length} parameter${comparable.length === 1 ? "" : "s"} with prior measurements in this report are within measurement variability of the previous result.`,
         evidence: rows.flatMap((r) => r.evidence),
         parameters: rows.map((r) => r.key),
       }),
@@ -194,7 +197,7 @@ function buildComparisonInsights(
         severity: outOfRange ? "watch" : "info",
         title: arrow,
         statement:
-          `${meta.label} changed from ${row.previous?.toFixed(meta.decimals)} ${meta.unit} (${row.previousDate}) to ${row.current?.toFixed(meta.decimals)} ${meta.unit} (${report.date}), ` +
+          `${meta.label} changed from ${row.previous?.toFixed(meta.decimals)} ${meta.unit} (${row.previousDate}) to ${row.current?.toFixed(meta.decimals)} ${meta.unit} (${row.currentDate || report.date}), ` +
           `a ${row.direction === "up" ? "rise" : "fall"} of ${Math.abs(row.delta ?? 0).toFixed(meta.decimals)} ${meta.unit}` +
           (row.percentDelta !== undefined ? ` (${row.percentDelta > 0 ? "+" : ""}${row.percentDelta.toFixed(0)}%)` : "") +
           `. Relative to the patient's own trend: ${row.trendSummary}`,

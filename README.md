@@ -22,7 +22,15 @@ run — nothing to configure.
 | `npm run dev` | Start the dev server |
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | Next.js lint |
+| `npm run lint` | ESLint checks |
+| `npm test` | Workflow and data-integrity tests |
+| `npm run test:e2e` | Production browser workflow tests (after build) |
+
+## Doctor productivity workflows
+
+The patient homepage includes a doctor worklist. Patient workspaces include saved visit summaries, laboratory PDF extraction and verification, and a unified clinical timeline linked to charts. Records remain in browser storage; original report files use browser IndexedDB. Download complete backups from **Browser storage and backups** to protect against clearing site data or device loss.
+
+See [implementation, storage, APIs, testing and deployment notes](docs/doctor-workflows.md). No patient database or Supabase patient schema is introduced.
 
 ## Key directories
 
