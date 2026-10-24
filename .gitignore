@@ -71,4 +71,14 @@ Thumbs.db
 .pyright/
 .ruff_cache/
 .dmypy.json
+.next-validation/
+# Build and dependency caches
+.npm-cache/
+.python-deps/
+.next/
+.nextvalidation/
+node_modules/
 
+# Python cache
+__pycache__/
+*.pyc
