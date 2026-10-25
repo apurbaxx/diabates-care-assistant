@@ -12,7 +12,7 @@ import { SECTIONS, type SectionId } from "@/lib/nav";
 import { EvidenceProvider } from "@/components/shared/EvidenceContext";
 import { SafetyFooter } from "@/components/shared/SafetyFooter";
 import { OverviewPanel } from "@/components/patient/OverviewPanel";
-import { VisitTimeline } from "@/components/history/VisitTimeline";
+import { UnifiedClinicalTimeline } from "@/components/history/UnifiedClinicalTimeline";
 import { VisitComparison } from "@/components/history/VisitComparison";
 import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
 import { MedicationTimeline } from "@/components/meds/MedicationTimeline";
@@ -219,9 +219,8 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
 
                 {/* History */}
                 <section id="history" className="scroll-mt-24 mt-6 space-y-2 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">Patient history</h2>
-                  <p className="mb-4 text-sm text-muted">Longitudinal visit record</p>
-                  <VisitTimeline visits={visits} insights={engine.insights} />
+                  <h2 className="text-lg font-semibold text-ink">Unified clinical timeline</h2>
+                  <UnifiedClinicalTimeline key={patient.id} patient={patient} insights={engine.insights} />
                 </section>
 
                 {/* Trends */}

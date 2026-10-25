@@ -21,7 +21,7 @@ export type SectionId = "overview" | "history" | "trends" | "comparison" | "medi
 /** Single source of truth for the sidebar nav and the section headings it drives. */
 export const SECTIONS: SectionDef[] = [
   { id: "overview", label: "Patient data", description: "Demographics, status and AI summary", icon: UserSearch },
-  { id: "history", label: "Patient history", description: "Longitudinal visit record", icon: History },
+  { id: "history", label: "Patient history", description: "Unified clinical timeline", icon: History },
   { id: "trends", label: "Trends & patterns", description: "Parameter trajectories over time", icon: BrainCircuit },
   { id: "comparison", label: "Test comparison", description: "Previous visit vs. most recent results", icon: ArrowLeftRight },
   { id: "medications", label: "Medication insights", description: "Drug therapy timeline", icon: Sparkles },

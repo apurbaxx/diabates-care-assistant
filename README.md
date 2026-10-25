@@ -26,6 +26,14 @@ run — nothing to configure.
 
 ## Key directories
 
+### Unified clinical timeline
+
+The patient workspace History section combines recorded consultations, laboratory results and reports, medication changes, appointment notes, and saved visit summaries. Category and inclusive date filters apply to both the event list and lab chart. The list supports newest/oldest ordering and jump controls. Expand an event to inspect its consultation or appointment, open its saved summary, or follow its original report verification link.
+
+Charts require measurements on at least two dates and exclude unverified reports. Accepted reports appear once rather than repeating their generated lab-review visit. Medication markers indicate timing only; they do not establish causation. Draft summaries and scheduled/cancelled appointments retain their statuses. This feature uses existing browser records and patient identifiers; it adds no patient backend, diagnostic extraction, or inferred medication changes.
+
+Run `node --test scripts/tests/timeline.cjs` for patient ownership, ordering, filtering, source relationships, report deduplication, and missing-data checks.
+
 ```
 lib/clinical/     Deterministic clinical engine (guidelines, derivations, trend
                    stats, causality guard, per-domain analyzers)
