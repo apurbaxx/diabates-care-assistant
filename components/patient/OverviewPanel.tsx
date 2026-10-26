@@ -5,6 +5,7 @@ import { formatWithUnit } from "@/lib/clinical/units";
 import { paramStyle } from "@/lib/clinical/paramStyle";
 import { AiMarker } from "@/components/shared/Badges";
 import { Sparkline } from "@/components/shared/Sparkline";
+import { PatientSummaries } from "@/components/workflow/PatientWorkflow";
 import { cn } from "@/lib/cn";
 
 const COMORBIDITY_LABEL: Record<string, string> = {
@@ -139,6 +140,8 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
       </div>
 
       {/* ── Metric tiles: 3 columns × 2 rows ── */}
+      <PatientSummaries key={patient.id} patient={patient} />
+
       <div>
         <h3 className="mb-3 text-sm font-semibold text-ink">
           Latest measurements{latestVisit ? ` (${latestVisit.date})` : ""}

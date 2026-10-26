@@ -1,0 +1,25 @@
+﻿const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL ? {channel:process.env.PLAYWRIGHT_CHANNEL} : {channel:"msedge"})});const page=await browser.newPage();page.setDefaultNavigationTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:3100');await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
+ await page.getByRole('button',{name:'Create appointment',exact:true}).click();
+ const dialog=page.getByRole('dialog');await dialog.locator('input[type=datetime-local]').fill('2027-01-12T10:00');await dialog.locator('textarea').first().fill('Synthetic follow-up');await dialog.getByRole('button',{name:'Save appointment'}).click();
+ await page.getByRole('button',{name:'All dates',exact:true}).click();await page.getByText('New Consultation · Synthetic follow-up',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Edit appointment',exact:true}).click();
+ await dialog.locator('input[type=datetime-local]').fill('2027-01-12T11:00');await dialog.getByRole('button',{name:'Save appointment'}).click();
+ await page.getByRole('link',{name:'Start visit',exact:true}).click();
+ await dialog.getByRole('heading',{name:'Draft visit summary'}).waitFor();
+ assert.equal(await page.getByRole('heading',{name:'Appointments & visits'}).count(),0);
+ assert.equal(await page.getByRole('button',{name:'Edit appointment',exact:true}).count(),0);
+ assert(await page.locator('#summaries').evaluate(el=>el.previousElementSibling.textContent.includes('AI Summary')));
+ await page.getByRole('dialog').getByRole('button',{name:'Save draft',exact:true}).click();
+ await page.reload();await dialog.getByRole('heading',{name:'Draft visit summary'}).waitFor();await page.getByRole('dialog').getByRole('button',{name:'Finalize summary'}).click();
+ await page.locator('.summary-history > summary').click();await page.getByRole('button',{name:'View summary'}).click();await page.getByRole('dialog').getByText('Finalized visit summary',{exact:true}).waitFor();await page.getByRole('dialog').getByRole('button',{name:'Close dialog'}).click();
+ const data=await page.evaluate(()=>JSON.parse(localStorage.getItem('diabetes-care-assistant-store')).state);assert.equal(data.appointments[0].status,'Completed');assert.equal(data.summaries[0].status,'Finalized');
+ await page.goto('http://localhost:3100');await page.getByRole('button',{name:'Create appointment',exact:true}).click();await dialog.locator('input[type=datetime-local]').fill('2027-01-13T10:00');await dialog.locator('textarea').first().fill('Conflict test');await dialog.getByRole('button',{name:'Save appointment'}).click();
+ await page.getByRole('button',{name:'Create appointment',exact:true}).click();await dialog.locator('input[type=datetime-local]').fill('2027-01-13T10:15');await dialog.locator('textarea').first().fill('Conflicting visit');await dialog.getByRole('button',{name:'Save appointment'}).click();await dialog.getByRole('alert').filter({hasText:'conflicts'}).waitFor();await dialog.getByRole('button',{name:'Close dialog'}).click();
+ await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:'test-results/workspace-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1100});await page.screenshot({path:'test-results/workspace-desktop.png',fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS: workspace appointment editing, summary placement, linked visits, draft persistence, finalization, conflict validation, and mobile overflow');await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

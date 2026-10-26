@@ -6,7 +6,13 @@ import type { LabReport, Patient } from "@/lib/types";
 import { buildSeedCohort } from "@/lib/data/seed";
 import { generatePatient, type GenerateOptions } from "@/lib/data/generator";
 
+import { appointmentSchema, summarySchema, localDate, type Appointment, type VisitSummary } from "./workflow";
+
 interface AppState {
+  appointments: Appointment[];
+  summaries: VisitSummary[];
+  saveAppointment: (appointment: Appointment) => void;
+  saveSummary: (summary: VisitSummary) => void;
   patients: Patient[];
   selectedPatientId?: string;
   hasHydrated: boolean;
@@ -24,6 +30,31 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      appointments: [], summaries: [],
+      saveAppointment: (input) => {
+        const a = appointmentSchema.parse(input);
+        const state = get();
+        if (!state.patients.some(p => p.id === a.patientId)) throw new Error("Patient not found");
+        const old = state.appointments.find(x => x.id === a.id);
+        if (old && old.patientId !== a.patientId) throw new Error("Patient cannot be changed");
+        if (old?.status === "Completed" && a.status !== "Completed") throw new Error("Completed visits cannot be reopened");
+        if (a.status === "Scheduled" && (!old || old.date !== a.date) && Date.parse(a.date) < Date.now()) throw new Error("Choose a future appointment time");
+        if (["Scheduled", "In Progress"].includes(a.status) && state.appointments.some(x => x.id !== a.id && ["Scheduled", "In Progress"].includes(x.status) && Math.abs(Date.parse(x.date)-Date.parse(a.date)) < 30*60000)) throw new Error("This time conflicts with another appointment (30 minute slots)");
+        set({appointments:[...state.appointments.filter(x=>x.id!==a.id), a]});
+      },
+      saveSummary: (input) => {
+        const s = summarySchema.parse(input); const state = get();
+        if (!state.patients.some(p=>p.id===s.patientId)) throw new Error("Patient not found");
+        const old = state.summaries.find(x=>x.id===s.id);
+        if (old && (old.patientId!==s.patientId || old.status==="Finalized")) throw new Error("Finalized summaries are read-only");
+        const a = s.appointmentId ? state.appointments.find(a=>a.id===s.appointmentId && a.patientId===s.patientId) : undefined;
+        if (s.appointmentId && (!a || a.status === "Cancelled")) throw new Error("Appointment unavailable");
+        if (s.appointmentId && state.summaries.some(x=>x.id!==s.id && x.appointmentId===s.appointmentId)) throw new Error("This appointment already has a summary");
+        if (s.date > localDate()) throw new Error("Visit date cannot be in the future");
+        if (s.followUp && s.followUp < s.date) throw new Error("Follow-up must be on or after the visit");
+        if (s.status === "Finalized" && !s.complaint.trim()) throw new Error("Chief complaint is required to finalize");
+        set({ summaries:[...state.summaries.filter(x=>x.id!==s.id),s], appointments:state.appointments.map(a=>a.id===s.appointmentId && s.status==="Finalized" ? {...a,status:"Completed"} : a) });
+      },
       patients: [],
       selectedPatientId: undefined,
       hasHydrated: false,
@@ -35,6 +66,7 @@ export const useAppStore = create<AppState>()(
 
       addGeneratedPatient: (opts) => {
         const patient = generatePatient(opts);
+        if (get().patients.some(p=>p.id===patient.id)) return get().patients.find(p=>p.id===patient.id)!;
         set((s) => ({ patients: [...s.patients, patient] }));
         return patient;
       },
@@ -42,7 +74,7 @@ export const useAppStore = create<AppState>()(
       addLabReport: (patientId, report) =>
         set((s) => ({
           patients: s.patients.map((p) =>
-            p.id === patientId ? { ...p, labReports: [...p.labReports, report] } : p,
+            p.id === patientId && report.patientId === patientId ? { ...p, labReports: [...p.labReports.filter(r=>r.id!==report.id), report] } : p,
           ),
         })),
 
@@ -51,7 +83,7 @@ export const useAppStore = create<AppState>()(
           patients: s.patients.map((p) => {
             if (p.id !== patientId) return p;
             const report = p.labReports.find((r) => r.id === reportId);
-            if (!report) return p;
+            if (!report || report.acknowledged) return p;
 
             if (!commit) {
               // Discard: remove the pending report entirely.
@@ -72,7 +104,8 @@ export const useAppStore = create<AppState>()(
                   id: `${p.id}-v-report-${reportId}`,
                   date: acknowledged.date,
                   reason: "Lab report review",
-                  labs: { ...lastVisit.labs, ...newLabs },
+                  vitals: {},
+                  labs: newLabs,
                   medicationChanges: [],
                   clinicianNote: `New laboratory report reviewed (${acknowledged.fileName ?? "manual entry"}).`,
                 }
@@ -86,7 +119,7 @@ export const useAppStore = create<AppState>()(
           }),
         })),
 
-      resetToSeedCohort: () => set({ patients: buildSeedCohort(), selectedPatientId: undefined }),
+      resetToSeedCohort: () => set({ patients: buildSeedCohort(), selectedPatientId: undefined, appointments: [], summaries: [] }),
 
       toggleInsightDismissed: (id) =>
         set((s) => ({
@@ -97,11 +130,22 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "diabetes-care-assistant-store",
+      version: 1,
+      migrate: (state) => ({...(state as object), appointments: [], summaries: []}),
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<AppState>;
+        const patients = Array.isArray(saved.patients) ? saved.patients : current.patients;
+        const ids = new Set(patients.map(p=>p.id));
+        const appointments = (saved.appointments ?? []).filter(a=>appointmentSchema.safeParse(a).success && ids.has(a.patientId));
+        const summaries = (saved.summaries ?? []).filter(s=>summarySchema.safeParse(s).success && ids.has(s.patientId) && (!s.appointmentId || appointments.some(a=>a.id===s.appointmentId && a.patientId===s.patientId)));
+        return {...current,...saved,patients,appointments,summaries};
+      },
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
       partialize: (s) => ({
+        appointments: s.appointments, summaries: s.summaries,
         patients: s.patients,
         selectedPatientId: s.selectedPatientId,
         dismissedInsightIds: s.dismissedInsightIds,
@@ -114,4 +158,11 @@ export const useAppStore = create<AppState>()(
 export function ensureSeeded() {
   const { patients, resetToSeedCohort } = useAppStore.getState();
   if (patients.length === 0) resetToSeedCohort();
+}
+
+// Keep open workspace/profile tabs synchronized through the existing browser store.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === "diabetes-care-assistant-store" && event.newValue) void useAppStore.persist.rehydrate();
+  });
 }

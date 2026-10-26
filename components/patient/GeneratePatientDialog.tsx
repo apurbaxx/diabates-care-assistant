@@ -112,7 +112,7 @@ export function GeneratePatientDialog({ onClose, onCreated }: { onClose: () => v
           <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm text-ink-secondary">
             Cancel
           </button>
-          <button onClick={create} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white">
+          <button onClick={create} className="primary rounded-lg px-4 py-2 text-sm font-semibold">
             Generate patient
           </button>
         </div>

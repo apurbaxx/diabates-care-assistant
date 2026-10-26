@@ -110,7 +110,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
     <EvidenceProvider>
       <div className="flex min-h-screen flex-col bg-page">
         {/* ── Top header bar ── */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8 print:hidden">
+        <header className="patient-header sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8 print:hidden">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/")}

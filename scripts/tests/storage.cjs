@@ -1,0 +1,12 @@
+﻿const {chromium}=require('playwright');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL || 'msedge',headless:true});const page=await browser.newPage();page.setDefaultNavigationTimeout(120000);
+await page.goto('http://localhost:3100');await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
+const legacy=await page.evaluate(()=>{const x=JSON.parse(localStorage.getItem('diabetes-care-assistant-store'));delete x.state.appointments;delete x.state.summaries;delete x.version;localStorage.setItem('diabetes-care-assistant-store',JSON.stringify(x));return x.state.patients.map(p=>p.id);});
+await page.reload();await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('diabetes-care-assistant-store')).state.patients.map(p=>p.id)),legacy);
+await page.getByRole('button',{name:'Create appointment',exact:true}).click();const d=page.getByRole('dialog');await d.locator('input[type=datetime-local]').fill('2020-01-01T10:00');await d.locator('textarea').first().fill('Invalid past visit');await d.getByRole('button',{name:'Save appointment'}).click();await d.getByRole('alert').filter({hasText:'future'}).waitFor();await d.getByRole('button',{name:'Close dialog'}).click();
+await page.getByRole('link',{name:'View',exact:true}).first().click();await page.locator('input[type=file]').setInputFiles({name:'synthetic-lab.txt',mimeType:'text/plain',buffer:Buffer.from('HbA1c: 7.1 %\nCreatinine: 1.0 mg/dL')});
+
+await page.getByRole('button',{name:/Parse/i}).click();
+await page.getByRole('button',{name:/Analyse against patient history/i}).last().click();await page.getByText('Saved reports (1)').waitFor();await page.reload();await page.getByText('Saved reports (1)').waitFor();
+const stored=await page.evaluate(async()=>{const req=indexedDB.open('cliniq-report-files');const db=await new Promise(r=>req.onsuccess=()=>r(req.result));return new Promise(r=>{const q=db.transaction('files').objectStore('files').getAll();q.onsuccess=()=>{r(q.result.map(x=>({patientId:x.patientId,size:x.file.size})));db.close()}})});assert.equal(stored.length,1);assert(stored[0].size>0);
+console.log('PASS: legacy patient migration, invalid date rejection, lab report and IndexedDB attachment persistence');await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
