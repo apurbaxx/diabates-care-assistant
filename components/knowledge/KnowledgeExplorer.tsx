@@ -20,36 +20,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-export interface PassageResult {
-  passage_id: string;
-  doc_id?: string | null;
-  doc_title: string;
-  source_org: string;
-  year: number;
-  section: string;
-  page_number: number;
-  official_url: string;
-  content_type: string;
-  text: string;
-  read_article_link: string;
-  bm25_rank?: number | null;
-  semantic_rank?: number | null;
-  rrf_score?: number | null;
-  rerank_score?: number | null;
-  relevance_label?: string | null;
-}
-
-export interface SearchResponse {
-  query: string;
-  total_results: number;
-  results: PassageResult[];
-  semantic_retrieval_executed: boolean;
-  reranking_executed: boolean;
-  reranker_fallback_used: boolean;
-  latency_ms: number;
-  message?: string | null;
-}
+import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
+export type { PassageResult, SearchResponse } from "@/lib/knowledge/search";
 
 export interface HealthState {
   status: "ready" | "degraded" | "error" | "loading";
@@ -190,19 +162,7 @@ export function KnowledgeExplorer() {
 
     startTransition(async () => {
       try {
-        const res = await fetch("/api/knowledge-assistant/search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: q, limit }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setErrorMsg(data.message || data.error || "Search retrieval failed.");
-          setSearchResponse(null);
-          return;
-        }
-
+        const data = await searchKnowledge(q, limit);
         setSearchResponse(data);
         setDisplayLimit(2);
       } catch (err: unknown) {

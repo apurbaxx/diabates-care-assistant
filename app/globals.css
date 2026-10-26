@@ -601,6 +601,25 @@ html:has(.patient-record), body:has(.patient-record) { overflow-x:hidden; }
 .record-main > section { grid-column:1 / -1; min-width:0; }
 .record-main > #overview { grid-column:1; }
 .record-references { grid-column:2; grid-row:1; padding:22px; background:#eaf0f7; border:1px solid #d3dde7; border-radius:10px; }
+.patient-knowledge { overflow-wrap:anywhere; }
+.knowledge-form { display:grid; gap:12px; margin-top:18px; }
+.knowledge-form label { font-size:14px; font-weight:600; }
+.knowledge-form textarea { width:100%; min-height:100px; resize:vertical; padding:12px; background:#fff; color:#172530; border:1px solid #c3cfdb; border-radius:4px; font:inherit; }
+.knowledge-button { display:block; width:100%; min-height:44px; padding:10px 14px; background:#205fa8; border:1px solid #205fa8; border-radius:4px; color:#fff; font:600 14px/1.6 var(--font-sans); cursor:pointer; }
+.knowledge-button:hover { background:#174b88; }
+.knowledge-button:disabled { opacity:.6; cursor:not-allowed; }
+.knowledge-form textarea:focus-visible,.knowledge-button:focus-visible { outline:2px solid #205fa8; outline-offset:3px; }
+.knowledge-response { font-size:16px; line-height:1.75; }
+.knowledge-response > :first-child { margin-top:20px; }
+.knowledge-question { padding-bottom:16px; border-bottom:1px solid #c6d3e0; }
+.knowledge-question strong,.knowledge-source > * { display:block; }
+.knowledge-question strong,.knowledge-answer h3 { font-size:14px; font-weight:600; margin-bottom:6px; }
+.knowledge-answer { margin-top:16px; }
+.knowledge-answer-text { white-space:pre-wrap; }
+.knowledge-source { border-top:1px solid #c6d3e0; margin-top:18px; padding-top:12px; color:#536579; font-size:14px; }
+.knowledge-source a { margin-top:8px; }
+.knowledge-warning { max-width:560px; }
+.knowledge-warning > p { margin:16px 0 24px; font-size:16px; line-height:1.75; }
 .record-tabs button[aria-current],.clinical-filters button[aria-pressed="true"] { background:#eaf2fb; }
 .record-review-banner { border:1px solid #bfd1e3; border-left:4px solid #759bc2; padding:16px 20px; font-size:15px; }
 .record-table-scroll,.visit-comparison-scroll { border:1px solid #c6d3e0; border-radius:8px; background:#fff; }

@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import type { PassageResult } from "@/components/knowledge/KnowledgeExplorer";
+import type { PassageResult } from "@/lib/knowledge/search";
 
 let cachedSupabaseClient: SupabaseClient | null = null;
 let cachedExtractor: any = null;
