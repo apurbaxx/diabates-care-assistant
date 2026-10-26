@@ -20,20 +20,20 @@ const DEFAULT_STYLE: ParamStyle = {
 };
 
 const PARAM_STYLE: Record<string, ParamStyle> = {
-  hba1c: { icon: Droplet, tint: "border-rose-200/60 bg-rose-50 text-rose-700", accent: "#be123c" },
-  fastingGlucose: { icon: Flame, tint: "border-amber-200/60 bg-amber-50 text-amber-700", accent: "#b45309" },
-  randomGlucose: { icon: Flame, tint: "border-amber-200/60 bg-amber-50 text-amber-700", accent: "#b45309" },
-  postprandialGlucose: { icon: Flame, tint: "border-amber-200/60 bg-amber-50 text-amber-700", accent: "#b45309" },
-  weightKg: { icon: Scale, tint: "border-violet-200/60 bg-violet-50 text-violet-700", accent: "#6d28d9" },
-  systolic: { icon: HeartPulse, tint: "border-sky-200/60 bg-sky-50 text-sky-700", accent: "#0369a1" },
-  diastolic: { icon: HeartPulse, tint: "border-sky-200/60 bg-sky-50 text-sky-700", accent: "#0369a1" },
-  egfr: { icon: Waves, tint: "border-emerald-200/60 bg-emerald-50 text-emerald-700", accent: "#047857" },
-  creatinine: { icon: Waves, tint: "border-emerald-200/60 bg-emerald-50 text-emerald-700", accent: "#047857" },
-  uacr: { icon: FlaskConical, tint: "border-teal-200/60 bg-teal-50 text-teal-700", accent: "#0f766e" },
-  ldl: { icon: TestTube, tint: "border-fuchsia-200/60 bg-fuchsia-50 text-fuchsia-700", accent: "#a21caf" },
-  hdl: { icon: TestTube, tint: "border-fuchsia-200/60 bg-fuchsia-50 text-fuchsia-700", accent: "#a21caf" },
-  triglycerides: { icon: TestTube, tint: "border-fuchsia-200/60 bg-fuchsia-50 text-fuchsia-700", accent: "#a21caf" },
-  potassium: { icon: Beaker, tint: "border-slate-200/60 bg-slate-50 text-slate-700", accent: "#334155" },
+  hba1c: { icon: Droplet, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  fastingGlucose: { icon: Flame, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  randomGlucose: { icon: Flame, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  postprandialGlucose: { icon: Flame, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  weightKg: { icon: Scale, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  systolic: { icon: HeartPulse, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  diastolic: { icon: HeartPulse, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  egfr: { icon: Waves, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  creatinine: { icon: Waves, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  uacr: { icon: FlaskConical, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  ldl: { icon: TestTube, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  hdl: { icon: TestTube, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  triglycerides: { icon: TestTube, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
+  potassium: { icon: Beaker, tint: "border-brand-200 bg-brand-100/20 text-brand-700", accent: "#28649b" },
 };
 
 export function paramStyle(key: string): ParamStyle {

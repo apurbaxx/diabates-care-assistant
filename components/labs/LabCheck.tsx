@@ -256,7 +256,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
                       {v.value.toFixed(meta.decimals)} {meta.unit}
                     </td>
                     <td className="py-1.5 text-right">
-                      <button onClick={() => removeValue(v.key)} className="text-muted hover:text-status-critical">
+                      <button onClick={() => removeValue(v.key)} className="text-muted hover:text-brand-700">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
@@ -340,12 +340,6 @@ export function LabCheck({ patient }: { patient: Patient }) {
                           {r.delta > 0 ? "+" : ""}
                           {r.delta.toFixed(parameterMeta(r.key).decimals)} {r.unit}
                           {r.notable && " ●"}
-                          {r.rangeStatus === "above-range" && (
-                            <span className="ml-1.5 text-xs font-normal text-muted">above range</span>
-                          )}
-                          {r.rangeStatus === "below-range" && (
-                            <span className="ml-1.5 text-xs font-normal text-muted">below range</span>
-                          )}
                         </span>
                       ) : (
                         <span className="text-muted">new</span>

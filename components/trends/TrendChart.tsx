@@ -68,14 +68,14 @@ export function TrendChart({
           <CartesianGrid stroke="var(--color-gridline)" strokeDasharray="0" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: "var(--color-muted)" }}
+            tick={{ fontSize: 14, fill: "var(--color-muted)" }}
             axisLine={{ stroke: "var(--color-baseline)" }}
             tickLine={false}
           />
           <YAxis
-            width={44}
+            width={58}
             domain={[min - pad, max + pad]}
-            tick={{ fontSize: 11, fill: "var(--color-muted)" }}
+            tick={{ fontSize: 14, fill: "var(--color-muted)" }}
             axisLine={false}
             tickLine={false}
           />
@@ -102,7 +102,7 @@ export function TrendChart({
               label={{
                 value: r.label,
                 position: "insideTopRight",
-                fontSize: 10,
+                fontSize: 13,
                 fill: "var(--color-muted)",
               }}
             />
@@ -120,7 +120,7 @@ export function TrendChart({
                   cx={props.cx}
                   cy={props.cy}
                   r={isHighlighted ? 6 : 3.5}
-                  fill={isHighlighted ? "var(--color-status-critical)" : color}
+                  fill={isHighlighted ? "var(--color-brand-700)" : color}
                   stroke={isHighlighted ? "var(--color-surface)" : "none"}
                   strokeWidth={isHighlighted ? 2 : 0}
                 />

@@ -1,323 +1,62 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Sparkles, BookOpen } from "lucide-react";
 import Link from "next/link";
-
+import { ArrowLeft } from "lucide-react";
 import { useAppStore, ensureSeeded } from "@/lib/store";
 import { runEngine } from "@/lib/clinical/engine";
 import { sortedVisits, ageAt } from "@/lib/clinical/derive";
-import { SECTIONS, type SectionId } from "@/lib/nav";
 import { EvidenceProvider } from "@/components/shared/EvidenceContext";
 import { SafetyFooter } from "@/components/shared/SafetyFooter";
-import { OverviewPanel } from "@/components/patient/OverviewPanel";
+import { OverviewPanel } from "./OverviewPanel";
 import { VisitTimeline } from "@/components/history/VisitTimeline";
 import { VisitComparison } from "@/components/history/VisitComparison";
 import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
 import { MedicationTimeline } from "@/components/meds/MedicationTimeline";
 import { LabCheck } from "@/components/labs/LabCheck";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
-import Image from "next/image";
-import { cn } from "@/lib/cn";
+import { PatientSummaries, SummaryEditor } from "@/components/workflow/PatientWorkflow";
+import { newSummary, type VisitSummary } from "@/lib/workflow";
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
-}
-
-// Tab configuration mapped to section ids
-const TAB_SECTIONS: SectionId[] = [
-  "overview",
-  "history",
-  "trends",
-  "medications",
-  "labs",
-  "assistant",
-];
-
-const TAB_LABELS: Record<SectionId, string> = {
-  overview: "Overview",
-  history: "History",
-  trends: "Trends & Patterns",
-  comparison: "Comparison",
-  medications: "Medications",
-  labs: "Labs & Evidence",
-  assistant: "AI Assistant",
-};
+const TABS = [ ["overview", "Overview"], ["history", "Clinical timeline"], ["summaries", "Visit summaries"], ["background", "History"], ["trends", "Trends & Patterns"], ["comparison", "Comparison"], ["medications", "Medications"], ["labs", "Labs & Evidence"], ["assistant", "AI Assistant"] ] as const;
 
 export function PatientDashboard({ patientId }: { patientId: string }) {
-  const router = useRouter();
-  const hasHydrated = useAppStore((s) => s.hasHydrated);
-  const patient = useAppStore((s) => s.patients.find((p) => p.id === patientId));
-  const [activeTab, setActiveTab] = useState<SectionId>("overview");
-
+  const hasHydrated = useAppStore(s => s.hasHydrated);
+  const patient = useAppStore(s => s.patients.find(p => p.id === patientId));
+  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [summary, setSummary] = useState<VisitSummary>();
+  const [comparisonPair, setComparisonPair] = useState<{current: string; previous: string}>();
+  useEffect(() => { if (hasHydrated) ensureSeeded(); }, [hasHydrated]);
+  const engine = useMemo(() => patient ? runEngine(patient) : undefined, [patient]);
   useEffect(() => {
-    if (hasHydrated) ensureSeeded();
-  }, [hasHydrated]);
-
-  // Track active section via scroll
-  useEffect(() => {
-    const sections = SECTIONS.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
-    if (sections.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActiveTab(visible[0].target.id as SectionId);
-      },
-      { rootMargin: "-15% 0px -70% 0px" },
-    );
-    sections.forEach((s) => observer.observe(s));
+    if (!hasHydrated || !patient) return;
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(e => e.isIntersecting).sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (visible[0]) setActiveTab(visible[0].target.id);
+    }, {rootMargin:"-15% 0px -65% 0px"});
+    TABS.forEach(([id]) => { const el = document.getElementById(id); if(el) observer.observe(el); });
     return () => observer.disconnect();
-  }, []);
-
-  const engine = useMemo(() => (patient ? runEngine(patient) : undefined), [patient]);
-
-  if (!hasHydrated) {
-    return <div className="p-8 text-sm text-muted">Loading…</div>;
-  }
-
-  if (!patient || !engine) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="text-sm text-muted">Patient not found. It may have been generated in another session.</p>
-        <button onClick={() => router.push("/")} className="text-sm font-medium text-brand-600 underline">
-          Back to patient list
-        </button>
-      </div>
-    );
-  }
-
+  }, [hasHydrated, patient?.id]);
+  function navigate(id: string) { document.getElementById(id)?.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",block:"start"}); setActiveTab(id); }
+  if (!hasHydrated) return <div className="p-8 text-sm" role="status">Loading patient record…</div>;
+  if (!patient || !engine) return <div className="p-12 text-center"><p>Patient record not found.</p><Link href="/" className="record-link">Back to patients</Link></div>;
   const visits = sortedVisits(patient);
-  const age = ageAt(patient.dob, new Date().toISOString().slice(0, 10));
-
-  function scrollToSection(id: SectionId) {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    setActiveTab(id);
-  }
-
-  // Format diabetes type nicely for badge
-  const diabetesTypeLabel = patient.diabetesType === "type-1"
-    ? "Type 1"
-    : patient.diabetesType === "type-2"
-    ? "Type 2"
-    : patient.diabetesType.replace(/-/g, " ");
-
-  return (
-    <EvidenceProvider>
-      <div className="flex min-h-screen flex-col bg-page">
-        {/* ── Top header bar ── */}
-        <header className="patient-header sticky top-0 z-30 flex items-center justify-between border-b border-gridline bg-surface px-6 py-3 sm:px-8 print:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center justify-center rounded-lg p-1.5 text-muted transition hover:bg-page hover:text-ink"
-              aria-label="Back to patient list"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <Image src="/logo.png" alt="ClinIQ" width={64} height={64} className="shrink-0 object-contain" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/knowledge-assistant"
-              className="flex items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-100/40 px-3 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-500 hover:text-white"
-              title="Search official clinical guidelines"
-            >
-              <BookOpen className="h-4 w-4" />
-              Knowledge Explorer
-            </Link>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-ink-secondary transition hover:bg-page hover:text-ink"
-              title="Open the browser print dialog (use 'Save as PDF' to export)"
-            >
-              <Printer className="h-4 w-4" />
-              Print / Export
-            </button>
-            <button
-              onClick={() => scrollToSection("assistant")}
-              className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
-            >
-              <Sparkles className="h-4 w-4" />
-              AI ASSISTANT
-            </button>
-          </div>
-
-        </header>
-
-        {/* ── Scrollable content ── */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="w-full px-6 py-6 sm:px-8">
-            {/* Patient hero section */}
-            <div className="mb-0 rounded-t-xl border border-b-0 border-gridline bg-surface px-6 pt-6">
-              {/* Breadcrumb */}
-              <nav className="mb-4 flex items-center gap-1.5 text-sm text-muted print:hidden" aria-label="Breadcrumb">
-                <button onClick={() => router.push("/")} className="hover:text-ink hover:underline">
-                  Patients
-                </button>
-                <span className="text-gridline">›</span>
-                <span className="font-medium text-ink">{patient.name}</span>
-              </nav>
-
-              {/* Avatar + name + meta row */}
-              <div className="mb-5 flex flex-wrap items-center gap-4">
-                {/* Avatar */}
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-700">
-                  {initials(patient.name)}
-                </div>
-                {/* Name + sub info */}
-                <div>
-                  <h1 className="text-2xl font-bold text-ink">{patient.name}</h1>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {patient.mrn} · {age} · {patient.sex.charAt(0).toUpperCase() + patient.sex.slice(1)} ·{" "}
-                    {diabetesTypeLabel} · {engine.derived.diabetesDurationYears.toFixed(1)} years history
-                  </p>
-                  {/* Status badges */}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
-                      ⬡ {diabetesTypeLabel}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                      ● Active
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tab navigation */}
-              <nav className="flex gap-1 overflow-x-auto print:hidden" aria-label="Patient record sections">
-                {TAB_SECTIONS.map((id) => (
-                  <button
-                    key={id}
-                    onClick={() => scrollToSection(id)}
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition",
-                      activeTab === id
-                        ? "border-brand-500 text-brand-600"
-                        : "border-transparent text-ink-secondary hover:border-gridline hover:text-ink",
-                    )}
-                  >
-                    {TAB_LABELS[id]}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-            {/* Main content + right rail */}
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-              {/* Left: scrollable sections */}
-              <main className="min-w-0 space-y-0">
-                {/* Overview */}
-                <section id="overview" className="scroll-mt-24 border border-t-0 border-gridline bg-surface px-6 py-6">
-                  <OverviewPanel patient={patient} engine={engine} />
-                </section>
-
-                {/* History */}
-                <section id="history" className="scroll-mt-24 mt-6 space-y-2 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">Patient history</h2>
-                  <p className="mb-4 text-sm text-muted">Longitudinal visit record</p>
-                  <VisitTimeline visits={visits} insights={engine.insights} />
-                </section>
-
-                {/* Trends */}
-                <section id="trends" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">Trends &amp; patterns</h2>
-                  <p className="mb-4 text-sm text-muted">Parameter trajectories over time</p>
-                  <TrendWorkbench trends={engine.trends} insights={engine.insights} />
-                </section>
-
-                {/* Comparison */}
-                <section id="comparison" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">Test comparison</h2>
-                  <p className="mb-4 text-sm text-muted">Previous visit vs. most recent results</p>
-                  <VisitComparison patient={patient} />
-                </section>
-
-                {/* Medications */}
-                <section id="medications" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">Medication insights</h2>
-                  <p className="mb-4 text-sm text-muted">Drug therapy timeline</p>
-                  <MedicationTimeline visits={visits} insights={engine.insights} />
-                </section>
-
-                {/* Labs */}
-                <section id="labs" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">New labs &amp; evidence</h2>
-                  <p className="mb-4 text-sm text-muted">Upload and compare a new report</p>
-                  <LabCheck patient={patient} />
-                </section>
-
-                {/* AI Assistant */}
-                <section id="assistant" className="scroll-mt-24 mt-6 rounded-xl border border-gridline bg-surface px-6 py-6">
-                  <h2 className="text-lg font-semibold text-ink">AI Assistant</h2>
-                  <p className="mb-4 text-sm text-muted">Grounded Q&amp;A assistant</p>
-                  <AssistantPanel patient={patient} engine={engine} />
-                </section>
-              </main>
-
-              {/* Right rail — sticky */}
-              <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-                <RightRail engine={engine} />
-              </aside>
-            </div>
-          </div>
-
-          <SafetyFooter />
-        </div>
-      </div>
-    </EvidenceProvider>
-  );
-}
-
-import { CalendarClock, ChevronRight } from "lucide-react";
-import type { EngineResult } from "@/lib/types";
-
-import { GuidelineCitation } from "@/components/shared/GuidelineCitation";
-
-function RightRail({ engine }: { engine: EngineResult }) {
-  const latestVisit = engine.derived.latestVisit;
-  const { summary } = engine;
-
-  return (
-    <>
-      {/* Last updated */}
-      {latestVisit && (
-        <div className="rounded-xl border border-gridline bg-surface p-4">
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-brand-500" />
-              <h3 className="text-sm font-semibold text-ink">Last updated</h3>
-            </div>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-              Up to date
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-ink-secondary">{latestVisit.date}</p>
-        </div>
-      )}
-
-      {/* Relevant reference information */}
-      {summary.guidelines.length > 0 && (
-        <div className="rounded-xl border border-gridline bg-surface p-4">
-          <div className="mb-1 flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-brand-500" />
-            <h3 className="text-sm font-semibold text-ink">Relevant reference information</h3>
-          </div>
-          <p className="mb-3 text-xs text-muted leading-relaxed">
-            General guideline statements related to the values shown — not a personalised recommendation for this patient.
-          </p>
-          <div className="max-h-[600px] space-y-2 overflow-y-auto pr-1">
-            {summary.guidelines.map((g) => (
-              <GuidelineCitation key={g.id} guideline={g} />
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  );
+  const dates = [...visits.map(v => v.date), ...patient.labReports.map(r => r.date)].sort();
+  return <EvidenceProvider><div className="patient-record">
+    <header className="record-header patient-header print:hidden"><div className="record-brand"><Link href="/" aria-label="Back to patient list"><ArrowLeft size={20}/></Link><Link href="/" className="record-wordmark">CliniQ</Link></div><div className="record-header-actions"><Link href="/knowledge-assistant">Knowledge Explorer</Link><button onClick={() => window.print()}>Print / Export</button><button onClick={() => setSummary(newSummary(patient))}>Generate visit summary</button><button className="record-primary" onClick={() => navigate("assistant")}>AI assistant</button></div></header>
+    <div className="record-container"><div className="record-hero"><nav aria-label="Breadcrumb"><Link href="/">Patients</Link><span> / {patient.name}</span></nav><h1>{patient.name}</h1><div className="record-identity-row"><div><p className="record-meta">{patient.mrn} · {ageAt(patient.dob,new Date().toISOString().slice(0,10))} · {patient.sex.charAt(0).toUpperCase()+patient.sex.slice(1)} · {patient.diabetesType.replace("type-", "Type ")} · {engine.derived.diabetesDurationYears.toFixed(1)} years history</p><p className="record-provenance">{patient.archetype ? "Synthetic demonstration patient · " : ""}Saved patient record · {visits.length} recorded visit{visits.length === 1 ? "" : "s"}</p></div><p className="record-updated">{dates.length ? `Latest record ${dates.at(-1)}` : "No dated records"}</p></div></div>
+    <nav className="record-tabs print:hidden" aria-label="Patient record sections">{TABS.map(([id,label]) => <button key={id} aria-current={activeTab===id ? "location" : undefined} onClick={() => navigate(id)}>{label}</button>)}</nav>
+    <div className="record-layout"><main className="record-main">
+      <section id="overview"><OverviewPanel patient={patient} engine={engine}/></section>
+      <section id="history" className="record-section"><div className="record-section-heading"><h2>Clinical timeline</h2><span>{visits.length} recorded visits</span></div><p className="record-description">Explore recorded measurements, treatment changes and clinician notes by visit.</p>{visits.length ? <VisitTimeline visits={visits} insights={engine.insights} onCompare={(current, previous) => { setComparisonPair({current, previous}); navigate("comparison"); }}/> : <p className="record-empty">No visits recorded.</p>}</section>
+      <section className="record-section"><h2>Visit summaries</h2><p className="record-description">Create, review and print summaries from this patient’s saved record.</p><PatientSummaries key={patient.id} patient={patient}/></section>
+      <section id="background" className="record-section"><h2>Patient history</h2><dl className="record-facts"><div><dt>Diagnosed</dt><dd>{patient.diagnosisDate}</dd></div><div><dt>Smoking</dt><dd>{patient.smoking}</dd></div><div><dt>Comorbidities</dt><dd>{patient.comorbidities.map(c => c.replace(/-/g," ")).join(", ") || "None recorded"}</dd></div><div><dt>Allergies</dt><dd>{patient.allergies.join(", ") || "None recorded"}</dd></div><div><dt>Background</dt><dd>{patient.background || "Not recorded"}</dd></div></dl></section>
+      <section id="trends" className="record-section"><h2>Trends &amp; patterns</h2><p className="record-description">Measurement trajectories across the available record.</p><TrendWorkbench trends={engine.trends} insights={engine.insights}/></section>
+      <section id="comparison" className="record-section"><h2>Visit comparison</h2><p className="record-description">Compare measurements between recorded visits.</p><VisitComparison key={comparisonPair ? `${comparisonPair.current}:${comparisonPair.previous}` : patient.id} patient={patient} initialCurrentId={comparisonPair?.current} initialPreviousId={comparisonPair?.previous}/></section>
+      <section id="medications" className="record-section"><h2>Medications</h2><p className="record-description">Recorded treatment history, dose changes and supporting evidence.</p><MedicationTimeline visits={visits} insights={engine.insights}/></section>
+      <section id="labs" className="record-section"><h2>Labs &amp; evidence</h2><p className="record-description">Upload, review and compare laboratory reports with this record.</p><LabCheck patient={patient}/></section>
+      <section id="assistant" className="record-section"><h2>AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></section>
+    </main><aside className="record-references"><h2>Reference information</h2><p className="record-description">General guideline statements related to the values shown. Not a personalised recommendation for this patient.</p>{engine.summary.guidelines.length ? engine.summary.guidelines.map(g => <a key={g.id} className="record-citation" href={g.url} target="_blank" rel="noreferrer"><strong>{g.source} {g.year}</strong><small>{g.section}{g.grade && <span> · Grade {g.grade}</span>}</small><b>{g.title}</b><p>{g.statement}</p></a>) : <p className="record-empty">No guideline references associated with this record.</p>}</aside></div></div><SafetyFooter/>
+    {summary && <SummaryEditor summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
+  </div></EvidenceProvider>;
 }

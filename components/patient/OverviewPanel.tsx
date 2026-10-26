@@ -1,341 +1,40 @@
-import { User, Droplets, Calendar, Cigarette, ClipboardList, Syringe, Pill, ChevronRight } from "lucide-react";
+"use client";
+
 import type { EngineResult, Patient, ParameterSeriesPoint } from "@/lib/types";
-import { ageAt } from "@/lib/clinical/derive";
-import { formatWithUnit } from "@/lib/clinical/units";
-import { paramStyle } from "@/lib/clinical/paramStyle";
-import { AiMarker } from "@/components/shared/Badges";
-import { Sparkline } from "@/components/shared/Sparkline";
-import { PatientSummaries } from "@/components/workflow/PatientWorkflow";
-import { cn } from "@/lib/cn";
+import { ckdEpi2021, ageAt, CKD_EPI_METHOD } from "@/lib/clinical/derive";
+import { parameterMeta, formatValue } from "@/lib/clinical/units";
+import { useEvidence } from "@/components/shared/EvidenceContext";
+import { InsightCard } from "@/components/shared/InsightCard";
 
-const COMORBIDITY_LABEL: Record<string, string> = {
-  hypertension: "Hypertension",
-  dyslipidemia: "Dyslipidaemia",
-  ckd: "Chronic kidney disease",
-  ascvd: "ASCVD",
-  "heart-failure": "Heart failure",
-  obesity: "Obesity",
-  retinopathy: "Retinopathy",
-  neuropathy: "Neuropathy",
-  nafld: "NAFLD",
-  hypothyroidism: "Hypothyroidism",
-  depression: "Depression",
-};
-
-function StatTile({
-  label,
-  value,
-  unit,
-  sub,
-  previousLabel,
-  paramKey,
-  points,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  sub?: string;
-  previousLabel?: string;
-  paramKey: string;
-  points?: ParameterSeriesPoint[];
-}) {
-  const { icon: Icon, tint, accent } = paramStyle(paramKey);
-  return (
-    <div className={cn("rounded-xl border p-4", tint)}>
-      {/* Header row: icon + label */}
-      <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide opacity-80">
-        <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
-        {label}
-      </div>
-
-      {/* Value + sparkline row */}
-      <div className="flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-2xl font-bold tabular-nums text-ink leading-none">
-            {value}
-            {unit && <span className="ml-1 text-sm font-medium text-ink-secondary">{unit}</span>}
-          </div>
-          {sub && <div className="mt-1 text-xs text-ink-secondary">{sub}</div>}
-          {previousLabel && (
-            <div className="mt-1.5 text-xs text-muted">{previousLabel}</div>
-          )}
-        </div>
-        {points && points.length >= 2 && (
-          <div className="shrink-0" style={{ color: accent }}>
-            <Sparkline points={points} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+const MEASURES = ["hba1c", "fastingGlucose", "systolic", "egfr", "uacr", "weightKg"];
 
 export function OverviewPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
-  const { derived, summary } = engine;
-  const latestVisit = derived.latestVisit;
-  const prevVisit = derived.previousVisit;
-
-  const age = ageAt(patient.dob, new Date().toISOString().slice(0, 10));
-
-  // Build "Previous: X" labels
-  function prevHba1c() {
-    const v = prevVisit?.labs.hba1c;
-    const d = prevVisit?.date;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("hba1c", v)}${d ? ` (${d})` : ""}`;
-  }
-  function prevGlucose() {
-    const v = prevVisit?.labs.fastingGlucose;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("fastingGlucose", v)}`;
-  }
-  function prevBP() {
-    if (!prevVisit?.vitals.systolic) return undefined;
-    return `Previous: ${prevVisit.vitals.systolic}/${prevVisit.vitals.diastolic} mmHg`;
-  }
-  function prevEgfr() {
-    if (!prevVisit) return undefined;
-    const prev = engine.trends.egfr?.points?.slice(-2, -1)[0]?.value;
-    if (!prev) return undefined;
-    return `Previous: ${prev.toFixed(0)}`;
-  }
-  function prevUacr() {
-    const v = prevVisit?.labs.uacr;
-    if (!v) return undefined;
-    return `Previous: ${formatWithUnit("uacr", v)}`;
-  }
-  function prevWeight() {
-    const v = prevVisit?.vitals.weightKg;
-    if (!v) return undefined;
-    return `Previous: ${v.toFixed(1)} kg`;
-  }
-
-  // Medications from latest visit
-  const currentMeds = latestVisit?.medications ?? [];
-  const insulinMeds = currentMeds.filter(
-    (m) => m.medClass === "basal-insulin" || m.medClass === "bolus-insulin" || m.medClass === "premix-insulin",
-  );
-  const otherMeds = currentMeds.filter(
-    (m) => m.medClass !== "basal-insulin" && m.medClass !== "bolus-insulin" && m.medClass !== "premix-insulin",
-  );
-
-  return (
-    <div className="space-y-6">
-      {/* ── AI Summary ── */}
-      <div className="rounded-xl border border-brand-300/60 bg-brand-100/25 p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <AiMarker label="AI Summary" />
-          <span className="text-xs text-muted">
-            Generated from this record — review all details on the below.
-          </span>
-        </div>
-        <h2 className="text-base font-semibold text-ink">{summary.headline}</h2>
-        <div className="mt-2 space-y-2">
-          {summary.paragraphs.map((p, i) => (
-            <p key={i} className="text-sm leading-relaxed text-ink-secondary">
-              {p}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Metric tiles: 3 columns × 2 rows ── */}
-      <PatientSummaries key={patient.id} patient={patient} />
-
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-ink">
-          Latest measurements{latestVisit ? ` (${latestVisit.date})` : ""}
-        </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <StatTile
-            label="HbA1c"
-            value={latestVisit?.labs.hba1c != null ? `${latestVisit.labs.hba1c}` : "—"}
-            unit={latestVisit?.labs.hba1c != null ? "%" : undefined}
-            paramKey="hba1c"
-            points={engine.trends.hba1c?.points}
-            previousLabel={prevHba1c()}
-          />
-          <StatTile
-            label="Fasting glucose"
-            value={latestVisit?.labs.fastingGlucose != null ? `${latestVisit.labs.fastingGlucose}` : "—"}
-            unit={latestVisit?.labs.fastingGlucose != null ? "mg/dL" : undefined}
-            paramKey="fastingGlucose"
-            points={engine.trends.fastingGlucose?.points}
-            previousLabel={prevGlucose()}
-          />
-          <StatTile
-            label="Blood pressure"
-            value={
-              latestVisit?.vitals.systolic
-                ? `${latestVisit.vitals.systolic}/${latestVisit.vitals.diastolic}`
-                : "—"
-            }
-            unit={latestVisit?.vitals.systolic ? "mmHg" : undefined}
-            paramKey="systolic"
-            points={engine.trends.systolic?.points}
-            previousLabel={prevBP()}
-          />
-          <StatTile
-            label="eGFR"
-            value={derived.egfr ? `${derived.egfr.toFixed(0)}` : "—"}
-            unit={derived.egfr ? "mL/min/1.73m²" : undefined}
-            sub={derived.ckdStage}
-            paramKey="egfr"
-            points={engine.trends.egfr?.points}
-            previousLabel={prevEgfr()}
-          />
-          <StatTile
-            label="UACR"
-            value={latestVisit?.labs.uacr != null ? `${latestVisit.labs.uacr}` : "—"}
-            unit={latestVisit?.labs.uacr != null ? "mg/g" : undefined}
-            sub={derived.albuminuriaStage}
-            paramKey="uacr"
-            points={engine.trends.uacr?.points}
-            previousLabel={prevUacr()}
-          />
-          <StatTile
-            label="Weight / BMI"
-            value={latestVisit?.vitals.weightKg ? `${latestVisit.vitals.weightKg.toFixed(1)}` : "—"}
-            unit={latestVisit?.vitals.weightKg ? "kg" : undefined}
-            sub={derived.bmi ? `BMI ${derived.bmi.toFixed(1)}` : undefined}
-            paramKey="weightKg"
-            points={engine.trends.weightKg?.points}
-            previousLabel={prevWeight()}
-          />
-        </div>
-      </div>
-
-      {/* ── Patient info + Treatment side-by-side ── */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Patient information */}
-        <div className="rounded-xl border border-gridline bg-page p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-brand-500" />
-            <h3 className="text-sm font-semibold text-ink">Patient information</h3>
-          </div>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
-            {/* Age / Sex */}
-            <div className="flex items-center gap-2 text-muted">
-              <User className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">Age / Sex</dt>
-            </div>
-            <dd className="text-ink font-medium">
-              {age} · {patient.sex.charAt(0).toUpperCase() + patient.sex.slice(1)}
-            </dd>
-
-            {/* MRN */}
-            <div className="flex items-center gap-2 text-muted">
-              <ClipboardList className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">MRN</dt>
-            </div>
-            <dd className="text-ink font-medium">{patient.mrn}</dd>
-
-            {/* Diabetes type */}
-            <div className="flex items-center gap-2 text-muted">
-              <Droplets className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">Diabetes type</dt>
-            </div>
-            <dd className="text-ink font-medium capitalize">
-              {patient.diabetesType.replace(/-/g, " ")}
-            </dd>
-
-            {/* Diagnosed */}
-            <div className="flex items-center gap-2 text-muted">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">Diagnosed</dt>
-            </div>
-            <dd className="text-ink font-medium">
-              {patient.diagnosisDate} ({derived.diabetesDurationYears.toFixed(1)} y)
-            </dd>
-
-            {/* Duration */}
-            <div className="flex items-center gap-2 text-muted">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">Duration</dt>
-            </div>
-            <dd className="text-ink font-medium">
-              {derived.diabetesDurationYears.toFixed(1)} years
-            </dd>
-
-            {/* Smoking */}
-            <div className="flex items-center gap-2 text-muted">
-              <Cigarette className="h-3.5 w-3.5 shrink-0" />
-              <dt className="text-xs">Smoking</dt>
-            </div>
-            <dd className="text-ink font-medium capitalize">{patient.smoking}</dd>
-          </dl>
-
-          {/* Comorbidities */}
-          <div className="mt-4 border-t border-gridline pt-3">
-            <dt className="mb-1 text-xs text-muted">Comorbidities</dt>
-            <dd className="text-sm text-ink font-medium">
-              {patient.comorbidities.length > 0
-                ? patient.comorbidities.map((c) => COMORBIDITY_LABEL[c] ?? c).join(", ")
-                : "None recorded"}
-            </dd>
-          </div>
-        </div>
-
-        {/* Current Treatment & Regimen */}
-        <div className="rounded-xl border border-gridline bg-page p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Syringe className="h-4 w-4 text-brand-500" />
-            <h3 className="text-sm font-semibold text-ink">Current Treatment &amp; Regimen</h3>
-          </div>
-
-          {currentMeds.length === 0 ? (
-            <p className="text-sm text-muted">No medications recorded.</p>
-          ) : (
-            <div className="space-y-3">
-              {/* Insulin regimen */}
-              {insulinMeds.length > 0 && (
-                <div className="flex items-start justify-between gap-3 rounded-lg border border-gridline bg-surface p-3">
-                  <div className="flex items-start gap-2.5">
-                    <Syringe className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-                    <div>
-                      <div className="text-sm font-semibold text-ink">Insulin regimen</div>
-                      <div className="mt-1 space-y-0.5">
-                        {insulinMeds.map((m) => (
-                          <div key={m.id} className="text-xs text-ink-secondary">
-                            {m.medClass === "basal-insulin" ? "Basal" : m.medClass === "bolus-insulin" ? "Bolus" : "Premix"}
-                            : {m.name} ({m.dose}
-                            {m.unit} {m.frequency})
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
-                </div>
-              )}
-
-              {/* Other medications */}
-              <div className="flex items-start justify-between gap-3 rounded-lg border border-gridline bg-surface p-3">
-                <div className="flex items-start gap-2.5">
-                  <Pill className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-                  <div>
-                    <div className="text-sm font-semibold text-ink">Other medications</div>
-                    <div className="mt-1 space-y-0.5">
-                      {otherMeds.length > 0 ? (
-                        otherMeds.map((m) => (
-                          <div key={m.id} className="text-xs text-ink-secondary">
-                            {m.name} {m.dose}
-                            {m.unit} {m.frequency}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-xs text-muted">None recorded</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
+  const { openInsight } = useEvidence();
+  const flags = engine.insights.filter(i => i.kind === "flagged-for-review");
+  const meds = engine.derived.latestVisit?.medications ?? [];
+  return <div className="record-overview">
+    <div className="record-section-heading"><h2>Summary</h2><span>Generated from this record · check against the details below</span></div>
+    <h3 className="record-headline">{engine.summary.headline}</h3>
+    {engine.summary.paragraphs.map((p, i) => <p className="record-narrative" key={i}>{p}</p>)}
+    {flags.length > 0 && <a className="record-review-banner" href="#review"><strong>{flags.length} item{flags.length === 1 ? "" : "s"} flagged for review</strong><span>Review findings and supporting evidence →</span></a>}
+    <div className="record-block">
+      <h2>Latest measurements</h2>
+      <div className="record-table-scroll"><table className="record-table measurement-table"><thead><tr><th>Measure</th><th>Latest</th><th>Change</th><th>Previous</th><th>Recorded</th><th><span className="sr-only">Evidence</span></th></tr></thead><tbody>
+        {MEASURES.map(key => {
+          const computedEgfr = key === "egfr" && !engine.trends.egfr?.points.length;
+          const points: ParameterSeriesPoint[] = computedEgfr ? [...patient.visits].sort((a,b) => a.date.localeCompare(b.date)).filter(v => v.labs.creatinine !== undefined).map(v => ({date:v.date,visitId:v.id,value:ckdEpi2021(v.labs.creatinine!,ageAt(patient.dob,v.date),patient.sex)})) : engine.trends[key]?.points ?? [];
+          const latest = points.at(-1);
+          const previous = points.at(-2);
+          const meta = parameterMeta(key);
+          const delta = latest && previous ? latest.value - previous.value : undefined;
+          const label = key === "egfr" ? `eGFR${engine.derived.ckdStage ? ` · ${engine.derived.ckdStage}` : ""}` : key === "uacr" ? `Urine albumin-to-creatinine${engine.derived.albuminuriaStage ? ` · ${engine.derived.albuminuriaStage}` : ""}` : meta.label;
+          return <tr key={key}><th scope="row">{label}</th><td><strong className="record-measure-value">{latest ? formatValue(key, latest.value) : "—"}</strong> <span className="record-unit">{latest ? meta.unit : "Not recorded"}</span></td><td>{delta === undefined ? "—" : `${delta > 0 ? "↑" : delta < 0 ? "↓" : "="} ${formatValue(key, Math.abs(delta))}`}</td><td className="record-previous">{previous ? `${formatValue(key, previous.value)} ${meta.unit} · ${previous.date}` : "No previous result"}</td><td>{latest?.date ?? "—"}</td><td>{latest && <button className="record-link" onClick={() => openInsight({id:`measurement-${key}`,scope:"overview",kind:"observation",severity:"info",title:label,statement:`${formatValue(key, latest.value)} ${meta.unit}, recorded ${latest.date}.`,confidence:"observed",parameters:[key],visitIds:latest.visitId ? [latest.visitId] : [],guidelines:[],evidence:[latest, ...(previous ? [previous] : [])].map((p, i) => ({id:`${key}-${i}`,kind:computedEgfr ? "computation" : "measurement",label:meta.label,date:p.date,value:formatValue(key,p.value),unit:meta.unit,visitId:p.visitId,reportId:p.reportId,method:computedEgfr ? CKD_EPI_METHOD : undefined,note:patient.visits.find(v => v.id === p.visitId)?.reason}))})}>Source</button>}</td></tr>;
+        })}
+      </tbody></table></div>
     </div>
-  );
+    <div className="record-block"><div className="record-section-heading"><h2>Current regimen</h2><a className="record-link" href="#medications">Open medications</a></div>
+      {meds.length ? <div className="record-table-scroll"><table className="record-table regimen-table"><thead><tr><th>Medication</th><th>Dose</th><th>Frequency</th></tr></thead><tbody>{meds.map(m => <tr key={m.id}><th scope="row">{m.name}</th><td>{m.dose} {m.unit}</td><td>{m.frequency}</td></tr>)}</tbody></table></div> : <p className="record-empty">No medications recorded.</p>}
+    </div>
+    {flags.length > 0 && <div id="review" className="record-block"><h2>Items for review</h2><div className="mt-4 space-y-3">{flags.map(i => <InsightCard key={i.id} insight={i} />)}</div></div>}
+  </div>;
 }
