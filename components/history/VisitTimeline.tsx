@@ -1,166 +1,84 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { Insight, Visit } from "@/lib/types";
-import { formatWithUnit } from "@/lib/clinical/units";
+import type { Insight, LabKey, Visit } from "@/lib/types";
+import { formatWithUnit, parameterMeta } from "@/lib/clinical/units";
 import { insightsForVisit } from "@/lib/clinical/engine";
-import { InsightCard } from "@/components/shared/InsightCard";
 import { describeChange } from "@/lib/clinical/analyzers/medication";
-import { paramStyle } from "@/lib/clinical/paramStyle";
-import { cn } from "@/lib/cn";
+import { useEvidence } from "@/components/shared/EvidenceContext";
 
-const DISPLAY_LABS: { key: keyof Visit["labs"]; label: string }[] = [
-  { key: "hba1c", label: "HbA1c" },
-  { key: "fastingGlucose", label: "Fasting glucose" },
-  { key: "creatinine", label: "Creatinine" },
-  { key: "egfr", label: "eGFR" },
-  { key: "uacr", label: "UACR" },
-  { key: "ldl", label: "LDL" },
-  { key: "potassium", label: "Potassium" },
-];
+const GLYCEMIA: LabKey[] = ["hba1c", "fastingGlucose", "postprandialGlucose", "randomGlucose"];
+const KIDNEY: LabKey[] = ["creatinine", "egfr", "uacr", "potassium", "sodium"];
+type Filter = "all" | "insights" | "medications";
 
-const weightStyle = paramStyle("weightKg");
-const WeightIcon = weightStyle.icon;
-const bpStyle = paramStyle("systolic");
-const BpIcon = bpStyle.icon;
+function Measurements({ title, visit, keys, vitals = false }: { title: string; visit: Visit; keys: LabKey[]; vitals?: boolean }) {
+  const recorded = keys.filter(key => visit.labs[key] !== undefined);
+  return <div className="clinical-measurements"><h3>{title}</h3><dl>
+    {recorded.map(key => <div key={key}><dt>{parameterMeta(key).label}</dt><dd>{formatWithUnit(key, visit.labs[key])}</dd></div>)}
+    {vitals && visit.vitals.weightKg !== undefined && <div><dt>Weight</dt><dd>{visit.vitals.weightKg.toFixed(1)} kg</dd></div>}
+    {vitals && (visit.vitals.systolic !== undefined || visit.vitals.diastolic !== undefined) && <div><dt>Blood pressure</dt><dd>{visit.vitals.systolic ?? "—"}/{visit.vitals.diastolic ?? "—"} mmHg</dd></div>}
+    {vitals && visit.vitals.heightCm !== undefined && <div><dt>Height</dt><dd>{visit.vitals.heightCm} cm</dd></div>}
+    {vitals && visit.vitals.heartRate !== undefined && <div><dt>Heart rate</dt><dd>{visit.vitals.heartRate} bpm</dd></div>}
+    {!recorded.length && (!vitals || !Object.values(visit.vitals).some(v => v !== undefined)) && <p className="clinical-empty">No measurements recorded.</p>}
+  </dl></div>;
+}
 
-export function VisitTimeline({ visits, insights }: { visits: Visit[]; insights: Insight[] }) {
+export function VisitTimeline({ visits, insights, onCompare }: { visits: Visit[]; insights: Insight[]; onCompare?: (currentId: string, previousId: string) => void }) {
   const chronological = [...visits].sort((a, b) => b.date.localeCompare(a.date));
   const [openId, setOpenId] = useState<string | undefined>(chronological[0]?.id);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [showAll, setShowAll] = useState(false);
+  const [selection, setSelection] = useState<string[]>([]);
+  const { openInsight } = useEvidence();
+  const filtered = chronological.filter(v => filter === "all" || (filter === "insights" ? insightsForVisit(insights, v.id).length > 0 : v.medicationChanges.some(c => c.type !== "unchanged")));
+  const condensed = !showAll && filtered.length > 2;
+  const visible = condensed ? [filtered[0], filtered[filtered.length - 1]] : filtered;
+  const latest = chronological[0];
+  const initial = chronological.at(-1);
 
-  return (
-    <div className="relative space-y-3 pl-5">
-      <div className="absolute bottom-2 left-[7px] top-2 w-px bg-gridline" aria-hidden />
-      {chronological.map((visit, idx) => {
+  function jump(id: string) {
+    setFilter("all"); setShowAll(true); setOpenId(id);
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(`timeline-${id}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" })));
+  }
+  function compare() {
+    const chosen = chronological.filter(v => selection.includes(v.id));
+    const pair = chosen.length === 2 ? chosen : chronological.slice(0, 2);
+    if (pair.length === 2) onCompare?.(pair[0].id, pair[1].id);
+  }
+
+  return <div className="clinical-timeline-layout"><div className="clinical-timeline-main">
+    <div className="clinical-filters" role="group" aria-label="Filter clinical visits">
+      {([["all", "All visits"], ["insights", "With AI insights"], ["medications", "Medication changes"]] as const).map(([value, label]) => <button key={value} aria-pressed={filter === value} onClick={() => {setFilter(value);setShowAll(false);}}>{label}</button>)}
+    </div>
+    <div className="clinical-timeline" aria-live="polite">
+      {!visible.length && <p className="clinical-empty">No recorded visits match this filter.</p>}
+      {visible.map((visit, index) => {
         const isOpen = openId === visit.id;
         const visitInsights = insightsForVisit(insights, visit.id);
-        const hasChanges = visit.medicationChanges.some((c) => c.type !== "unchanged");
-
-        return (
-          <div key={visit.id} className="relative">
-            <span
-              className={cn(
-                "absolute -left-5 top-1.5 h-3 w-3 rounded-full border-2 border-surface",
-                idx === 0 ? "bg-brand-500" : "bg-baseline",
-              )}
-              aria-hidden
-            />
-            <div className="overflow-hidden rounded-xl border border-border bg-surface">
-              <button
-                onClick={() => setOpenId(isOpen ? undefined : visit.id)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-page/60"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-ink">{visit.date}</span>
-                    <span className="text-xs text-muted">{visit.reason}</span>
-                    {idx === 0 && (
-                      <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
-                        Most recent
-                      </span>
-                    )}
-                  </div>
-                  {visitInsights.length > 0 && (
-                    <span className="mt-1 inline-block text-xs text-brand-600">
-                      {visitInsights.length} AI insight{visitInsights.length === 1 ? "" : "s"} anchored here
-                    </span>
-                  )}
-                </div>
-                {isOpen ? (
-                  <ChevronUp className="h-4 w-4 shrink-0 text-muted" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
-                )}
-              </button>
-
-              {isOpen && (
-                <div className="space-y-4 border-t border-gridline px-4 py-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {DISPLAY_LABS.filter((d) => visit.labs[d.key] !== undefined).map((d) => {
-                      const { icon: Icon, tint } = paramStyle(d.key);
-                      return (
-                        <div key={d.key} className={cn("rounded-lg border px-2.5 py-2", tint)}>
-                          <div className="flex items-center gap-1.5 text-xs font-medium">
-                            <Icon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
-                            {d.label}
-                          </div>
-                          <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
-                            {formatWithUnit(d.key, visit.labs[d.key])}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {visit.vitals.weightKg !== undefined && (
-                      <div className={cn("rounded-lg border px-2.5 py-2", weightStyle.tint)}>
-                        <div className="flex items-center gap-1.5 text-xs font-medium">
-                          <WeightIcon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
-                          Weight
-                        </div>
-                        <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
-                          {visit.vitals.weightKg.toFixed(1)} kg
-                        </div>
-                      </div>
-                    )}
-                    {visit.vitals.systolic !== undefined && (
-                      <div className={cn("rounded-lg border px-2.5 py-2", bpStyle.tint)}>
-                        <div className="flex items-center gap-1.5 text-xs font-medium">
-                          <BpIcon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
-                          Blood pressure
-                        </div>
-                        <div className="mt-0.5 text-sm font-semibold tabular-nums text-ink">
-                          {visit.vitals.systolic}/{visit.vitals.diastolic} mmHg
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Medications</div>
-                    <p className="text-sm text-ink-secondary">
-                      {visit.medications.length > 0
-                        ? visit.medications.map((m) => `${m.name} ${m.dose}${m.unit} ${m.frequency}`).join(", ")
-                        : "None recorded"}
-                    </p>
-                    {hasChanges && (
-                      <ul className="mt-1 space-y-0.5">
-                        {visit.medicationChanges
-                          .filter((c) => c.type !== "unchanged")
-                          .map((c) => (
-                            <li key={c.id} className="text-sm text-brand-700">
-                              ↳ {describeChange(c)}
-                              {c.reason && <span className="text-ink-secondary"> — {c.reason}</span>}
-                            </li>
-                          ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">
-                      Clinician note
-                    </div>
-                    <p className="text-sm text-ink-secondary">{visit.clinicianNote}</p>
-                  </div>
-
-                  {visitInsights.length > 0 && (
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                        AI insight for this visit
-                      </div>
-                      <div className="space-y-2">
-                        {visitInsights.map((i) => (
-                          <InsightCard key={i.id} insight={i} compact />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        );
+        const changes = visit.medicationChanges.filter(c => c.type !== "unchanged");
+        const otherLabs = (Object.keys(visit.labs) as LabKey[]).filter(key => !GLYCEMIA.includes(key) && !KIDNEY.includes(key));
+        return <Fragment key={visit.id}>
+          {index === 1 && condensed && <div className="clinical-hidden-visits"><span>{filtered.length - 2} more visit{filtered.length - 2 === 1 ? "" : "s"} between {filtered.at(-1)?.date} and {filtered[0].date}</span><button onClick={() => setShowAll(true)}>Show all</button></div>}
+          <article id={`timeline-${visit.id}`} className={`clinical-visit${visit.id === latest?.id ? " clinical-visit-latest" : ""}`}>
+            <button className="clinical-visit-toggle" aria-expanded={isOpen} aria-controls={`visit-details-${visit.id}`} onClick={() => setOpenId(isOpen ? undefined : visit.id)}>
+              <span className="clinical-visit-title"><strong>{visit.date}</strong><span>{visit.reason || "Reason not recorded"}</span>{visit.id === latest?.id && <small>Most recent</small>}</span>
+              {isOpen ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
+            </button>
+            {visitInsights.length > 0 && <p className="clinical-insight-count">{visitInsights.length} AI insight{visitInsights.length === 1 ? "" : "s"}{isOpen ? " anchored to this visit" : ""}</p>}
+            {isOpen && <div id={`visit-details-${visit.id}`} className="clinical-visit-details">
+              <div className="clinical-measurement-grid"><Measurements title="Glycaemia" visit={visit} keys={GLYCEMIA}/><Measurements title="Kidney" visit={visit} keys={KIDNEY}/><Measurements title="Other" visit={visit} keys={otherLabs} vitals/></div>
+              <div className="clinical-notes-grid"><div><h3>Medications</h3>{visit.medications.length ? <ul>{visit.medications.map(m => <li key={m.id}>{m.name} {m.dose} {m.unit} {m.frequency}</li>)}</ul> : <p>No medications recorded.</p>}
+                {changes.length > 0 && <div className="clinical-medication-changes"><h4>Treatment changes</h4><ul>{changes.map(c => <li key={c.id}>{describeChange(c)}{c.reason ? ` · ${c.reason}` : ""}</li>)}</ul></div>}
+              </div><div><h3>Clinician note</h3><p>{visit.clinicianNote || "No clinician note recorded."}</p></div></div>
+              {visitInsights.length > 0 && <div className="clinical-insights"><div className="clinical-insights-heading"><h3>AI insights for this visit</h3><span>Generated from the record</span></div>{visitInsights.map(insight => <div key={insight.id} className="clinical-insight-row"><button onClick={() => openInsight(insight)}>{insight.title}<span className="sr-only"> — View evidence</span></button><a href={insight.scope === "medication" ? "#medications" : "#trends"}>{insight.scope === "medication" ? "View medications" : "View in Trends"} →</a></div>)}</div>}
+            </div>}
+          </article>
+        </Fragment>;
       })}
+      {showAll && filtered.length > 2 && <button className="clinical-show-fewer" onClick={() => setShowAll(false)}>Show fewer visits</button>}
     </div>
-  );
+  </div><aside className="clinical-jump"><h3>Jump to visit</h3>{latest && <button className="clinical-jump-link" onClick={() => jump(latest.id)}><strong>{latest.date}</strong><span>Most recent</span></button>}{initial && initial.id !== latest?.id && <button className="clinical-jump-link" onClick={() => jump(initial.id)}><span>{initial.date}</span><span>Initial visit</span></button>}
+    {onCompare && <div className="clinical-compare"><p>Select two visits to compare their measurements side by side.</p><div className="clinical-compare-selectors">{[0, 1].map(index => <label key={index}><span>Visit {index + 1}</span><select aria-label={`Timeline comparison visit ${index + 1}`} value={selection[index] ?? chronological[index]?.id ?? ""} onChange={event => { const next = [selection[0] ?? chronological[0]?.id ?? "", selection[1] ?? chronological[1]?.id ?? ""]; next[index] = event.target.value; setSelection(next); }}>{chronological.map(v => <option key={v.id} value={v.id}>{v.date}</option>)}</select></label>)}</div><button className="clinical-compare-button" disabled={chronological.length < 2 || (selection[0] ?? chronological[0]?.id) === (selection[1] ?? chronological[1]?.id)} onClick={compare}>Compare visits</button></div>}
+  </aside></div>;
 }
