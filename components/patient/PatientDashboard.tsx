@@ -15,6 +15,7 @@ import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
 import { MedicationTimeline } from "@/components/meds/MedicationTimeline";
 import { LabCheck } from "@/components/labs/LabCheck";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
+import { PatientKnowledgeAssistant } from "@/components/knowledge/PatientKnowledgeAssistant";
 import { PatientSummaries, SummaryEditor } from "@/components/workflow/PatientWorkflow";
 import { newSummary, type VisitSummary } from "@/lib/workflow";
 
@@ -56,7 +57,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
       <section id="medications" className="record-section"><h2>Medications</h2><p className="record-description">Recorded treatment history, dose changes and supporting evidence.</p><MedicationTimeline visits={visits} insights={engine.insights}/></section>
       <section id="labs" className="record-section"><h2>Labs &amp; evidence</h2><p className="record-description">Upload, review and compare laboratory reports with this record.</p><LabCheck patient={patient}/></section>
       <section id="assistant" className="record-section"><h2>AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></section>
-    </main><aside className="record-references"><h2>Reference information</h2><p className="record-description">General guideline statements related to the values shown. Not a personalised recommendation for this patient.</p>{engine.summary.guidelines.length ? engine.summary.guidelines.map(g => <a key={g.id} className="record-citation" href={g.url} target="_blank" rel="noreferrer"><strong>{g.source} {g.year}</strong><small>{g.section}{g.grade && <span> · Grade {g.grade}</span>}</small><b>{g.title}</b><p>{g.statement}</p></a>) : <p className="record-empty">No guideline references associated with this record.</p>}</aside></div></div><SafetyFooter/>
+    </main><PatientKnowledgeAssistant /></div></div><SafetyFooter/>
     {summary && <SummaryEditor summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
   </div></EvidenceProvider>;
 }

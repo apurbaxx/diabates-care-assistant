@@ -38,6 +38,7 @@ ENV/
 .env
 .env.*
 !.env.example
+test-results/
 
 # Build and distribution
 build/
