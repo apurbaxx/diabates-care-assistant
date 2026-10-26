@@ -24,7 +24,7 @@ export function EvidenceDrawer({
   if (!insight) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="record-evidence fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto border-l border-border bg-surface shadow-2xl">
         <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-border bg-surface p-4">

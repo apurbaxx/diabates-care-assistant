@@ -24,7 +24,7 @@ function MedCard({ entry, current }: { entry: MedEntry; current: boolean }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="flex items-center gap-2 text-sm font-medium">
           <span
-            className={cn("h-2 w-2 shrink-0 rounded-full", current ? "bg-status-good" : "bg-status-critical")}
+            className={cn("h-2 w-2 shrink-0 rounded-full", current ? "bg-brand-500" : "bg-baseline")}
             aria-hidden
           />
           <span className={current ? "text-ink" : "text-ink-secondary"}>{med.name}</span>
@@ -104,7 +104,7 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
 
       <div className="rounded-xl border border-border bg-surface p-4">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-ink">
-          <Pill className="h-4 w-4 shrink-0 text-status-good" strokeWidth={2.25} />
+          <Pill className="h-4 w-4 shrink-0 text-brand-600" strokeWidth={2.25} />
           Current medications
         </h3>
         {currentMeds.length === 0 ? (
@@ -121,7 +121,7 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
       {pastMeds.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-4">
           <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold text-ink">
-            <Pill className="h-4 w-4 shrink-0 text-status-critical" strokeWidth={2.25} />
+            <Pill className="h-4 w-4 shrink-0 text-muted" strokeWidth={2.25} />
             Past medications
           </h3>
           <div className="mt-2 space-y-2">

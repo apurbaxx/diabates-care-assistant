@@ -33,7 +33,7 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
       </tbody></table></div>
     </div>
     <div className="record-block"><div className="record-section-heading"><h2>Current regimen</h2><a className="record-link" href="#medications">Open medications</a></div>
-      {meds.length ? <div className="record-table-scroll"><table className="record-table regimen-table"><thead className="sr-only"><tr><th>Medication</th><th>Dose</th><th>Frequency</th></tr></thead><tbody>{meds.map(m => <tr key={m.id}><th scope="row">{m.name}</th><td>{m.dose} {m.unit}</td><td>{m.frequency}</td></tr>)}</tbody></table></div> : <p className="record-empty">No medications recorded.</p>}
+      {meds.length ? <div className="record-table-scroll"><table className="record-table regimen-table"><thead><tr><th>Medication</th><th>Dose</th><th>Frequency</th></tr></thead><tbody>{meds.map(m => <tr key={m.id}><th scope="row">{m.name}</th><td>{m.dose} {m.unit}</td><td>{m.frequency}</td></tr>)}</tbody></table></div> : <p className="record-empty">No medications recorded.</p>}
     </div>
     {flags.length > 0 && <div id="review" className="record-block"><h2>Items for review</h2><div className="mt-4 space-y-3">{flags.map(i => <InsightCard key={i.id} insight={i} />)}</div></div>}
   </div>;

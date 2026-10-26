@@ -18,7 +18,7 @@ function Measurements({ title, visit, keys, vitals = false }: { title: string; v
     {recorded.map(key => <div key={key}><dt>{parameterMeta(key).label}</dt><dd>{formatWithUnit(key, visit.labs[key])}</dd></div>)}
     {vitals && visit.vitals.weightKg !== undefined && <div><dt>Weight</dt><dd>{visit.vitals.weightKg.toFixed(1)} kg</dd></div>}
     {vitals && (visit.vitals.systolic !== undefined || visit.vitals.diastolic !== undefined) && <div><dt>Blood pressure</dt><dd>{visit.vitals.systolic ?? "—"}/{visit.vitals.diastolic ?? "—"} mmHg</dd></div>}
-    {vitals && visit.vitals.heightCm !== undefined && <div><dt>Height</dt><dd>{visit.vitals.heightCm} cm</dd></div>}
+    {vitals && visit.vitals.heightCm !== undefined && <div><dt>Height</dt><dd>{visit.vitals.heightCm.toFixed(1)} cm</dd></div>}
     {vitals && visit.vitals.heartRate !== undefined && <div><dt>Heart rate</dt><dd>{visit.vitals.heartRate} bpm</dd></div>}
     {!recorded.length && (!vitals || !Object.values(visit.vitals).some(v => v !== undefined)) && <p className="clinical-empty">No measurements recorded.</p>}
   </dl></div>;
