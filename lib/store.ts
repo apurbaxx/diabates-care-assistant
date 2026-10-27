@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { LabReport, Patient } from "@/lib/types";
 import { buildSeedCohort } from "@/lib/data/seed";
-import { generatePatient, type GenerateOptions } from "@/lib/data/generator";
+import { generatePatient, repairFutureGeneratedVisits, type GenerateOptions } from "@/lib/data/generator";
 
 import { appointmentSchema, summarySchema, localDate, type Appointment, type VisitSummary } from "./workflow";
 
@@ -134,7 +134,8 @@ export const useAppStore = create<AppState>()(
       migrate: (state) => ({...(state as object), appointments: [], summaries: []}),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<AppState>;
-        const patients = Array.isArray(saved.patients) ? saved.patients : current.patients;
+        const patients = (Array.isArray(saved.patients) ? saved.patients : current.patients)
+          .map(p => repairFutureGeneratedVisits(p));
         const ids = new Set(patients.map(p=>p.id));
         const appointments = (saved.appointments ?? []).filter(a=>appointmentSchema.safeParse(a).success && ids.has(a.patientId));
         const summaries = (saved.summaries ?? []).filter(s=>summarySchema.safeParse(s).success && ids.has(s.patientId) && (!s.appointmentId || appointments.some(a=>a.id===s.appointmentId && a.patientId===s.patientId)));

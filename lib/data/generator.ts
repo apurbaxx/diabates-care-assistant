@@ -50,7 +50,32 @@ function interpolateCheckpoints(checkpoints: Checkpoint[], t: number): Checkpoin
 }
 
 function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Repair only generated visits affected by the old unbounded date jitter. */
+export function repairFutureGeneratedVisits(patient: Patient, today = isoDate(new Date())): Patient {
+  if (!patient.archetype || patient.seed === undefined || patient.id !== `p-${patient.archetype}-${patient.seed}`) return patient;
+  const correctedDates = new Map(patient.visits
+    .filter(v => v.id.startsWith(`${patient.id}-v`) && /^\d+$/.test(v.id.slice(`${patient.id}-v`.length)) && v.date > today)
+    .map(v => [v.date, today]));
+  if (!correctedDates.size) return patient;
+  return {
+    ...patient,
+    visits: patient.visits.map(v => {
+      // Report-review visits and their source dates are clinician supplied.
+      if (!v.id.startsWith(`${patient.id}-v`) || !/^\d+$/.test(v.id.slice(`${patient.id}-v`.length))) return v;
+      return {
+        ...v,
+        date: correctedDates.get(v.date) ?? v.date,
+        medications: v.medications.map(m => ({
+          ...m,
+          startDate: correctedDates.get(m.startDate) ?? m.startDate,
+          endDate: m.endDate ? correctedDates.get(m.endDate) ?? m.endDate : undefined,
+        })),
+      };
+    }),
+  };
 }
 
 export function generatePatient(opts: GenerateOptions): Patient {
@@ -76,15 +101,18 @@ export function generatePatient(opts: GenerateOptions): Patient {
 
   const totalVisits = Math.max(3, Math.round((opts.years * 12) / opts.visitIntervalMonths) + 1);
 
-  // Timeline start = totalVisits back from "today", with jitter per interval.
+  // Anchor each visit to today independently, clamping month ends to avoid
+  // Date.setMonth overflow (e.g. October 31 -> March 3 instead of February 28).
+  // Jitter must never turn a historical visit into a future observation.
   const visitDates: Date[] = [];
-  const start = new Date(now);
-  start.setMonth(start.getMonth() - opts.visitIntervalMonths * (totalVisits - 1));
   for (let i = 0; i < totalVisits; i++) {
-    const d = new Date(start);
-    d.setMonth(d.getMonth() + opts.visitIntervalMonths * i);
+    const d = new Date(now);
+    d.setDate(1);
+    d.setMonth(d.getMonth() - opts.visitIntervalMonths * (totalVisits - 1 - i));
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(now.getDate(), lastDay));
     d.setDate(d.getDate() + randInt(rng, -6, 6));
-    visitDates.push(d);
+    visitDates.push(d > now ? new Date(now) : d);
   }
 
   const patientId = `p-${opts.archetypeId}-${opts.seed}`;
