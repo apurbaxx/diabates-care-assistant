@@ -23,7 +23,7 @@ export function VisitComparison({ patient, initialCurrentId = "", initialPreviou
     ...patient,
     visits: [...(previousVisit ? [previousVisit] : []), ...(currentVisit ? [currentVisit] : [])],
   }), [patient, currentVisit, previousVisit]);
-  const history = useMemo(() => buildSeries(visits.filter(v => currentVisit && v.date <= currentVisit.date)), [visits, currentVisit]);
+  const history = useMemo(() => buildSeries(visits.filter(v => currentVisit && v.date <= currentVisit.date), patient), [visits, currentVisit]);
 
   if (!currentVisit) return <p className="record-empty">No visits recorded for this patient yet.</p>;
 

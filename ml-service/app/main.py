@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas import SearchRequest, SearchResponse, HealthResponse
 from app.retrieval import ModelManager, GuidelineIndex, HybridSearchEngine
+from app.patient_records import PatientSearchRequest, search_patient_documents
 
 # Configure privacy-preserving logging (do NOT log query terms or patient data)
 logging.basicConfig(
@@ -106,6 +107,12 @@ async def health_check():
         device=model_manager.device if model_manager else "cpu",
         version="1.0.0",
     )
+
+
+@app.post("/patient-record/search")
+def search_patient_record(request: PatientSearchRequest, api_key: Optional[str] = Depends(verify_api_key)):
+    # Independent request-scoped corpus. No PDF index access or patient persistence.
+    return search_patient_documents(request, model_manager)
 
 
 @app.post("/search", response_model=SearchResponse)

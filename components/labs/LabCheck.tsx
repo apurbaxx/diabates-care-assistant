@@ -10,6 +10,7 @@ import { paramStyle } from "@/lib/clinical/paramStyle";
 import { useAppStore } from "@/lib/store";
 import { InsightList } from "@/components/shared/InsightCard";
 import { cn } from "@/lib/cn";
+import { localDate, isCalendarDate } from "@/lib/dates";
 
 import { saveReportFile, downloadReportFile } from "@/lib/report-files";
 
@@ -26,7 +27,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
   const [stage, setStage] = useState<Stage>("input");
   const [rawText, setRawText] = useState("");
   const [fileName, setFileName] = useState<string | undefined>();
-  const [reportDate, setReportDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reportDate, setReportDate] = useState(() => localDate());
   const [values, setValues] = useState<ParsedLabValue[]>([]);
   const [unmatched, setUnmatched] = useState<string[]>([]);
   const [comparison, setComparison] = useState<LabComparison | undefined>();
@@ -100,6 +101,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
 
   async function analyze() {
     if (isSaving) return;
+    if (!isCalendarDate(reportDate) || reportDate > localDate()) { setStorageError("Report date must be on or before today."); return; }
     setIsSaving(true);
     const report: LabReport = {
       id: `report-${crypto.randomUUID()}`,
@@ -124,8 +126,8 @@ export function LabCheck({ patient }: { patient: Patient }) {
 
   function confirmAndCommit() {
     if (!pendingReportId) return;
-    acknowledgeLabReport(patient.id, pendingReportId, true);
-    reset();
+    try { acknowledgeLabReport(patient.id, pendingReportId, true); reset(); }
+    catch (error) { setStorageError(error instanceof Error ? error.message : "Could not verify report."); }
   }
 
   function discard() {
@@ -196,6 +198,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
           <label className="mb-1 block text-xs font-medium text-ink-secondary">Report date</label>
           <input
             type="date"
+            max={localDate()}
             value={reportDate}
             onChange={(e) => setReportDate(e.target.value)}
             className="mb-3 rounded-lg border border-border px-2.5 py-1.5 text-sm"

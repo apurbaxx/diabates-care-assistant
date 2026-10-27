@@ -197,7 +197,11 @@ export function generatePatient(opts: GenerateOptions): Patient {
       } else if (ev.type === "increase" || ev.type === "decrease") {
         const existing = activeMeds.get(ev.name);
         const fromDose = existing?.dose ?? ev.dose;
-        if (existing) existing.dose = ev.dose;
+        if (existing) {
+          existing.dose = ev.dose;
+          existing.frequency = ev.frequency;
+          existing.unit = ev.unit;
+        }
         changes.push({
           id: `${patientId}-chg-${medIdCounter}-${ev.name}-${i}`,
           medicationName: ev.name,
@@ -264,7 +268,7 @@ export function generatePatient(opts: GenerateOptions): Patient {
     sex,
     dob: isoDate(dob),
     diabetesType: archetype.diabetesType,
-    diagnosisDate: isoDate(diagnosisDate),
+    diagnosisDate: isoDate(diagnosisDate) > visits[0].date ? visits[0].date : isoDate(diagnosisDate),
     comorbidities: archetype.comorbidities as Comorbidity[],
     allergies: [],
     smoking: pick(rng, ["never", "never", "never", "former", "current"] as const),

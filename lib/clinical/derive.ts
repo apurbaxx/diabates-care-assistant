@@ -7,6 +7,7 @@ import type {
   Visit,
 } from "@/lib/types";
 import { yearsBetween } from "./stats";
+import { localDate } from "@/lib/dates";
 
 /**
  * Derived clinical quantities. Every function here is a published formula or a
@@ -120,17 +121,19 @@ export function latestLab(
 }
 
 export function deriveState(patient: Patient, asOf?: string): DerivedState {
-  const visits = sortedVisits(patient);
+  const referenceDate = asOf ?? localDate();
+  const visits = sortedVisits(patient).filter(v=>v.date<=referenceDate);
+  patient = {...patient, visits};
   const latestVisit = visits[visits.length - 1];
   const previousVisit = visits[visits.length - 2];
-  const referenceDate = asOf ?? latestVisit?.date ?? new Date().toISOString().slice(0, 10);
 
   const ageYears = ageAt(patient.dob, referenceDate);
   const diabetesDurationYears =
     Math.round(yearsBetween(patient.diagnosisDate, referenceDate) * 10) / 10;
 
-  const weight = latestVisit?.vitals.weightKg;
-  const height = latestVisit?.vitals.heightCm;
+  const vitalsVisit = [...visits].reverse().find(v => v.vitals.weightKg !== undefined && v.vitals.heightCm !== undefined);
+  const weight = vitalsVisit?.vitals.weightKg;
+  const height = vitalsVisit?.vitals.heightCm;
   const bmiValue = weight && height ? bmi(weight, height) : undefined;
 
   const creat = latestLab(patient, "creatinine");
@@ -138,10 +141,10 @@ export function deriveState(patient: Patient, asOf?: string): DerivedState {
 
   let egfr: number | undefined;
   let egfrSource: DerivedState["egfrSource"] = "unavailable";
-  if (reportedEgfr) {
+  if (reportedEgfr && (!creat || reportedEgfr.date >= creat.date)) {
     egfr = reportedEgfr.value;
     egfrSource = "reported";
-  } else if (creat) {
+  } else if (creat && creat.value > 0) {
     egfr = ckdEpi2021(creat.value, ageAt(patient.dob, creat.date), patient.sex);
     egfrSource = "computed-ckd-epi-2021";
   }

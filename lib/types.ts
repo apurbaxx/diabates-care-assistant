@@ -142,6 +142,7 @@ export interface Visit {
   medications: Medication[];
   medicationChanges: MedicationChange[];
   clinicianNote: string;
+  sourceReportId?: string;
 }
 
 export type LabReportSource = "upload" | "manual" | "synthetic";
@@ -303,6 +304,7 @@ export interface ParameterSeriesPoint {
   value: number;
   visitId?: string;
   reportId?: string;
+  method?: string;
 }
 
 export type TrendDirection =
@@ -412,4 +414,11 @@ export interface AssistantAnswer {
   narrative?: string;
   narrativeSource: "deterministic" | "llm";
   caveats: string[];
+  patientId?: string;
+  recordVersion?: string;
+  asOf?: string;
+  latestRecordDate?: string;
+  period?: { from?: string; to: string };
+  planningSource?: "rules" | "model";
+  noteSearchSource?: "local" | "python";
 }

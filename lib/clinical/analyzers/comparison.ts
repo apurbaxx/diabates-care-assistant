@@ -23,7 +23,7 @@ import { sortedVisits } from "../derive";
  */
 export function compareReport(patient: Patient, report: LabReport): LabComparison {
   const visits = sortedVisits(patient);
-  const series = buildSeries(visits);
+  const series = buildSeries(visits, patient);
 
   const reportedKeys = report.values.map((v) => v.key);
   const rows: LabComparisonRow[] = [];
@@ -110,7 +110,7 @@ export function compareVisits(patient: Patient): {
 
   if (!currentVisit) return { currentVisit: undefined, previousVisit: undefined, rows: [] };
 
-  const series = buildSeries(visits);
+  const series = buildSeries(visits, patient);
   const keys = (Object.keys(ANALYTES) as LabKey[]).filter(
     (key) => currentVisit.labs[key] !== undefined || previousVisit?.labs[key] !== undefined,
   );
@@ -173,8 +173,8 @@ function buildComparisonInsights(
         scope: "lab-report",
         kind: "observation",
         severity: "info",
-        title: "New report consistent with previous results",
-        statement: `All ${rows.length} parameter${rows.length === 1 ? "" : "s"} in this report are within measurement variability of the previous result.`,
+        title: "Report comparison",
+        statement: `${rows.filter(r => r.previous !== undefined).length} of ${rows.length} parameters have a previous measurement. No calculated change exceeds its measurement-variability threshold. Missing previous measurements cannot be compared.`,
         evidence: rows.flatMap((r) => r.evidence),
         parameters: rows.map((r) => r.key),
       }),
