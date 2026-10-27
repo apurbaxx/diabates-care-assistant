@@ -3,7 +3,7 @@
   "embedding_dimension": 384,
   "total_indexed_passages": 2032,
   "passages_hash": "4c398c305227666a0e8060e2f12b1504ba7416f7b693c27dc587bd7d675a121b",
-  "created_at": "2026-10-19T17:39:32Z",
+  "created_at": "2026-10-27T13:56:48Z",
   "passage_ids": [
     "rssdi-2024-glucose-monitoring-p1-001",
     "rssdi-2024-glucose-monitoring-p1-002",
