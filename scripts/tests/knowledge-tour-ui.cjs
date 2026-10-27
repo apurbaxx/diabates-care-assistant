@@ -1,0 +1,73 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+
+(async () => {
+  const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page.setDefaultTimeout(30000);
+    const errors = [];
+    let searches = 0;
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('request', request => { if (request.url().includes('/api/knowledge-assistant/search')) searches++; });
+    await page.route('**/api/knowledge-assistant/health', route => route.fulfill({ status: 503, body: '{}' }));
+    const url = `${process.env.TEST_BASE_URL || 'http://127.0.0.1:3100'}/knowledge-assistant`;
+    const key = 'cliniq:knowledge-assistant-tour:v1';
+    const mainKey = 'cliniq:workspace-tour:v1';
+    const dialog = page.getByRole('dialog');
+    const title = text => dialog.getByRole('heading', { name: text, exact: true }).waitFor();
+    const button = name => dialog.getByRole('button', { name, exact: true });
+    await page.goto(url);
+    await title('Welcome to Knowledge Assistant');
+    await page.reload();
+    await title('Welcome to Knowledge Assistant');
+    await button('Skip tour').first().click();
+    assert.equal(await page.evaluate(k => JSON.parse(localStorage.getItem(k)).outcome, key), 'skipped');
+    assert.equal(await page.evaluate(k => localStorage.getItem(k), mainKey), null);
+    await page.reload();
+    await page.getByRole('button', { name: 'Take a tour', exact: true }).click();
+    await title('Welcome to Knowledge Assistant');
+    await button('Start tour').click();
+    await title('Ask your question');
+    assert.equal(await page.locator('.tour-spotlight').getAttribute('data-active'), 'true');
+    await button('Next').click();
+    await title('Find relevant information');
+    await button('Back').click();
+    await title('Ask your question');
+    await button('Next').click();
+    await button('Next').click();
+    await title('Review the response');
+    assert.equal(await dialog.getAttribute('data-side'), 'center');
+    await button('Next').click();
+    await title('Review the sources');
+    await button('Next').click();
+    await title("You're ready to explore");
+    await button('Finish tour').click();
+    assert.equal(await page.evaluate(k => JSON.parse(localStorage.getItem(k)).outcome, key), 'completed');
+    await page.reload();
+    await page.getByRole('button', { name: 'Take a tour', exact: true }).waitFor();
+    assert.equal(await dialog.count(), 0);
+    // Hide the optional source panel; keep its explanatory step available.
+    await page.getByRole('button', { name: 'Passage details', exact: true }).click();
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.getByRole('button', { name: 'Take a tour', exact: true }).click();
+    await button('Start tour').click();
+    await dialog.getByRole('button', { name: 'Go to step 5: Review the sources', exact: true }).click();
+    await title('Review the sources');
+    assert.equal(await dialog.getAttribute('data-side'), 'center');
+    const bounds = await dialog.boundingBox();
+    assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 390 && bounds.y + bounds.height <= 664);
+    await page.keyboard.press('Tab');
+    assert(await dialog.evaluate(el => el.contains(document.activeElement)));
+    await page.keyboard.press('Escape');
+    assert.equal(await dialog.count(), 0);
+    // Main tour still launches independently and uses its original persistence.
+    await page.goto(url.replace('/knowledge-assistant', ''));
+    await title('Take a tour of your workspace');
+    await button('Skip tour').first().click();
+    assert.equal(await page.evaluate(k => JSON.parse(localStorage.getItem(k)).outcome, mainKey), 'skipped');
+    assert.equal(searches, 0, 'Tour must not submit searches');
+    assert.deepEqual(errors, []);
+    console.log('PASS: first launch, unfinished refresh, skip, finish, replay, completed refresh, Back, missing results/sources, mobile bounds, keyboard focus/Escape, independent main tour, no searches');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

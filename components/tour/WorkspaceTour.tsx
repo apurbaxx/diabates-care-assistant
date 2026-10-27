@@ -21,18 +21,18 @@ import type { LucideIcon } from "lucide-react";
 
 const STORAGE_KEY = "cliniq:workspace-tour:v1";
 
-export function hasSeenWorkspaceTour(): boolean {
+export function hasSeenWorkspaceTour(storageKey = STORAGE_KEY): boolean {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) !== null;
+    return window.localStorage.getItem(storageKey) !== null;
   } catch {
     return true; // storage blocked: never auto-open
   }
 }
 
-function markTourSeen(outcome: "completed" | "skipped") {
+function markTourSeen(outcome: "completed" | "skipped", storageKey: string) {
   try {
     window.localStorage.setItem(
-      STORAGE_KEY,
+      storageKey,
       JSON.stringify({ outcome, at: new Date().toISOString() })
     );
   } catch {
@@ -44,7 +44,7 @@ function markTourSeen(outcome: "completed" | "skipped") {
 
 type Placement = "top" | "bottom" | "left" | "right";
 
-type TourStep = {
+export type TourStep = {
   id: string;
   /** value of the data-tour attribute on the real element; omit for centered steps */
   target?: string;
@@ -188,8 +188,8 @@ function findTarget(id: string): HTMLElement | null {
   return r.width > 0 && r.height > 0 ? el : null;
 }
 
-function getAvailableSteps(): TourStep[] {
-  return STEPS.filter((s) => !s.target || findTarget(s.target));
+function getAvailableSteps(steps: TourStep[], keepMissingTargets: boolean): TourStep[] {
+  return steps.filter((s) => keepMissingTargets || !s.target || findTarget(s.target));
 }
 
 function scrollTargetIntoView(el: HTMLElement) {
@@ -260,11 +260,18 @@ function computePosition(
 
 /* ───────────── Component ───────────── */
 
-type Props = { open: boolean; onClose: () => void };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  tourSteps?: TourStep[];
+  storageKey?: string;
+  /** Keep explanatory steps centered when their optional UI is absent. */
+  keepMissingTargets?: boolean;
+};
 
-export function WorkspaceTour({ open, onClose }: Props) {
+export function WorkspaceTour({ open, onClose, tourSteps = STEPS, storageKey = STORAGE_KEY, keepMissingTargets = false }: Props) {
   const [mounted, setMounted] = useState(false);
-  const [steps, setSteps] = useState<TourStep[]>(STEPS);
+  const [steps, setSteps] = useState<TourStep[]>(tourSteps);
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [pos, setPos] = useState<Position | null>(null);
@@ -284,12 +291,12 @@ export function WorkspaceTour({ open, onClose }: Props) {
   useEffect(() => {
     if (!open) return;
     returnFocusRef.current = document.activeElement as HTMLElement | null;
-    setSteps(getAvailableSteps());
+    setSteps(getAvailableSteps(tourSteps, keepMissingTargets));
     setIndex(0);
     setRect(null);
     setPos(null);
     setAnimated(false);
-  }, [open]);
+  }, [open, tourSteps, keepMissingTargets]);
 
   // Turn on glide transitions only after the first position has been painted
   useEffect(() => {
@@ -306,35 +313,35 @@ export function WorkspaceTour({ open, onClose }: Props) {
 
   const finish = useCallback(
     (outcome: "completed" | "skipped") => {
-      markTourSeen(outcome);
+      markTourSeen(outcome, storageKey);
       onClose();
       window.setTimeout(() => returnFocusRef.current?.focus?.(), 0);
     },
-    [onClose]
+    [onClose, storageKey]
   );
 
   // Re-check which targets exist on every move, so missing ones are skipped
   const move = useCallback(
     (delta: number) => {
-      const fresh = getAvailableSteps();
+      const fresh = getAvailableSteps(tourSteps, keepMissingTargets);
       const at = Math.max(0, fresh.findIndex((s) => s.id === steps[index]?.id));
       const next = Math.min(Math.max(at + delta, 0), fresh.length - 1);
       setSteps(fresh);
       setIndex(next);
     },
-    [steps, index]
+    [steps, index, tourSteps, keepMissingTargets]
   );
 
   // Jump straight to a step (progress dots)
   const goTo = useCallback(
     (k: number) => {
-      const fresh = getAvailableSteps();
+      const fresh = getAvailableSteps(tourSteps, keepMissingTargets);
       const id = steps[k]?.id;
       const at = fresh.findIndex((s) => s.id === id);
       setSteps(fresh);
       setIndex(at >= 0 ? at : Math.min(k, fresh.length - 1));
     },
-    [steps]
+    [steps, tourSteps, keepMissingTargets]
   );
 
   // Measure target + popover and compute positions
@@ -488,7 +495,8 @@ export function WorkspaceTour({ open, onClose }: Props) {
         tabIndex={-1}
         className="tour-popover"
         data-side={pos?.side ?? "center"}
-        style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? "visible" : "hidden" }}
+        style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? "visible" : "hidden",
+          ...(keepMissingTargets ? { maxHeight: "calc(100dvh - 24px)", overflowY: "auto" as const } : {}) }}
       >
         {arrowStyle && <span className="tour-arrow" style={arrowStyle} aria-hidden="true" />}
 
