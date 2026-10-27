@@ -1,196 +1,93 @@
 "use client";
 
-import { useState } from "react";
-import { BookOpen, Send, Sparkles, Stethoscope } from "lucide-react";
-import type { AssistantAnswer, AssistantFact, EngineResult, GuidelineRef, Insight, Patient } from "@/lib/types";
-import { composeAnswer, suggestedQuestions } from "@/lib/assistant/compose";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { Send, Sparkles } from "lucide-react";
+import type { AssistantAnswer, AssistantFact, EngineResult, Insight, Patient } from "@/lib/types";
+import { suggestedQuestions } from "@/lib/assistant/compose";
+import { planQuestion, queryPlanSchema, type QueryPlan } from "@/lib/assistant/plan";
+import { createRecordContext, recordVersion } from "@/lib/assistant/record";
+import { executeRecordQuery, validateRecordAnswer } from "@/lib/assistant/tools";
+import { localDate } from "@/lib/dates";
 import { useEvidence } from "@/components/shared/EvidenceContext";
-import { GuidelineCitation } from "@/components/shared/GuidelineCitation";
 
-function factToInsight(fact: AssistantFact, title: string): Insight {
-  return {
-    id: fact.id,
-    scope: "overview",
-    kind: "observation",
-    severity: "info",
-    title,
-    statement: fact.text,
-    evidence: fact.evidence,
-    guidelines: [],
-    confidence: "observed",
-    parameters: [],
-    visitIds: [],
-  };
-}
+interface Exchange { answer: AssistantAnswer; plan: QueryPlan }
 
-function FactRow({ fact }: { fact: AssistantFact }) {
+function FactRow({ fact, patientId }: { fact: AssistantFact; patientId: string }) {
   const { openInsight } = useEvidence();
-  return (
-    <li className="flex items-start gap-2">
-      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
-      <span className="text-sm text-ink">
-        {fact.text}{" "}
-        {fact.evidence.length > 0 && (
-          <button
-            onClick={() => openInsight(factToInsight(fact, "Patient-specific fact"))}
-            className="ml-1 rounded-full bg-brand-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-brand-700 hover:bg-brand-500/20"
-          >
-            evidence
-          </button>
-        )}
-      </span>
-    </li>
-  );
+  function openSource() {
+    const insight: Insight = { id:fact.id,scope:"overview",kind:"observation",severity:"info",title:"Patient record source",statement:fact.text,evidence:fact.evidence,guidelines:[],confidence:"observed",parameters:[],visitIds:fact.evidence.flatMap(e=>e.visitId?[e.visitId]:[]) };
+    openInsight(insight);
+  }
+  const reports=[...new Set(fact.evidence.flatMap(e=>e.reportId?[e.reportId]:[]))];
+  return <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400"/><span className="text-sm text-ink">{fact.text} <button type="button" onClick={openSource} className="record-link" aria-label={`Show source for ${fact.text}`}>Source</button>{reports.map(id=><Link key={id} className="record-link ml-2" href={`/patient/${encodeURIComponent(patientId)}?report=${encodeURIComponent(id)}#labs`}>Open report</Link>)}</span></li>;
 }
 
-function GuidelineRow({ item }: { item: { id: string; text: string; guideline: GuidelineRef } }) {
-  return (
-    <li>
-      <GuidelineCitation guideline={item.guideline} />
-    </li>
-  );
-}
-
-function AnswerBlock({ answer }: { answer: AssistantAnswer }) {
-  return (
-    <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-brand-500" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Assistant</span>
-        {answer.narrativeSource === "llm" && (
-          <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
-            Rephrased by model, citations verified
-          </span>
-        )}
-      </div>
-
-      {answer.narrative ? (
-        <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{answer.narrative}</p>
-      ) : (
-        <>
-          <div>
-            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
-              <Stethoscope className="h-3.5 w-3.5" /> This patient
-            </div>
-            {answer.patientFindings.length === 0 ? (
-              <p className="text-sm text-muted">No patient-specific facts in the record answer this directly.</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {answer.patientFindings.map((f) => (
-                  <FactRow key={f.id} fact={f} />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {answer.guidelineContext.length > 0 && (
-            <div>
-              <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
-                <BookOpen className="h-3.5 w-3.5" /> Guideline context
-              </div>
-              <ul className="space-y-1.5">
-                {answer.guidelineContext.map((g) => (
-                  <GuidelineRow key={g.id} item={g} />
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
-      )}
-
-      <p className="border-t border-gridline pt-2 text-xs text-muted">{answer.caveats[answer.caveats.length - 1]}</p>
-    </div>
-  );
+function AnswerBlock({answer}:{answer:AssistantAnswer}) {
+  return <article className="space-y-3 rounded-xl border border-border bg-surface p-4" aria-label="Patient record answer">
+    <div className="flex flex-wrap items-center gap-2"><Sparkles className="h-4 w-4 text-brand-500"/><strong className="text-sm">Record findings</strong><span className="text-xs text-muted">{answer.planningSource==="model"?"Model-assisted record search":"Record search"}</span></div>
+    <p className="text-xs text-muted">Period: {answer.period?.from ?? "record start"} to {answer.period?.to}. Latest included record: {answer.latestRecordDate ?? "none"}. Reference date: {answer.asOf}.</p>
+    <ul className="space-y-2">{answer.patientFindings.map(f=><FactRow key={f.id} fact={f} patientId={answer.patientId!}/>)}</ul>
+    <div className="space-y-1 border-t border-gridline pt-2">{answer.caveats.map((c,i)=><p key={i} className="text-xs text-muted">{c}</p>)}</div>
+  </article>;
 }
 
 export function AssistantPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
-  const [question, setQuestion] = useState("");
-  const [history, setHistory] = useState<AssistantAnswer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const suggestions = suggestedQuestions(engine);
+  const [question,setQuestion]=useState("");
+  const [history,setHistory]=useState<Exchange[]>([]);
+  const [loading,setLoading]=useState(false);
+  const [notice,setNotice]=useState("");
+  const [asOf,setAsOf]=useState(localDate);
+  const version=useMemo(()=>recordVersion(patient),[patient]);
+  const revision=`${version}:${asOf}`;
+  const active=useRef(revision);
+  active.current=revision;
+  const abort=useRef<AbortController | undefined>(undefined);
+  const cache=useRef(new Map<string,Exchange>());
+  useEffect(()=>{
+    abort.current?.abort();setHistory([]);setQuestion("");setLoading(false);setNotice("");cache.current.clear();
+    return ()=>abort.current?.abort();
+  },[revision]);
+  useEffect(()=>{const timer=window.setInterval(()=>setAsOf(localDate()),30000);return ()=>window.clearInterval(timer);},[]);
 
-  async function ask(q: string) {
-    if (!q.trim()) return;
-    setLoading(true);
-    setQuestion("");
-    const deterministic = composeAnswer(patient, engine, q);
-    setHistory((h) => [deterministic, ...h]);
-
+  async function ask(q:string) {
+    if(!q.trim() || loading) return;
+    const currentRevision=revision;
+    const previous=history[0]?.plan;
+    const key=JSON.stringify([revision,q,previous]);
+    const cached=cache.current.get(key);
+    if(cached){setHistory(h=>[cached,...h].slice(0,20));setQuestion("");return;}
+    const ctx=createRecordContext(patient,asOf);
+    const fallbackPlan=planQuestion(q,asOf,previous);
+    const fallback=executeRecordQuery(ctx,fallbackPlan,q);
+    const controller=new AbortController();abort.current=controller;
+    setLoading(true);setQuestion("");setNotice("");
+    let exchange:Exchange={answer:fallback,plan:fallbackPlan};
     try {
-      const resp = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer: deterministic }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.narrative) {
-          setHistory((h) => [
-            { ...deterministic, narrative: data.narrative, narrativeSource: "llm" },
-            ...h.slice(1),
-          ]);
-        }
-      }
+      const response=await fetch("/api/assistant",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({patient,question:q,asOf,...(previous?{previous:{patientId:patient.id,recordVersion:version,plan:previous}}:{})}),signal:controller.signal});
+      if(!response.ok) throw new Error("Unavailable");
+      const data=await response.json();
+      const parsedPlan=queryPlanSchema.safeParse(data.plan);
+      if(!parsedPlan.success || !validateRecordAnswer(data.answer,ctx,parsedPlan.data)) throw new Error("Invalid evidence");
+      exchange={answer:data.answer,plan:data.plan};
     } catch {
-      // Silently keep the deterministic answer — the app is fully functional without the LLM pass.
-    } finally {
-      setLoading(false);
-    }
+      if(controller.signal.aborted) return;
+      if(active.current===currentRevision) setNotice("Showing a local record query because the assistant service is unavailable.");
+    } finally {if(active.current===currentRevision)setLoading(false);}
+    if(active.current!==currentRevision || controller.signal.aborted) return;
+    cache.current.set(key,exchange);
+    if(cache.current.size>30)cache.current.delete(cache.current.keys().next().value!);
+    setHistory(h=>[exchange,...h].slice(0,20));
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <h3 className="mb-2 text-sm font-semibold text-ink">Ask about {patient.name}</h3>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            ask(question);
-          }}
-          className="flex gap-2"
-        >
-          <input
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. What has changed over the last 6 months?"
-            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={loading || !question.trim()}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </form>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {suggestions.map((s) => (
-            <button
-              key={s}
-              onClick={() => ask(s)}
-              className="rounded-full border border-border px-2.5 py-1 text-xs text-ink-secondary hover:bg-brand-100/40"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {loading && <div className="text-sm text-muted">Thinking…</div>}
-        {history.map((a, i) => (
-          <div key={i} className="space-y-1.5">
-            <div className="text-sm font-medium text-ink-secondary">You asked: “{a.question}”</div>
-            <AnswerBlock answer={a} />
-          </div>
-        ))}
-        {history.length === 0 && !loading && (
-          <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted">
-            Ask a question above, or pick a suggestion. Answers separate what's in this patient's record from
-            general guideline context, and every patient-specific claim links to its evidence.
-          </p>
-        )}
-      </div>
+  return <div className="space-y-4" data-testid="patient-assistant">
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <h3 className="mb-2 text-sm font-semibold text-ink">Ask about {patient.name}'s record</h3>
+      <p className="mb-3 text-sm text-muted">Explore recorded measurements, medication events and source notes. Answers describe facts without diagnosis, treatment advice or judgments.</p>
+      <form onSubmit={e=>{e.preventDefault();void ask(question);}} className="flex gap-2"><input aria-label="Question about patient record" maxLength={500} value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Show HbA1c over the last six months" className="min-w-0 flex-1 rounded-lg border border-border px-3 py-2 text-sm"/><button type="submit" aria-label="Ask patient assistant" disabled={loading || !question.trim()} className="record-primary disabled:opacity-40"><Send className="h-4 w-4"/></button></form>
+      <div className="mt-3 flex flex-wrap gap-1.5">{suggestedQuestions(engine).map(s=><button type="button" key={s} disabled={loading} onClick={()=>void ask(s)} className="rounded-full border border-border px-2.5 py-1 text-xs disabled:opacity-40">{s}</button>)}</div>
+      <p className="mt-3 text-xs text-muted">For general research from the nine PDFs, use the <Link className="record-link" href="/knowledge-assistant">Knowledge Assistant</Link>.</p>
     </div>
-  );
+    <div className="space-y-3" aria-live="polite" aria-busy={loading}>{loading && <p role="status" className="text-sm text-muted">Searching this patient's record...</p>}{notice && <p role="status" className="text-xs text-muted">{notice}</p>}{history.filter(x=>x.answer.recordVersion===version && x.answer.asOf===asOf).map((exchange,i)=><div key={`${i}:${exchange.answer.question}`} className="space-y-2"><p className="text-sm font-medium">You asked: {exchange.answer.question}</p><AnswerBlock answer={exchange.answer}/></div>)}{!history.length && !loading && <p className="text-sm text-muted">Ask a question or select a suggestion. You can follow up with a different period or parameter.</p>}</div>
+  </div>;
 }

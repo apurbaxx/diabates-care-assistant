@@ -4,7 +4,10 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { LabReport, Patient } from "@/lib/types";
 import { buildSeedCohort } from "@/lib/data/seed";
-import { generatePatient, type GenerateOptions } from "@/lib/data/generator";
+import { generatePatient, repairFutureGeneratedVisits, type GenerateOptions } from "@/lib/data/generator";
+import { isCalendarDate } from "./dates";
+import { ANALYTES } from "./clinical/units";
+import { activeMedicationsAt } from "./clinical/context";
 
 import { appointmentSchema, summarySchema, localDate, type Appointment, type VisitSummary } from "./workflow";
 
@@ -71,12 +74,15 @@ export const useAppStore = create<AppState>()(
         return patient;
       },
 
-      addLabReport: (patientId, report) =>
+      addLabReport: (patientId, report) => {
+        if (!isCalendarDate(report.date) || report.date > localDate()) throw new Error("Report date must be a valid date on or before today");
+        if (report.patientId !== patientId) throw new Error("Report belongs to another patient");
         set((s) => ({
           patients: s.patients.map((p) =>
             p.id === patientId && report.patientId === patientId ? { ...p, labReports: [...p.labReports.filter(r=>r.id!==report.id), report] } : p,
           ),
-        })),
+        }));
+      },
 
       acknowledgeLabReport: (patientId, reportId, commit) =>
         set((s) => ({
@@ -84,11 +90,15 @@ export const useAppStore = create<AppState>()(
             if (p.id !== patientId) return p;
             const report = p.labReports.find((r) => r.id === reportId);
             if (!report || report.acknowledged) return p;
+            if (report.patientId !== p.id) throw new Error("Report belongs to another patient");
 
             if (!commit) {
               // Discard: remove the pending report entirely.
               return { ...p, labReports: p.labReports.filter((r) => r.id !== reportId) };
             }
+
+            if (!isCalendarDate(report.date) || report.date > localDate()) throw new Error("Report date must be a valid date on or before today");
+            if (!report.values.length || report.values.some(v => !(v.key in ANALYTES) || !Number.isFinite(v.value))) throw new Error("Report must contain valid measurements");
 
             const acknowledged = { ...report, acknowledged: true };
             // Commit accepted values into a new visit's labs so the record and
@@ -96,25 +106,24 @@ export const useAppStore = create<AppState>()(
             const newLabs: Record<string, number> = {};
             for (const v of acknowledged.values) newLabs[v.key] = v.value;
 
-            const lastVisit = [...p.visits].sort((a, b) => a.date.localeCompare(b.date)).pop();
-
-            const newVisit = lastVisit
-              ? {
-                  ...lastVisit,
+            const priorVisits = p.visits.filter(v => v.patientId === p.id && v.date <= acknowledged.date).sort((a, b) => a.date.localeCompare(b.date));
+            const newVisit = {
                   id: `${p.id}-v-report-${reportId}`,
+                  patientId: p.id,
+                  sourceReportId: reportId,
                   date: acknowledged.date,
                   reason: "Lab report review",
                   vitals: {},
                   labs: newLabs,
+                  medications: activeMedicationsAt(priorVisits,acknowledged.date).map(m => ({...m})),
                   medicationChanges: [],
                   clinicianNote: `New laboratory report reviewed (${acknowledged.fileName ?? "manual entry"}).`,
-                }
-              : undefined;
+                };
 
             return {
               ...p,
               labReports: p.labReports.map((r) => (r.id === reportId ? acknowledged : r)),
-              visits: newVisit ? [...p.visits, newVisit] : p.visits,
+              visits: [...p.visits, newVisit],
             };
           }),
         })),
@@ -134,7 +143,8 @@ export const useAppStore = create<AppState>()(
       migrate: (state) => ({...(state as object), appointments: [], summaries: []}),
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<AppState>;
-        const patients = Array.isArray(saved.patients) ? saved.patients : current.patients;
+        const patients = (Array.isArray(saved.patients) ? saved.patients : current.patients)
+          .map(p => repairFutureGeneratedVisits(p));
         const ids = new Set(patients.map(p=>p.id));
         const appointments = (saved.appointments ?? []).filter(a=>appointmentSchema.safeParse(a).success && ids.has(a.patientId));
         const summaries = (saved.summaries ?? []).filter(s=>summarySchema.safeParse(s).success && ids.has(s.patientId) && (!s.appointmentId || appointments.some(a=>a.id===s.appointmentId && a.patientId===s.patientId)));

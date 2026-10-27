@@ -1,9 +1,7 @@
 import type { EngineResult, Insight, Patient } from "@/lib/types";
-import { deriveState, sortedVisits } from "./derive";
+import { deriveState } from "./derive";
 import {
-  buildSeries,
   buildTrends,
-  activeMedicationsAt,
   resetInsightIds,
   type AnalysisContext,
 } from "./context";
@@ -16,6 +14,8 @@ import { analyseCardiometabolic } from "./analyzers/cardiometabolic";
 import { analyseScreening } from "./analyzers/screening";
 import { containsUnsupportedCausalClaim } from "./causality";
 import { buildSummary } from "./summary";
+import { localDate } from "@/lib/dates";
+import { createRecordContext } from "./record";
 
 /**
  * Runs the full deterministic clinical engine for a patient.
@@ -23,16 +23,18 @@ import { buildSummary } from "./summary";
  * Order matters only for insight id stability, not for correctness — every
  * analyzer is pure and independent, taking the same AnalysisContext.
  */
-export function runEngine(patient: Patient): EngineResult {
+export function runEngine(patient: Patient, asOf = localDate()): EngineResult {
   resetEvidenceIds();
   resetInsightIds();
 
-  const visits = sortedVisits(patient);
-  const derived = deriveState(patient);
-  const series = buildSeries(visits);
+  const record = createRecordContext(patient, asOf);
+  patient = {...patient, visits:record.visits};
+  const visits = record.visits;
+  const derived = deriveState(patient, asOf);
+  const series = record.series;
   const trends = buildTrends(series);
-  const activeMedications = activeMedicationsAt(visits);
-  const today = visits[visits.length - 1]?.date ?? new Date().toISOString().slice(0, 10);
+  const activeMedications = record.activeMedications;
+  const today = asOf;
 
   const ctx: AnalysisContext = {
     patient,

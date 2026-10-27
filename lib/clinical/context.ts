@@ -16,7 +16,7 @@ import type {
 } from "@/lib/types";
 import { ANALYTES, VITAL_META } from "./units";
 import { analyseTrend } from "./stats";
-import { bmi } from "./derive";
+import { bmi, ckdEpi2021, ageAt, CKD_EPI_METHOD } from "./derive";
 
 /** Everything an analyzer is allowed to look at. Pure input, no I/O. */
 export interface AnalysisContext {
@@ -31,25 +31,9 @@ export interface AnalysisContext {
   today: string;
 }
 
-export const TRACKED_PARAMETERS: string[] = [
-  "hba1c",
-  "fastingGlucose",
-  "postprandialGlucose",
-  "creatinine",
-  "egfr",
-  "uacr",
-  "ldl",
-  "hdl",
-  "triglycerides",
-  "potassium",
-  "hemoglobin",
-  "weightKg",
-  "systolic",
-  "diastolic",
-  "bmi",
-];
+export const TRACKED_PARAMETERS: string[] = [...Object.keys(ANALYTES), ...Object.keys(VITAL_META)];
 
-export function buildSeries(visits: Visit[]): Record<string, ParameterSeriesPoint[]> {
+export function buildSeries(visits: Visit[], demographics?: Pick<Patient, "dob" | "sex">): Record<string, ParameterSeriesPoint[]> {
   const series: Record<string, ParameterSeriesPoint[]> = {};
   for (const key of TRACKED_PARAMETERS) series[key] = [];
 
@@ -57,7 +41,7 @@ export function buildSeries(visits: Visit[]): Record<string, ParameterSeriesPoin
     for (const key of Object.keys(ANALYTES) as LabKey[]) {
       const value = visit.labs[key];
       if (value !== undefined && series[key]) {
-        series[key].push({ date: visit.date, value, visitId: visit.id });
+        series[key].push({ date: visit.date, value, visitId: visit.id, ...(visit.sourceReportId ? { reportId: visit.sourceReportId } : {}) });
       }
     }
     for (const key of Object.keys(VITAL_META)) {
@@ -69,7 +53,10 @@ export function buildSeries(visits: Visit[]): Record<string, ParameterSeriesPoin
     }
     const { weightKg, heightCm } = visit.vitals;
     if (weightKg && heightCm) {
-      series.bmi.push({ date: visit.date, value: bmi(weightKg, heightCm), visitId: visit.id });
+      series.bmi.push({ date: visit.date, value: bmi(weightKg, heightCm), visitId: visit.id, method: "weight (kg) / height (m) squared" });
+    }
+    if (demographics && visit.labs.egfr === undefined && visit.labs.creatinine !== undefined && visit.labs.creatinine > 0) {
+      series.egfr.push({ date: visit.date, value: ckdEpi2021(visit.labs.creatinine, ageAt(demographics.dob, visit.date), demographics.sex), visitId: visit.id, method: CKD_EPI_METHOD, ...(visit.sourceReportId ? { reportId: visit.sourceReportId } : {}) });
     }
   }
   return series;
@@ -85,9 +72,12 @@ export function buildTrends(
   return trends;
 }
 
-export function activeMedicationsAt(visits: Visit[]): Medication[] {
-  const last = visits[visits.length - 1];
-  return last ? last.medications.filter((m) => !m.endDate) : [];
+export function activeMedicationsAt(visits: Visit[], referenceDate?: string): Medication[] {
+  // Report-only visits cannot establish or change a medication regimen.
+  const clinical = visits.filter(v => !v.sourceReportId && !v.id.includes("-v-report-"));
+  const last = clinical[clinical.length - 1];
+  const asOf = referenceDate ?? visits[visits.length - 1]?.date;
+  return last ? last.medications.filter(m => (!asOf || m.startDate <= asOf) && (!m.endDate || !!asOf && m.endDate > asOf)) : [];
 }
 
 // ---------------------------------------------------------------------------

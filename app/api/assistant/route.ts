@@ -1,102 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import type { AssistantAnswer } from "@/lib/types";
+import { assistantRequestSchema } from "@/lib/assistant/schema";
+import { answerPatientQuestion } from "@/lib/assistant/server";
+import { localDate } from "@/lib/dates";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-/**
- * Optional narration pass. Takes an already-composed, already-cited
- * AssistantAnswer and asks the model to rephrase it for readability only.
- *
- * The model is given ONLY the retrieved facts/guidelines (never raw chart access,
- * never permission to add anything) and every citation id it uses is checked
- * against the bundle before the narrative is returned. If the key is absent, or
- * validation fails, the deterministic composition is returned unchanged — the
- * app is fully functional without this route.
- */
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as { answer: AssistantAnswer };
-  const { answer } = body;
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ narrative: null, narrativeSource: "deterministic" as const });
-  }
-
-  const factIds = new Set(answer.patientFindings.map((f) => f.id));
-  const guidelineIds = new Set(answer.guidelineContext.map((g) => g.id));
-
-  const factLines = answer.patientFindings.map((f) => `[${f.id}] ${f.text}`).join("\n");
-  const guidelineLines = answer.guidelineContext
-    .map((g) => `[${g.id}] (${g.guideline.source} ${g.guideline.year}, ${g.guideline.section}) ${g.text}`)
-    .join("\n");
-
-  const system = `You rephrase record-review output for a doctor — restating already-computed facts and cited guideline text in clear prose. You may ONLY restate the facts and guideline statements given to you below — you must NOT add any new clinical claim, number, or inference that is not already present verbatim in the input.
-
-Rules:
-- Every sentence describing a patient-specific fact must end with the bracketed id of the fact it came from, e.g. [F1].
-- Every sentence describing guideline content must end with the bracketed id of the guideline it came from, e.g. [G-ADA_A1C_GENERAL].
-- Clearly separate "This patient" content from "Guideline context" content, using those two headings.
-- Do not use the words "caused", "causes", "due to", "because of", "resulted in", or "proves".
-- Do not suggest a specific prescription, dose, or diagnosis. Do not tell the doctor what to do — describe what the record shows.
-- If there are no patient findings, say so plainly.
-- Be concise: short sentences, no filler.`;
-
-  const userMsg = `Question: ${answer.question}
-
-PATIENT FACTS (cite by id):
-${factLines || "(none)"}
-
-GUIDELINE CONTEXT (cite by id):
-${guidelineLines || "(none)"}`;
-
+  const headers = {"Cache-Control":"no-store"};
   try {
-    const client = new Anthropic({ apiKey });
-    const resp = await client.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 600,
-      system,
-      messages: [{ role: "user", content: userMsg }],
-    });
-
-    const text = resp.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
-
-    if (!validateCitations(text, factIds, guidelineIds)) {
-      return NextResponse.json({
-        narrative: null,
-        narrativeSource: "deterministic" as const,
-        validationFailed: true,
-      });
-    }
-
-    return NextResponse.json({ narrative: text, narrativeSource: "llm" as const });
-  } catch (err) {
-    return NextResponse.json({
-      narrative: null,
-      narrativeSource: "deterministic" as const,
-      error: err instanceof Error ? err.message : "unknown error",
-    });
+    const raw = await req.text();
+    if (new TextEncoder().encode(raw).length > 2_000_000) return NextResponse.json({error:"Record exceeds the request limit"},{status:413,headers});
+    let body: unknown;
+    try { body=JSON.parse(raw); } catch { return NextResponse.json({error:"Invalid JSON"},{status:400,headers}); }
+    const parsed=assistantRequestSchema.safeParse(body);
+    if(!parsed.success) return NextResponse.json({error:"Invalid patient-record request"},{status:400,headers});
+    // Allow a one-day timezone difference between browser and server calendars.
+    const tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    if(parsed.data.asOf>localDate(tomorrow)) return NextResponse.json({error:"Invalid reference date"},{status:400,headers});
+    return NextResponse.json(await answerPatientQuestion(parsed.data),{headers});
+  } catch {
+    return NextResponse.json({error:"Unable to verify this record answer. Please try again."},{status:500,headers});
   }
-}
-
-/**
- * Every [id] token found in the narration must exist in the bundle we gave it.
- * This is the guard that prevents the model from fabricating a citation for a
- * claim it invented.
- */
-function validateCitations(text: string, factIds: Set<string>, guidelineIds: Set<string>): boolean {
-  const tokens = text.match(/\[([A-Za-z0-9_-]+)\]/g) ?? [];
-  if (tokens.length === 0 && text.length > 40) {
-    // A non-trivial narrative with zero citations is treated as unsupported.
-    return false;
-  }
-  for (const t of tokens) {
-    const id = t.slice(1, -1);
-    if (!factIds.has(id) && !guidelineIds.has(id)) return false;
-  }
-  return true;
 }

@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:patient-assistant": "node scripts/tests/patient-assistant.cjs && node scripts/tests/generated-dates.cjs",
+    "test:patient-assistant-ui": "node scripts/tests/patient-assistant-ui.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

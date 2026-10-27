@@ -10,8 +10,8 @@ import { guidelines } from "./guidelines";
  * value means. Guideline references collected here are general reference
  * material, not a personalised recommendation for this patient.
  *
- * If an LLM key is configured, /api/assistant can rephrase this for tone, but the
- * facts and their evidence are fixed here first.
+ * Patient-assistant answers use their own neutral, source-backed record queries;
+ * they do not consume clinical flags from this overview.
  */
 export function buildSummary(
   ctx: AnalysisContext,
@@ -74,11 +74,13 @@ export function buildSummary(
   }
 
   // --- Blood pressure: recorded value + change only -----------------------
-  if (latestVisit?.vitals.systolic !== undefined && latestVisit?.vitals.diastolic !== undefined) {
-    const previousVisit = derived.previousVisit;
-    const s = latestVisit.vitals.systolic;
-    const d = latestVisit.vitals.diastolic;
-    let bpLine = `Blood pressure: ${s}/${d} mmHg — recorded ${latestVisit.date}.`;
+  const bpVisits = ctx.visits.filter(v=>v.vitals.systolic!==undefined && v.vitals.diastolic!==undefined);
+  const bpVisit = bpVisits.at(-1);
+  if (bpVisit) {
+    const previousVisit = bpVisits.at(-2);
+    const s = bpVisit.vitals.systolic!;
+    const d = bpVisit.vitals.diastolic!;
+    let bpLine = `Blood pressure: ${s}/${d} mmHg — recorded ${bpVisit.date}.`;
     if (previousVisit?.vitals.systolic !== undefined && previousVisit?.vitals.diastolic !== undefined) {
       const ps = previousVisit.vitals.systolic;
       const pd = previousVisit.vitals.diastolic;
