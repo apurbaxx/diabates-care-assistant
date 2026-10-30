@@ -1,25 +1,207 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Newsreader:wght@600&display=swap");
 
-.screen{
-  --bg:#f7f9fb; --ink:#14202e; --accent:#1f5aa6; --muted:#5d6b7c;
-  position:fixed; inset:0; z-index:9999;
-  display:grid; place-items:center; background:var(--bg); color:var(--ink);
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+/* =========================================
+CLINIQ STARTUP SCREEN
+========================================= */
+
+.screen {
+--bg: #f7f9fb;
+--ink: #14202e;
+--accent: #1f5aa6;
+--muted: #5d6b7c;
+
+position: fixed;
+inset: 0;
+z-index: 9999;
+
+width: 100%;
+height: 100%;
+overflow: hidden;
+
+background: var(--bg);
+color: var(--ink);
+
+box-sizing: border-box;
+
+padding-top: env(safe-area-inset-top, 0px);
+padding-bottom: env(safe-area-inset-bottom, 0px);
+
+animation: screenReveal 500ms ease-out both;
 }
 
-.loader{display:flex;flex-direction:column;align-items:center;gap:30px}
-.globe{position:relative;width:200px;height:200px}
-.globe canvas,.globe svg{position:absolute;inset:0;width:100%;height:100%}
-.pulse{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
-  stroke-dasharray:26 100;animation:trace 2.2s linear infinite}
-@keyframes trace{from{stroke-dashoffset:26}to{stroke-dashoffset:-100}}
-.text{display:flex;flex-direction:column;align-items:center;gap:8px}
-.brand{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:30px;margin:0}
-.brand span{color:var(--accent)}
-.cap{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--muted);margin:0}
-.cap i{font-style:normal;animation:blink 1.4s infinite}
-.cap i:nth-child(2){animation-delay:.2s}.cap i:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,60%,100%{opacity:.2}30%{opacity:1}}
-@media (prefers-reduced-motion: reduce){.pulse{animation:none;stroke-dasharray:none}.cap i{animation:none}}
+/* =========================================
+FULL-SCREEN VIDEO BACKGROUND
+========================================= */
+
+.introVideo {
+position: absolute;
+inset: 0;
+z-index: 0;
+
+width: 100%;
+height: 100%;
+
+margin: 0;
+padding: 0;
+
+overflow: hidden;
+background: var(--bg);
+}
+
+.introVideo video {
+display: block;
+
+width: 100%;
+height: 100%;
+
+object-fit: cover;
+object-position: center;
+
+border: none;
+outline: none;
+}
+
+/* =========================================
+LOADING MESSAGE OVERLAY
+========================================= */
+
+.loader {
+position: absolute;
+inset: 0;
+z-index: 2;
+
+width: 100%;
+height: 100%;
+
+pointer-events: none;
+}
+
+/* Position the loading text over the video */
+
+.text {
+position: absolute;
+
+top: 74%;
+left: 50%;
+
+z-index: 3;
+
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+
+width: max-content;
+max-width: calc(100% - 32px);
+
+padding: 10px 16px;
+
+transform: translate(-50%, -50%);
+
+border-radius: 8px;
+
+background: rgba(255, 255, 255, 0.78);
+
+box-shadow: 0 2px 16px rgba(20, 36, 58, 0.06);
+
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+}
+
+/* =========================================
+LOADING RECORDS TEXT
+========================================= */
+
+.cap {
+display: flex;
+align-items: center;
+justify-content: center;
+
+margin: 0;
+
+color: var(--muted);
+
+font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+font-size: 11px;
+font-weight: 400;
+
+letter-spacing: 0.14em;
+text-transform: uppercase;
+
+white-space: nowrap;
+}
+
+/* Animated loading dots */
+
+.cap i {
+font-style: normal;
+
+animation: blink 1.4s infinite;
+}
+
+.cap i:nth-child(2) {
+animation-delay: 0.2s;
+}
+
+.cap i:nth-child(3) {
+animation-delay: 0.4s;
+}
+
+/* =========================================
+ANIMATIONS
+========================================= */
+
+@keyframes screenReveal {
+from {
+opacity: 0;
+}
+
+to {
+opacity: 1;
+}
+}
+
+@keyframes blink {
+0%,
+60%,
+100% {
+opacity: 0.2;
+}
+
+30% {
+opacity: 1;
+}
+}
+
+/* =========================================
+RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 480px) {
+.text {
+top: 74%;
+max-width: calc(100% - 24px);
+padding: 9px 12px;
+}
+
+.cap {
+font-size: 10px;
+letter-spacing: 0.12em;
+}
+}
+
+/* =========================================
+ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+.screen {
+animation: none;
+}
+
+.cap i {
+animation: none;
+opacity: 1;
+}
+}
