@@ -15,7 +15,6 @@ import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
 import { MedicationTimeline } from "@/components/meds/MedicationTimeline";
 import { LabCheck } from "@/components/labs/LabCheck";
 import { AssistantPanel } from "@/components/assistant/AssistantPanel";
-import { PatientKnowledgeAssistant } from "@/components/knowledge/PatientKnowledgeAssistant";
 import { PatientSummaries, SummaryEditor } from "@/components/workflow/PatientWorkflow";
 import { newSummary, type VisitSummary } from "@/lib/workflow";
 
@@ -56,8 +55,8 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
       <section id="comparison" className="record-section"><h2>Visit comparison</h2><p className="record-description">Compare measurements between recorded visits.</p><VisitComparison key={comparisonPair ? `${comparisonPair.current}:${comparisonPair.previous}` : patient.id} patient={patient} initialCurrentId={comparisonPair?.current} initialPreviousId={comparisonPair?.previous}/></section>
       <section id="medications" className="record-section"><h2>Medications</h2><p className="record-description">Recorded treatment history, dose changes and supporting evidence.</p><MedicationTimeline visits={visits} insights={engine.insights}/></section>
       <section id="labs" className="record-section"><h2>Labs &amp; evidence</h2><p className="record-description">Upload, review and compare laboratory reports with this record.</p><LabCheck patient={patient}/></section>
-      <section id="assistant" className="record-section"><h2>AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></section>
-    </main><PatientKnowledgeAssistant /></div></div><SafetyFooter/>
+      <section id="assistant" className="record-section" aria-labelledby="patient-assistant-title"><h2 id="patient-assistant-title">AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></section>
+    </main><aside className="record-references" aria-labelledby="patient-assistant-sidebar-title"><h2 id="patient-assistant-sidebar-title">AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></aside></div></div><SafetyFooter/>
     {summary && <SummaryEditor summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
   </div></EvidenceProvider>;
 }

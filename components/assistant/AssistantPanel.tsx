@@ -32,7 +32,40 @@ function AnswerBlock({answer}:{answer:AssistantAnswer}) {
   </article>;
 }
 
-export function AssistantPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
+function AssistantDisclaimer({ onAccept, onClose }: { onAccept: () => void; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
+
+  return <dialog ref={dialog} className="workflow-dialog knowledge-warning" aria-labelledby="patient-assistant-disclaimer-title" aria-describedby="patient-assistant-disclaimer-description" onCancel={onClose}>
+    <div className="workflow-heading"><h2 id="patient-assistant-disclaimer-title">Patient record assistant disclaimer</h2></div>
+    <p id="patient-assistant-disclaimer-description">This AI Assistant helps you explore information in this patient’s recorded history. It does not provide clinical decisions, diagnoses or treatment recommendations. It does not replace professional clinical judgment. Verify answers against the original patient records before use.</p>
+    <div className="workflow-actions"><button type="button" onClick={onClose} autoFocus>Cancel</button><button type="button" className="primary" onClick={onAccept}>I understand — continue</button></div>
+  </dialog>;
+}
+
+export function AssistantPanel(props: { patient: Patient; engine: EngineResult }) {
+  return <PatientAssistantGate key={props.patient.id} {...props} />;
+}
+
+function PatientAssistantGate({ patient, engine }: { patient: Patient; engine: EngineResult }) {
+  const [accepted, setAccepted] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const input = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (accepted) input.current?.querySelector('input')?.focus();
+  }, [accepted]);
+
+  return <div ref={input}>
+    {accepted ? <RecordAssistantPanel patient={patient} engine={engine} /> : <button type="button" className="knowledge-button" onClick={() => setShowDisclaimer(true)}>Ask Question related to patient records</button>}
+    {showDisclaimer && <AssistantDisclaimer onClose={() => setShowDisclaimer(false)} onAccept={() => { setShowDisclaimer(false); setAccepted(true); }} />}
+  </div>;
+}
+
+function RecordAssistantPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
   const [question,setQuestion]=useState("");
   const [history,setHistory]=useState<Exchange[]>([]);
   const [loading,setLoading]=useState(false);
