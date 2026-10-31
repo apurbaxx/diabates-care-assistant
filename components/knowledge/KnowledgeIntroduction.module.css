@@ -1,0 +1,27 @@
+.content { padding-top: 38px; padding-bottom: 36px; }
+.headline { font-size: clamp(42px, 4.5vw, 62px); margin-top: 19px; margin-bottom: 18px; outline: none; }
+.description { max-width: 780px; font-size: 16px; }
+.sources { margin-top: 30px; border-top: 1px solid #bdcbd6; border-bottom: 1px solid #bdcbd6; }
+.sources summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 18px; background: #edf3f8; list-style: none; cursor: pointer; font-size: 18px; font-weight: 600; color: #172b3d; }
+.sources summary:hover { background: #e3edf6; }
+.sources summary::-webkit-details-marker { display: none; }
+.sources summary > svg { flex-shrink: 0; color: #205ea6; transition: transform 200ms; }
+.sources[open] summary > svg { transform: rotate(180deg); }
+.sourceCount { display: inline-block; margin-left: 18px; color: #43596b; font: 400 14px/1.6 var(--font-sans); }
+.sourceNote { color: #43596b; font-size: 14px; line-height: 1.7; margin: 18px 18px 10px; }
+.sourceList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; list-style: none; padding: 0; margin: 0 18px 18px; }
+.sourceList li { min-width: 0; border-top: 1px solid #d5dfe6; }
+.sourceList a { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 90px; padding: 13px 0; text-decoration: none; color: #172b3d; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.sourceList small { display: block; margin-bottom: 5px; color: #205ea6; font: 12px/1.4 ui-monospace, Consolas, monospace; letter-spacing: .06em; }
+.sourceList a > svg { flex-shrink: 0; color: #205ea6; }
+.sourceList a:hover { color: #205ea6; text-decoration: underline; text-underline-offset: 3px; }
+.sources summary:focus-visible, .sourceList a:focus-visible { outline: 2px solid #205ea6; outline-offset: 4px; }
+@media (max-width: 700px) {
+  .content { padding: 34px 0; }
+  .headline { font-size: 44px; }
+  .description { font-size: 14px; }
+  .sourceCount { display: block; margin-left: 0; margin-top: 5px; }
+  .sourceList { grid-template-columns: 1fr; }
+  .sourceList a { min-height: 76px; }
+}
+@media (prefers-reduced-motion: reduce) { .sources summary > svg { transition: none; } }

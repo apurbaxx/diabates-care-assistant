@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { KnowledgeExplorer } from "@/components/knowledge/KnowledgeExplorer";
+import { getKnowledgeSources } from "@/lib/knowledge/sources";
 
 export const metadata: Metadata = {
   title: "Medical Guideline Knowledge Explorer | ClinIQ",
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
     "Evidence-based guideline retrieval engine for diabetes care — surfaces original text, verified citations, and official links from ADA and RSSDI standards of care.",
 };
 
-export default function KnowledgeAssistantPage() {
-  return <KnowledgeExplorer />;
+export default async function KnowledgeAssistantPage() {
+  const sources = await getKnowledgeSources();
+  return <KnowledgeExplorer sources={sources} />;
 }

@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     await page.addInitScript(() => localStorage.setItem('cliniq:welcome:v1', JSON.stringify({ name: 'Test', completed: true })));
+    await page.addInitScript(() => localStorage.setItem('cliniq:knowledge-introduction:v1', 'completed'));
     page.setDefaultTimeout(30000);
     const errors = [];
     let searches = 0;

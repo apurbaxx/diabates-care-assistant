@@ -70,7 +70,11 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
 
   return <WelcomeCompleteContext.Provider value={ready && checked && !visible}>
     {children}
-    {ready && visible && <dialog ref={dialog} className={`${styles.dialog} ${leaving ? styles.leaving : ""}`} aria-labelledby="welcome-heading" aria-describedby="welcome-description" onCancel={event => event.preventDefault()}>
+    {ready && visible && <dialog ref={dialog} className={`${styles.dialog} ${leaving ? styles.leaving : ""}`} aria-labelledby="welcome-heading" aria-describedby="welcome-description" onCancel={event => event.preventDefault()} onKeyDown={event => {
+      if (step !== "greeting" || event.repeat || event.nativeEvent.isComposing || event.ctrlKey || event.metaKey || event.altKey || ["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
+      event.preventDefault();
+      enterWorkspace();
+    }}>
     <div className={styles.shell}>
       <header className={styles.header}>
         <span className={styles.wordmark}>Clin<span>IQ</span><span className={styles.brandDot} aria-hidden="true" /></span>
@@ -101,7 +105,7 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
           <article className={styles.feature}><div className={styles.featureTop}><span>02</span><CalendarDays size={19} strokeWidth={1.4} /></div><h2>A more connected day.</h2><p>Keep appointments, reports awaiting review and visit summaries together in one considered workspace.</p></article>
           <article className={styles.feature}><div className={styles.featureTop}><span>03</span><BookOpen size={19} strokeWidth={1.4} /></div><h2>Room to explore.</h2><p>Search diabetes research with Knowledge Explorer and follow sources for further reading.</p></article>
         </div>
-        <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace} disabled={leaving}>Enter workspace <ArrowRight size={18} strokeWidth={1.5} /></button><span>You can explore more with “Take a tour” anytime.</span></div>
+        <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace} disabled={leaving}>Enter workspace <ArrowRight size={18} strokeWidth={1.5} /></button><span>Press any key to continue. You can revisit “Take a tour” anytime.</span></div>
       </div>}
 
       <footer className={styles.footer}><span>Thoughtfully organised. Clinician led.</span><span className={styles.footerRight}>Your judgment stays at the centre.</span></footer>

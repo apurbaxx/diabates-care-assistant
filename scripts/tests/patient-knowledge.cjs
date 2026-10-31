@@ -11,6 +11,7 @@ const ARTICLE_URL = 'https://www.rssdi.in/newwebsite/pdfdata/rssdiGuidelines/202
     await page.addInitScript(() => {
       localStorage.setItem('cliniq:workspace-tour:v1', 'seen');
       localStorage.setItem('cliniq:welcome:v1', JSON.stringify({ name: 'Test', completed: true }));
+      localStorage.setItem('cliniq:knowledge-introduction:v1', 'completed');
       // Acknowledgements saved by older versions must not bypass the warning.
       localStorage.setItem('cliniq-knowledge-disclaimer-v1', 'true');
     });

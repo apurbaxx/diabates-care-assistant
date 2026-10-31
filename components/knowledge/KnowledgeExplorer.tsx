@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Search, AlertCircle, Check, FileText, Layers, X } from "lucide-react";
 import { KnowledgeAssistantTour, hasSeenKnowledgeAssistantTour } from "@/components/tour/KnowledgeAssistantTour";
 import { useWelcomeComplete } from "@/components/shared/WelcomeExperience";
+import { KnowledgeIntroduction, KNOWLEDGE_INTRODUCTION_KEY } from "./KnowledgeIntroduction";
+import type { KnowledgeSource } from "@/lib/knowledge/sources";
 import styles from "./KnowledgeExplorer.module.css";
 import { ShortAnswer, evidenceCardId } from "./ShortAnswer";
 import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
@@ -79,12 +81,17 @@ function renderPassageText(text: string) {
   ));
 }
 
-export function KnowledgeExplorer() {
+export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
   const welcomeComplete = useWelcomeComplete();
+  const [introduction, setIntroduction] = useState<"checking" | "pending" | "complete">("checking");
+  useEffect(() => {
+    try { setIntroduction(localStorage.getItem(KNOWLEDGE_INTRODUCTION_KEY) === "completed" ? "complete" : "pending"); }
+    catch { setIntroduction("pending"); }
+  }, []);
   const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
-    if (welcomeComplete && !hasSeenKnowledgeAssistantTour()) setTourOpen(true);
-  }, [welcomeComplete]);
+    if (welcomeComplete && introduction === "complete" && !hasSeenKnowledgeAssistantTour()) setTourOpen(true);
+  }, [welcomeComplete, introduction]);
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(5);
   const [sourceFilter, setSourceFilter] = useState<"all" | "ada" | "rssdi">("all");
@@ -329,6 +336,7 @@ export function KnowledgeExplorer() {
           </>}
         </aside>}
       </div>
+      {welcomeComplete && introduction === "pending" && <KnowledgeIntroduction sources={sources} onComplete={() => setIntroduction("complete")} />}
       <KnowledgeAssistantTour open={tourOpen} onClose={() => setTourOpen(false)} />
       {showVerificationModal && selectedPassage && <dialog ref={verificationDialog} className={styles.dialog} onCancel={() => setShowVerificationModal(false)} onClose={() => setShowVerificationModal(false)} aria-labelledby="knowledge-verification-title">
         <div className={styles.dialogHeader}><h2 id="knowledge-verification-title"><Layers size={20}/>Evidence Verification &amp; Scoring</h2><button autoFocus aria-label="Close verification" onClick={() => setShowVerificationModal(false)}><X size={20}/></button></div>
