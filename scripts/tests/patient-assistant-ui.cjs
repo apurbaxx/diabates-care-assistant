@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
   const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultNavigationTimeout(120000);page.setDefaultTimeout(45000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));let knowledgeRequests=0;page.on('request',r=>{if(r.url().includes('/api/knowledge-assistant/search'))knowledgeRequests++;});
   await page.addInitScript(()=>localStorage.setItem('cliniq:workspace-tour:v1','seen'));
+  await page.addInitScript(()=>localStorage.setItem('cliniq:welcome:v1',JSON.stringify({name:'Test',completed:true})));
   const base=process.env.TEST_BASE_URL || 'http://127.0.0.1:3100';
   await page.goto(base);await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
   const ids=await page.evaluate(()=>{

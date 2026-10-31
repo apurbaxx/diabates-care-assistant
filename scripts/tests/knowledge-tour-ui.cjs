@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
   const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    await page.addInitScript(() => localStorage.setItem('cliniq:welcome:v1', JSON.stringify({ name: 'Test', completed: true })));
     page.setDefaultTimeout(30000);
     const errors = [];
     let searches = 0;

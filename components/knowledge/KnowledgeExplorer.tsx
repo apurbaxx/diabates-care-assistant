@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useMemo, useRef } from "react";
 import Link from "next/link";
 import { Search, AlertCircle, Check, FileText, Layers, X } from "lucide-react";
 import { KnowledgeAssistantTour, hasSeenKnowledgeAssistantTour } from "@/components/tour/KnowledgeAssistantTour";
+import { useWelcomeComplete } from "@/components/shared/WelcomeExperience";
 import styles from "./KnowledgeExplorer.module.css";
 import { ShortAnswer, evidenceCardId } from "./ShortAnswer";
 import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
@@ -79,10 +80,11 @@ function renderPassageText(text: string) {
 }
 
 export function KnowledgeExplorer() {
+  const welcomeComplete = useWelcomeComplete();
   const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
-    if (!hasSeenKnowledgeAssistantTour()) setTourOpen(true);
-  }, []);
+    if (welcomeComplete && !hasSeenKnowledgeAssistantTour()) setTourOpen(true);
+  }, [welcomeComplete]);
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(5);
   const [sourceFilter, setSourceFilter] = useState<"all" | "ada" | "rssdi">("all");

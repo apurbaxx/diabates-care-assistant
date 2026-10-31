@@ -9,15 +9,17 @@ import { localDate, type Appointment } from "@/lib/workflow";
 import { GeneratePatientDialog } from "./GeneratePatientDialog";
 import { AppointmentEditor } from "@/components/workflow/PatientWorkflow";
 import { WorkspaceTour, hasSeenWorkspaceTour } from "@/components/tour/WorkspaceTour";
+import { useWelcomeComplete } from "@/components/shared/WelcomeExperience";
 
 export function PatientSelection() {
  const router = useRouter();
+ const welcomeComplete = useWelcomeComplete();
  const {patients,appointments,summaries,hasHydrated}=useAppStore();
  const [query,setQuery]=useState("");const [type,setType]=useState("");const [kidney,setKidney]=useState("");const [range,setRange]=useState("Today");
  const [generate,setGenerate]=useState(false);const [edit,setEdit]=useState<Appointment | "new">();const [appointmentError,setAppointmentError]=useState("");const [showAll,setShowAll]=useState(false);const [reportsAll,setReportsAll]=useState(false);const [tasksAll,setTasksAll]=useState(false);const [summariesAll,setSummariesAll]=useState(false);
  useEffect(()=>{if(hasHydrated)ensureSeeded();},[hasHydrated]);
   const [tourOpen,setTourOpen]=useState(false);
- useEffect(()=>{if(hasHydrated && !hasSeenWorkspaceTour())setTourOpen(true);},[hasHydrated]);
+ useEffect(()=>{if(hasHydrated && welcomeComplete && !hasSeenWorkspaceTour())setTourOpen(true);},[hasHydrated,welcomeComplete]);
  const rows=useMemo(()=>patients.map(p=>({p,e:runEngine(p)})).sort((a,b)=>(b.e.trends.hba1c?.points.at(-1)?.value ?? -1)-(a.e.trends.hba1c?.points.at(-1)?.value ?? -1)),[patients]);
  const filtered=rows.filter(({p,e})=>(!query || `${p.name} ${p.mrn} ${p.diabetesType}`.toLowerCase().includes(query.toLowerCase()))&&(!type || p.diabetesType===type)&&(!kidney || e.derived.ckdStage===kidney));
  const reports=patients.flatMap(p=>p.labReports.filter(r=>!r.acknowledged).map(r=>({p,r})));

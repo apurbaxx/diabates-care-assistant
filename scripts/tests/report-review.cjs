@@ -1,6 +1,8 @@
 ﻿const {chromium}=require('playwright');const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL || 'msedge'});const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultNavigationTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>localStorage.setItem('cliniq:welcome:v1',JSON.stringify({name:'Test',completed:true})));
+ await page.addInitScript(()=>localStorage.setItem('cliniq:workspace-tour:v1','seen'));
  await page.goto('http://localhost:3100');await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
  const baseline=await page.evaluate(()=>{const data=JSON.parse(localStorage.getItem('diabetes-care-assistant-store'));const patient=data.state.patients[0];const make=(id,name,value)=>({id,patientId:patient.id,date:'2026-10-20',source:'synthetic',fileName:name,rawText:`HbA1c: ${value} %`,values:[{key:'hba1c',value,reportedUnit:'%',reportedValue:value,confidence:1}],unmatchedLines:[],acknowledged:false});patient.labReports=[...patient.labReports,make('control-report','Other synthetic report',7.1234567),make('target-report','Selected synthetic report',8.005979504071735)];localStorage.setItem('diabetes-care-assistant-store',JSON.stringify(data));return {patientId:patient.id,visits:patient.visits.length};});
  await page.reload();await page.locator('#report-queue .workflow-row').filter({hasText:'Selected synthetic report'}).getByRole('link',{name:'Review',exact:true}).click();

@@ -2,6 +2,8 @@
 const assert = require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL ? {channel:process.env.PLAYWRIGHT_CHANNEL} : {channel:"msedge"})});const page=await browser.newPage();page.setDefaultNavigationTimeout(120000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>localStorage.setItem('cliniq:welcome:v1',JSON.stringify({name:'Test',completed:true})));
+ await page.addInitScript(()=>localStorage.setItem('cliniq:workspace-tour:v1','seen'));
  await page.goto('http://localhost:3100');await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
  await page.getByRole('button',{name:'Create appointment',exact:true}).click();
  const dialog=page.getByRole('dialog');await dialog.locator('input[type=datetime-local]').fill('2027-01-12T10:00');await dialog.locator('textarea').first().fill('Synthetic follow-up');await dialog.getByRole('button',{name:'Save appointment'}).click();

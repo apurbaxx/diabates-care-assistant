@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import styles from "./StartupScreen.module.css";
+import { WelcomeExperience } from "./WelcomeExperience";
 
 function animateGlobe(cv: HTMLCanvasElement) {
   // Coarse continent outlines as [lon, lat]; rendered as a dot-matrix map.
@@ -108,7 +109,7 @@ export function StartupScreen({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       )}
-      <div hidden={loading}>{children}</div>
+      <WelcomeExperience ready={!loading}><div hidden={loading}>{children}</div></WelcomeExperience>
     </>
   );
 }

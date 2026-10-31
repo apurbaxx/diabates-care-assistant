@@ -9,6 +9,7 @@ const { chromium } = require('playwright');
     page.on('pageerror', error => errors.push(error.message));
     page.on('request', request => requests.push(request.url()));
     await page.addInitScript(() => localStorage.setItem('cliniq:knowledge-assistant-tour:v1', JSON.stringify({ outcome: 'completed' })));
+    await page.addInitScript(() => localStorage.setItem('cliniq:welcome:v1', JSON.stringify({ name: 'Test', completed: true })));
     await page.route('**/api/knowledge-assistant/health', route => route.fulfill({ json: { status: 'ready', total_passages: 3, total_documents: 2 } }));
     let finishSearch;
     const pending = new Promise(resolve => { finishSearch = resolve; });
