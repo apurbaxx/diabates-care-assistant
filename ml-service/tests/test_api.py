@@ -56,3 +56,31 @@ def test_search_endpoint_irrelevant_query(client):
     data = response.json()
     assert data["total_results"] == 0
     assert "No relevant medical guideline passages" in data["message"]
+
+
+def test_extract_pdf_endpoint_success(client):
+    import pymupdf
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=750, height=800)
+        page.insert_text((30, 40), "Report Date: 2026-10-21")
+        page.insert_text((30, 90), "Test Name        Result    Units    Reference Range")
+        page.insert_text((30, 120), "HbA1c            8.2       %        4.0 - 5.6")
+        pdf_bytes = doc.tobytes()
+
+    response = client.post("/extract-pdf", content=pdf_bytes, headers={"Content-Type": "application/pdf"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["report_date"] == "2026-10-21"
+    assert len(data["values"]) == 1
+    v = data["values"][0]
+    assert v["analyte"] == "hba1c"
+    assert v["result"] == 8.2
+    assert v["unit"] == "%"
+    assert v["reference_range"] == "4.0 - 5.6"
+    assert v["validation_status"] == "valid"
+
+
+def test_extract_pdf_endpoint_empty(client):
+    response = client.post("/extract-pdf", content=b"", headers={"Content-Type": "application/pdf"})
+    assert response.status_code == 400
+

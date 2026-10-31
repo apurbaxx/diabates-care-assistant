@@ -155,6 +155,11 @@ export interface ParsedLabValue {
   reportedValue: number;
   /** 0..1 — how confident the parser is in this extraction. */
   confidence: number;
+  confidenceCategory?: 'high' | 'needs_review' | 'ambiguous';
+  operator?: string;
+  referenceRange?: string;
+  sourceCoordinates?: { page: number; bbox: number[]; name: number[]; result: number[] | null };
+  issues?: string[];
   sourceLine?: string;
 }
 
@@ -167,6 +172,7 @@ export interface LabReport {
   fileName?: string;
   labName?: string;
   rawText?: string;
+  pdfExtraction?: unknown;
   values: ParsedLabValue[];
   unmatchedLines: string[];
   /** Set once the doctor has reviewed and accepted the parsed values. */

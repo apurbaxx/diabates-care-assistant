@@ -1,0 +1,346 @@
+{
+  "hba1c": {
+    "label": "HbA1c",
+    "names": [
+      "HbA1c",
+      "Hb A1c",
+      "Hb-A1c",
+      "Hemoglobin A1c",
+      "Haemoglobin A1c",
+      "A1c",
+      "Glycated Hemoglobin",
+      "Glycated Haemoglobin",
+      "Glycated Hb",
+      "Glycosylated Hemoglobin",
+      "Glycohemoglobin",
+      "GHB",
+      "A1C Glycohemoglobin"
+    ],
+    "unit": "%",
+    "units": {
+      "%": [1.0, 0.0],
+      "mmol/mol": [0.09148, 2.152]
+    }
+  },
+  "fastingGlucose": {
+    "label": "Fasting plasma glucose",
+    "names": [
+      "Fasting Plasma Glucose",
+      "Fasting Blood Glucose",
+      "Fasting Glucose",
+      "Glucose Fasting",
+      "Plasma Glucose Fasting",
+      "Blood Glucose Fasting",
+      "Fasting Blood Sugar",
+      "Fasting Sugar",
+      "FBS",
+      "FPG",
+      "FBG"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [18.0182, 0.0]
+    }
+  },
+  "postprandialGlucose": {
+    "label": "Post-prandial glucose",
+    "names": [
+      "Postprandial Glucose",
+      "Post-Prandial Glucose",
+      "Post Prandial Glucose",
+      "Post Prandial Blood Sugar",
+      "Postprandial Blood Glucose",
+      "PPBS",
+      "PPG",
+      "PP Glucose",
+      "2 hr PP",
+      "2-Hour Postprandial Glucose",
+      "Post Meal Glucose"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [18.0182, 0.0]
+    }
+  },
+  "randomGlucose": {
+    "label": "Random plasma glucose",
+    "names": [
+      "Random Plasma Glucose",
+      "Random Blood Glucose",
+      "Random Glucose",
+      "Glucose Random",
+      "Random Blood Sugar",
+      "Random Sugar",
+      "RBS",
+      "RBG"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [18.0182, 0.0]
+    }
+  },
+  "uacr": {
+    "label": "Urine albumin-to-creatinine ratio",
+    "names": [
+      "Urine Albumin to Creatinine Ratio",
+      "Urinary Albumin Creatinine Ratio",
+      "Albumin Creatinine Ratio",
+      "Albumin / Creatinine Ratio",
+      "Microalbumin Creatinine Ratio",
+      "Microalbumin / Creatinine Ratio",
+      "Urine Albumin/Creatinine",
+      "Microalbumin/Creatinine",
+      "UACR",
+      "ACR",
+      "Urine Albumin Creatinine",
+      "Albumin Creatinine"
+    ],
+    "unit": "mg/g",
+    "units": {
+      "mg/g": [1.0, 0.0],
+      "mg/mmol": [8.84, 0.0],
+      "ug/mg": [1.0, 0.0]
+    }
+  },
+  "creatinine": {
+    "label": "Serum creatinine",
+    "names": [
+      "Serum Creatinine",
+      "Creatinine Serum",
+      "Creatinine",
+      "S Creatinine",
+      "S Creat",
+      "S. Creatinine",
+      "SCr",
+      "Blood Creatinine"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "umol/l": [0.0113122, 0.0],
+      "µmol/l": [0.0113122, 0.0]
+    }
+  },
+  "egfr": {
+    "label": "eGFR (CKD-EPI 2021)",
+    "names": [
+      "Estimated Glomerular Filtration Rate",
+      "Estimated GFR",
+      "eGFR",
+      "e-GFR",
+      "Glomerular Filtration Rate",
+      "eGFR CKD-EPI",
+      "eGFR Non-African American",
+      "eGFR African American",
+      "Calculated GFR"
+    ],
+    "unit": "mL/min/1.73m²",
+    "units": {
+      "ml/min/1.73m2": [1.0, 0.0],
+      "ml/min/1.73m^2": [1.0, 0.0],
+      "ml/min/1.73m²": [1.0, 0.0],
+      "ml/min": [1.0, 0.0]
+    }
+  },
+  "potassium": {
+    "label": "Potassium",
+    "names": [
+      "Serum Potassium",
+      "Potassium Serum",
+      "Potassium",
+      "Serum K",
+      "K+",
+      "K"
+    ],
+    "unit": "mmol/L",
+    "units": {
+      "mmol/l": [1.0, 0.0],
+      "meq/l": [1.0, 0.0]
+    }
+  },
+  "sodium": {
+    "label": "Sodium",
+    "names": [
+      "Serum Sodium",
+      "Sodium Serum",
+      "Sodium",
+      "Serum Na",
+      "Na+",
+      "Na"
+    ],
+    "unit": "mmol/L",
+    "units": {
+      "mmol/l": [1.0, 0.0],
+      "meq/l": [1.0, 0.0]
+    }
+  },
+  "ldl": {
+    "label": "LDL cholesterol",
+    "names": [
+      "Low Density Lipoprotein Cholesterol",
+      "Low Density Lipoprotein",
+      "LDL Cholesterol",
+      "LDL-Cholesterol",
+      "LDL C",
+      "LDL-C",
+      "LDL",
+      "Calculated LDL",
+      "Direct LDL"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [38.67, 0.0]
+    }
+  },
+  "hdl": {
+    "label": "HDL cholesterol",
+    "names": [
+      "High Density Lipoprotein Cholesterol",
+      "High Density Lipoprotein",
+      "HDL Cholesterol",
+      "HDL-Cholesterol",
+      "HDL C",
+      "HDL-C",
+      "HDL"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [38.67, 0.0]
+    }
+  },
+  "totalCholesterol": {
+    "label": "Total cholesterol",
+    "names": [
+      "Total Cholesterol",
+      "Cholesterol Total",
+      "Serum Cholesterol",
+      "T Cholesterol",
+      "T Chol",
+      "T-Chol",
+      "Cholesterol"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [38.67, 0.0]
+    }
+  },
+  "triglycerides": {
+    "label": "Triglycerides",
+    "names": [
+      "Serum Triglycerides",
+      "Triglycerides",
+      "Triglyceride",
+      "TG",
+      "Trigs"
+    ],
+    "unit": "mg/dL",
+    "units": {
+      "mg/dl": [1.0, 0.0],
+      "mmol/l": [88.57, 0.0]
+    }
+  },
+  "alt": {
+    "label": "ALT",
+    "names": [
+      "Alanine Aminotransferase",
+      "Alanine Transaminase",
+      "ALT / SGPT",
+      "SGPT",
+      "ALT"
+    ],
+    "unit": "U/L",
+    "units": {
+      "u/l": [1.0, 0.0],
+      "iu/l": [1.0, 0.0]
+    }
+  },
+  "ast": {
+    "label": "AST",
+    "names": [
+      "Aspartate Aminotransferase",
+      "Aspartate Transaminase",
+      "AST / SGOT",
+      "SGOT",
+      "AST"
+    ],
+    "unit": "U/L",
+    "units": {
+      "u/l": [1.0, 0.0],
+      "iu/l": [1.0, 0.0]
+    }
+  },
+  "hemoglobin": {
+    "label": "Haemoglobin",
+    "names": [
+      "Hemoglobin",
+      "Haemoglobin",
+      "Total Hemoglobin",
+      "Total Haemoglobin",
+      "Hgb",
+      "Hb"
+    ],
+    "unit": "g/dL",
+    "units": {
+      "g/dl": [1.0, 0.0],
+      "g/l": [0.1, 0.0]
+    }
+  },
+  "tsh": {
+    "label": "TSH",
+    "names": [
+      "Thyroid Stimulating Hormone",
+      "Thyrotropin",
+      "Ultrasensitive TSH",
+      "Sensitive TSH",
+      "TSH"
+    ],
+    "unit": "mIU/L",
+    "units": {
+      "miu/l": [1.0, 0.0],
+      "uiu/ml": [1.0, 0.0],
+      "uu/ml": [1.0, 0.0],
+      "uui/ml": [1.0, 0.0],
+      "u/l": [1.0, 0.0]
+    }
+  },
+  "vitaminB12": {
+    "label": "Vitamin B12",
+    "names": [
+      "Vitamin B12",
+      "Vitamin B-12",
+      "Vitamin B 12",
+      "Cobalamin",
+      "Cyanocobalamin",
+      "B12"
+    ],
+    "unit": "pg/mL",
+    "units": {
+      "pg/ml": [1.0, 0.0],
+      "pmol/l": [1.355, 0.0]
+    }
+  },
+  "vitaminD": {
+    "label": "25-OH Vitamin D",
+    "names": [
+      "25 OH Vitamin D",
+      "25 Hydroxy Vitamin D",
+      "25-OH Vitamin D",
+      "25-Hydroxyvitamin D",
+      "Vitamin D 25-OH",
+      "Vitamin D",
+      "25 OH D",
+      "25(OH)D"
+    ],
+    "unit": "ng/mL",
+    "units": {
+      "ng/ml": [1.0, 0.0],
+      "nmol/l": [0.4, 0.0]
+    }
+  }
+}

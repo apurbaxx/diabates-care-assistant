@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -13,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.schemas import SearchRequest, SearchResponse, HealthResponse
 from app.retrieval import ModelManager, GuidelineIndex, HybridSearchEngine
 from app.patient_records import PatientSearchRequest, search_patient_documents
+from app.lab_pdf import extract_pdf, MAX_BYTES
 
 # Configure privacy-preserving logging (do NOT log query terms or patient data)
 logging.basicConfig(
@@ -145,6 +147,49 @@ async def search_guidelines(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while retrieving guideline evidence: {str(e)}",
         )
+
+
+# Limit concurrent PDF extractions to keep peak memory minimal on memory-constrained dynos
+pdf_semaphore = asyncio.Semaphore(2)
+
+
+@app.post("/extract-pdf")
+@app.post("/labs/extract")
+async def extract_laboratory_pdf(
+    request: Request,
+    api_key: Optional[str] = Depends(verify_api_key),
+):
+    """Layout-aware extraction endpoint for clinical laboratory report PDFs."""
+    content_type = request.headers.get("content-type", "")
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        file = form.get("file")
+        if not file or not hasattr(file, "read"):
+            raise HTTPException(status_code=400, detail="Provide a PDF file in the 'file' form field.")
+        pdf_bytes = await file.read()
+    else:
+        pdf_bytes = await request.body()
+
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="The uploaded PDF report is empty.")
+    if len(pdf_bytes) > MAX_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"PDF exceeds the maximum size limit of {MAX_BYTES // (1024 * 1024)} MB.",
+        )
+
+    async with pdf_semaphore:
+        try:
+            return extract_pdf(pdf_bytes)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        except Exception as exc:
+            logger.error(f"Error extracting PDF: {exc}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail="This PDF layout could not be extracted safely. Please upload a digitally generated report or paste text directly.",
+            )
 
 
 if __name__ == "__main__":

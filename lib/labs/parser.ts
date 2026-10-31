@@ -38,9 +38,6 @@ const SYNONYMS: Synonym[] = [
   { key: "vitaminD", patterns: [/vitamin\s*d/i, /25[\s-]?oh[\s-]?d/i] },
 ];
 
-// Order matters: hba1c must be checked before generic haemoglobin, and uacr
-// before creatinine — "Albumin/Creatinine ratio" would otherwise be caught by
-// the generic "creatinine" pattern first.
 const ORDERED_KEYS: LabKey[] = [
   "hba1c",
   "fastingGlucose",
@@ -67,6 +64,12 @@ const NUMBER_RE = /(-?\d+(?:\.\d+)?)/;
 const UNIT_RE =
   /(mmol\/mol|mmol\/l|umol\/l|µmol\/l|mg\/dl|mg\/g|mg\/mmol|ng\/ml|pg\/ml|miu\/l|u\/l|g\/dl|%)/i;
 
+const PROSE_RE =
+  /\b(?:diagnosis\s+of|diagnostic\s+criteria|diagnostic\s+threshold|requires\s+(?:a\s+|an\s+)?|defined\s+as|classified\s+as|considered\s+(?:diagnostic|normal|abnormal)|and\s*\/\s*or|>\s*or\s*=|<\s*or\s*=|greater\s+than\s+(?:or\s+equal\s+to\s+)?|less\s+than\s+(?:or\s+equal\s+to\s+)?|impaired\s+fasting|prediabetes|clinical\s+significance|correlate\s+clinically|clinically\s+indicated|criteria\s+for|prior\s+to\s+(?:collection|testing)|fasting\s+for\s+at\s+least|fasting\s+period)\b/i;
+
+const COMMENT_HEADING_RE =
+  /^(?:notes?|comments?|interpretation|clinical\s*interpretation|methodology|diagnostic\s*criteria|clinical\s*significance|remarks?|disclaimer)\s*[:\-–\/]/i;
+
 export interface ParseResult {
   values: ParsedLabValue[];
   unmatchedLines: string[];
@@ -83,6 +86,15 @@ export function parseLabText(raw: string): ParseResult {
   const claimedKeys = new Set<LabKey>();
 
   for (const line of lines) {
+    if (
+      COMMENT_HEADING_RE.test(line) ||
+      PROSE_RE.test(line) ||
+      /^\d+\.\s+(?:the\s+|a\s+|an\s+|criteria|diagnosis|impaired|normal|fasting|patient)/i.test(line)
+    ) {
+      unmatched.push(line);
+      continue;
+    }
+
     let matchedKey: LabKey | undefined;
     let labelMatch: RegExpMatchArray | undefined;
     for (const key of ORDERED_KEYS) {
@@ -103,15 +115,10 @@ export function parseLabText(raw: string): ParseResult {
       continue;
     }
     if (claimedKeys.has(matchedKey)) {
-      // Duplicate line for an already-parsed analyte (e.g. a repeated header) —
-      // keep the first, surface the rest as unmatched for visibility.
       unmatched.push(line);
       continue;
     }
 
-    // Search for the number in the line with the matched label blanked out —
-    // labels like "HbA1c" or "Vitamin B12" contain digits that would otherwise
-    // be mistaken for the reported value.
     const searchLine =
       labelMatch && labelMatch.index !== undefined
         ? line.slice(0, labelMatch.index) +
@@ -130,11 +137,9 @@ export function parseLabText(raw: string): ParseResult {
 
     const { value, converted, note } = normaliseToCanonical(matchedKey, reportedValue, reportedUnit);
 
-    // Confidence: high if we found a clear label + number + unit; slightly lower
-    // if the unit was missing (we assume canonical) or an ambiguous label matched.
     let confidence = 0.95;
     if (!reportedUnit) confidence -= 0.15;
-    if (converted) confidence -= 0.02; // conversions carry a hair more uncertainty
+    if (converted) confidence -= 0.02;
 
     values.push({
       key: matchedKey,
