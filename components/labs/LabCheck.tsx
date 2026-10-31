@@ -99,10 +99,20 @@ export function LabCheck({ patient }: { patient: Patient }) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch("/api/labs/extract", {
+        let res = await fetch("/api/labs/extract", {
           method: "POST",
           body: formData,
         });
+
+        // If server is overloaded, notify and automatically retry once after 5 seconds
+        if (res.status === 429) {
+          setStorageError("Server is overloaded. Retrying automatically in 5 seconds...");
+          await new Promise((r) => setTimeout(r, 5000));
+          res = await fetch("/api/labs/extract", {
+            method: "POST",
+            body: formData,
+          });
+        }
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({ error: "Failed to extract PDF" }));
@@ -147,6 +157,9 @@ export function LabCheck({ patient }: { patient: Patient }) {
         setStorageError(message);
       } finally {
         setIsExtracting(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
       return;
     }
@@ -157,6 +170,10 @@ export function LabCheck({ patient }: { patient: Patient }) {
       setRawText(text);
     } catch {
       setStorageError("Unable to read uploaded text file.");
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }
 
@@ -383,7 +400,10 @@ export function LabCheck({ patient }: { patient: Patient }) {
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <button
               disabled={isExtracting}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                fileInputRef.current?.click();
+              }}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-page px-3 py-1.5 text-sm font-medium text-ink hover:bg-brand-100/40 disabled:opacity-50"
             >
               {isExtracting ? (
@@ -401,7 +421,14 @@ export function LabCheck({ patient }: { patient: Patient }) {
               type="file"
               accept=".pdf,.txt,.csv"
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              onClick={(e) => {
+                (e.target as HTMLInputElement).value = "";
+              }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) handleFile(f);
+              }}
             />
             <span className="text-xs text-muted">or try synthetic samples:</span>
             {SAMPLES.map((s) => (

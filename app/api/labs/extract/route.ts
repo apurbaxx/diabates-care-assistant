@@ -6,10 +6,46 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MiB limit
-const ML_SERVICE_URL = process.env.LAB_EXTRACT_SERVICE_URL || process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
+const rawUrl = process.env.LAB_EXTRACT_SERVICE_URL || process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
+const ML_SERVICE_URL = rawUrl.replace(/\/+$/, "");
 const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || "cliniq-knowledge-internal-key";
 
-let activeWorker = false;
+const MAX_CONCURRENT = 2;
+let activeWorkers = 0;
+const waitQueue: Array<() => void> = [];
+
+function acquireSlot(maxWaitMs = 5000): Promise<boolean> {
+  if (activeWorkers < MAX_CONCURRENT) {
+    activeWorkers++;
+    return Promise.resolve(true);
+  }
+
+  return new Promise<boolean>((resolve) => {
+    let timer: NodeJS.Timeout | null = null;
+
+    const onSlotAvailable = () => {
+      if (timer) clearTimeout(timer);
+      activeWorkers++;
+      resolve(true);
+    };
+
+    timer = setTimeout(() => {
+      const idx = waitQueue.indexOf(onSlotAvailable);
+      if (idx !== -1) waitQueue.splice(idx, 1);
+      resolve(false);
+    }, maxWaitMs);
+
+    waitQueue.push(onSlotAvailable);
+  });
+}
+
+function releaseSlot() {
+  activeWorkers = Math.max(0, activeWorkers - 1);
+  const next = waitQueue.shift();
+  if (next) {
+    next();
+  }
+}
 
 /**
  * Extracts structured laboratory test findings from an uploaded PDF.
@@ -18,14 +54,14 @@ let activeWorker = false;
  * when the ML service is offline (e.g. Supabase mode on memory-constrained dynos).
  */
 export async function POST(req: NextRequest) {
-  if (activeWorker) {
+  const acquired = await acquireSlot(5000);
+  if (!acquired) {
     return NextResponse.json(
-      { error: "Another PDF report extraction is currently in progress. Please retry in a few seconds." },
-      { status: 429 }
+      { error: "Server is overloaded. Please try again in 5 seconds." },
+      { status: 429, headers: { "Retry-After": "5", "Cache-Control": "no-store" } }
     );
   }
 
-  activeWorker = true;
   try {
     const contentType = req.headers.get("content-type") || "";
     let pdfBuffer: Buffer;
@@ -81,9 +117,13 @@ export async function POST(req: NextRequest) {
     // 1. Try FastAPI ML Service first (if running)
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const mlRes = await fetch(`${ML_SERVICE_URL}/extract-pdf`, {
+      const extractEndpoint = ML_SERVICE_URL.endsWith("/extract-pdf")
+        ? ML_SERVICE_URL
+        : `${ML_SERVICE_URL}/extract-pdf`;
+
+      const mlRes = await fetch(extractEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/pdf",
@@ -169,6 +209,6 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
-    activeWorker = false;
+    releaseSlot();
   }
 }

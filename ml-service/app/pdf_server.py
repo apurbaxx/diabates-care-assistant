@@ -5,6 +5,8 @@ Peak RAM is ~35MB, perfectly suited for running on a separate 512MB dyno or cont
 """
 import os
 import sys
+import asyncio
+import re
 from typing import Optional
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -22,6 +24,8 @@ API_KEY_NAME = "X-API-Key"
 API_KEY = os.environ.get("ML_SERVICE_API_KEY", "cliniq-knowledge-internal-key")
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
+pdf_semaphore = asyncio.Semaphore(2)
+
 
 async def verify_api_key(header_key: Optional[str] = Security(api_key_header)):
     if not API_KEY or API_KEY == "cliniq-knowledge-internal-key":
@@ -36,6 +40,14 @@ app = FastAPI(
     description="Lightweight layout-aware PDF extraction microservice without ML model overhead.",
     version="1.0.0",
 )
+
+@app.middleware("http")
+async def normalize_path_middleware(request: Request, call_next):
+    # Normalize duplicate slashes in path (e.g. //extract-pdf -> /extract-pdf)
+    path = request.scope.get("path", "")
+    if "//" in path:
+        request.scope["path"] = re.sub(r"/+", "/", path)
+    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,7 +69,9 @@ def health_check():
 
 
 @app.post("/extract-pdf")
+@app.post("//extract-pdf")
 @app.post("/labs/extract")
+@app.post("//labs/extract")
 async def extract_laboratory_pdf(
     request: Request,
     api_key: Optional[str] = Depends(verify_api_key),
@@ -83,7 +97,8 @@ async def extract_laboratory_pdf(
         )
 
     try:
-        return extract_pdf(pdf_bytes)
+        async with pdf_semaphore:
+            return extract_pdf(pdf_bytes)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except Exception as exc:

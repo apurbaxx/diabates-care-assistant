@@ -154,7 +154,9 @@ pdf_semaphore = asyncio.Semaphore(2)
 
 
 @app.post("/extract-pdf")
+@app.post("//extract-pdf")
 @app.post("/labs/extract")
+@app.post("//labs/extract")
 async def extract_laboratory_pdf(
     request: Request,
     api_key: Optional[str] = Depends(verify_api_key),

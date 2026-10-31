@@ -1,16 +1,24 @@
 #!/bin/bash
 set -e
 
-# If Supabase is configured, offload vector operations to Supabase pgvector
-# and run pure Next.js to stay well under Heroku's 512MB RAM limit.
+# If Supabase is configured:
 if [ -n "$SUPABASE_URL" ]; then
     echo ">>> ======================================================="
     echo ">>> [SUPABASE PGVECTOR DETECTED]"
     echo ">>> Offloading vector search & storage to Supabase."
-    echo ">>> Skipping heavy Python ML service (saving ~400MB RAM)."
+    echo ">>> Starting PDF extraction microservice on port 8000..."
     echo ">>> Starting Next.js on port ${PORT:-3000}..."
     echo ">>> ======================================================="
-    exec node_modules/.bin/next start -p ${PORT:-3000}
+    cd /app/ml-service
+    python -m uvicorn app.pdf_server:app --host 127.0.0.1 --port 8000 &
+    ML_PID=$!
+    cd /app
+    node_modules/.bin/next start -p ${PORT:-3000} &
+    NEXT_PID=$!
+    wait -n $ML_PID $NEXT_PID
+    EXIT_CODE=$?
+    kill $ML_PID $NEXT_PID 2>/dev/null
+    exit $EXIT_CODE
 fi
 
 # Fallback: Start both local Python ML service and Next.js
