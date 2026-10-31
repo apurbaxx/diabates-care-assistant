@@ -70,9 +70,38 @@ const PROSE_RE =
 const COMMENT_HEADING_RE =
   /^(?:notes?|comments?|interpretation|clinical\s*interpretation|methodology|diagnostic\s*criteria|clinical\s*significance|remarks?|disclaimer)\s*[:\-–\/]/i;
 
+const DATE_LINE_RE =
+  /\b(?:specimen(?:\s*collected)?|collection(?:\s*date)?|report\s*date|date\s*of\s*(?:collection|report)|sample\s*date|test\s*date|date)\s*[:\-–]?\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})\b/i;
+
+function parseDateSnippet(snippet: string): string | undefined {
+  const isoMatch = snippet.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (isoMatch) {
+    const y = isoMatch[1];
+    const m = isoMatch[2].padStart(2, "0");
+    const d = isoMatch[3].padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const dmyMatch = snippet.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const d = dmyMatch[1].padStart(2, "0");
+    const m = dmyMatch[2].padStart(2, "0");
+    const y = dmyMatch[3];
+    return `${y}-${m}-${d}`;
+  }
+  const parsed = new Date(snippet);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return undefined;
+}
+
 export interface ParseResult {
   values: ParsedLabValue[];
   unmatchedLines: string[];
+  reportDate?: string;
 }
 
 export function parseLabText(raw: string): ParseResult {
@@ -84,8 +113,16 @@ export function parseLabText(raw: string): ParseResult {
   const values: ParsedLabValue[] = [];
   const unmatched: string[] = [];
   const claimedKeys = new Set<LabKey>();
+  let extractedDate: string | undefined;
 
   for (const line of lines) {
+    if (!extractedDate) {
+      const dateMatch = line.match(DATE_LINE_RE);
+      if (dateMatch) {
+        const candidate = parseDateSnippet(dateMatch[1]);
+        if (candidate) extractedDate = candidate;
+      }
+    }
     if (
       COMMENT_HEADING_RE.test(line) ||
       PROSE_RE.test(line) ||
@@ -152,7 +189,7 @@ export function parseLabText(raw: string): ParseResult {
     claimedKeys.add(matchedKey);
   }
 
-  return { values, unmatchedLines: unmatched };
+  return { values, unmatchedLines: unmatched, reportDate: extractedDate };
 }
 
 /** Parse a .csv with header row `analyte,value,unit` or `analyte,value`. */

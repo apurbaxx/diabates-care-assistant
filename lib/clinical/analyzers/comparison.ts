@@ -32,8 +32,13 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
     const parsed = report.values.find((v) => v.key === key)!;
     const meta = ANALYTES[key];
     const history = series[key] ?? [];
-    // Previous = latest prior visit measurement, strictly before this report's date.
-    const priorPoints = history.filter((p) => p.date < report.date);
+    // Previous = latest prior visit measurement: strictly before this report's date,
+    // or on the same date from a distinct prior visit (not this report itself).
+    const priorPoints = history.filter(
+      (p) =>
+        p.date < report.date ||
+        (p.date === report.date && p.reportId !== report.id && p.visitId !== report.id),
+    );
     const previous = priorPoints[priorPoints.length - 1];
 
     const current = parsed.value;
@@ -196,7 +201,13 @@ function buildComparisonInsights(
         statement:
           `${meta.label} changed from ${row.previous?.toFixed(meta.decimals)} ${meta.unit} (${row.previousDate}) to ${row.current?.toFixed(meta.decimals)} ${meta.unit} (${report.date}), ` +
           `a ${row.direction === "up" ? "rise" : "fall"} of ${Math.abs(row.delta ?? 0).toFixed(meta.decimals)} ${meta.unit}` +
-          (row.percentDelta !== undefined ? ` (${row.percentDelta > 0 ? "+" : ""}${row.percentDelta.toFixed(0)}%)` : "") +
+          (row.percentDelta !== undefined
+            ? ` (${row.percentDelta > 0 ? "+" : ""}${
+                Math.abs(row.percentDelta) < 1 && row.percentDelta !== 0
+                  ? row.percentDelta.toFixed(1)
+                  : row.percentDelta.toFixed(0)
+              }%)`
+            : "") +
           `. Relative to the patient's own trend: ${row.trendSummary}`,
         detail:
           row.rangeStatus === "within-range"

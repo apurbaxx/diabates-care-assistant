@@ -166,6 +166,9 @@ export function LabCheck({ patient }: { patient: Patient }) {
     setValues(result.values);
     setUnmatched(result.unmatchedLines);
     setWarnings([]);
+    if (result.reportDate && isCalendarDate(result.reportDate) && result.reportDate <= localDate()) {
+      setReportDate(result.reportDate);
+    }
     setStage("review");
   }
 
@@ -176,6 +179,12 @@ export function LabCheck({ patient }: { patient: Patient }) {
         setSourceFile(undefined);
         setRawText(text);
         setFileName(label);
+        const parsed = parseLabText(text);
+        if (parsed.reportDate && isCalendarDate(parsed.reportDate) && parsed.reportDate <= localDate()) {
+          setReportDate(parsed.reportDate);
+        } else {
+          setReportDate(localDate());
+        }
       });
   }
 
@@ -275,6 +284,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
     setStage("input");
     setRawText("");
     setFileName(undefined);
+    setReportDate(localDate());
     setValues([]);
     setUnmatched([]);
     setWarnings([]);

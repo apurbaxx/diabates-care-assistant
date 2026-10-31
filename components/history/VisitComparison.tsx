@@ -17,7 +17,7 @@ export function VisitComparison({ patient, initialCurrentId = "", initialPreviou
   const [currentId, setCurrentId] = useState(initialCurrentId);
   const [previousId, setPreviousId] = useState(initialPreviousId);
   const currentVisit = visits.find(v => v.id === currentId) ?? visits.at(-1);
-  const earlierVisits = visits.filter(v => currentVisit && v.date < currentVisit.date);
+  const earlierVisits = visits.filter(v => currentVisit && (v.date < currentVisit.date || (v.date === currentVisit.date && v.id !== currentVisit.id)));
   const previousVisit = earlierVisits.find(v => v.id === previousId) ?? earlierVisits.at(-1);
   const { rows } = useMemo(() => compareVisits({
     ...patient,
