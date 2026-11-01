@@ -78,17 +78,17 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
     <div className={styles.shell}>
       <header className={styles.header}>
         <span className={styles.wordmark}>Clin<span>IQ</span><span className={styles.brandDot} aria-hidden="true" /></span>
-        <span className={styles.eyebrow}>A little clarity, before you begin</span>
+        <span className={styles.eyebrow}>DOCTOR PRODUCTIVITY &amp; KNOWLEDGE ASSISTANT</span>
       </header>
       <div className={styles.rule} aria-hidden="true"><span /></div>
 
       {step === "name" ? <div key="name" className={styles.nameStep}>
-        <p className={styles.eyebrow}><span className={styles.stepNumber}>01 /</span> Your workspace, made personal</p>
-        <h1 id="welcome-heading" className={styles.headline}>A clearer view.<br /><em>A more focused day.</em></h1>
-        <p id="welcome-description" className={styles.description}>Welcome to ClinIQ. A little more context for every patient.<br className={styles.desktopBreak} /> A little more space for the work that matters.</p>
+        <p className={styles.eyebrow}><span className={styles.stepNumber}>01 /</span> WELCOME TO CLINIQ</p>
+        <h1 id="welcome-heading" className={styles.headline}>Simplifying Clinical Workflows.<br /><em>Supporting Better-Informed Care.</em></h1>
+        <p id="welcome-description" className={styles.description}>ClinIQ brings patient records, clinical workflows, and evidence-based medical knowledge into one unified workspace.<br className={styles.desktopBreak} /> Helping doctors save time, access information faster, and focus on patient care.</p>
 
         <form className={styles.form} onSubmit={event => { event.preventDefault(); const value = cleanName(name); if (value) { setName(value); setStep("greeting"); } }}>
-          <label htmlFor="welcome-name" className={styles.nameLabel}>Let’s begin with your name.</label>
+          <label htmlFor="welcome-name" className={styles.nameLabel}>Let's personalize your workspace.</label>
           <div className={styles.nameLine}>
             <span className={styles.prefix} aria-hidden="true">Dr.</span>
             <input ref={input} id="welcome-name" name="doctor-name" autoComplete="given-name" aria-label="Your name, prefixed with Dr." value={name} onChange={event => setName(event.target.value)} maxLength={60} placeholder="Your name" required />
@@ -97,18 +97,18 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
           <div className={styles.inputFooter}><span>Just for your welcome. Saved only in this browser.</span><span className={styles.enterHint}>Press Enter <span aria-hidden="true">↵</span></span></div>
         </form>
       </div> : <div key="greeting" className={styles.greetingStep}>
-        <p className={styles.eyebrow}><span className={styles.stepNumber}>02 /</span> A place for your day</p>
-        <h1 ref={greeting} tabIndex={-1} id="welcome-heading" className={styles.greeting}>Hello, <em>Dr. {name}.</em></h1>
-        <p id="welcome-description" className={styles.description}>Your patients’ stories, a little clearer.<br />Your working day, a little more connected.</p>
+        <p className={styles.eyebrow}><span className={styles.stepNumber}>02 /</span> EXPLORE YOUR WORKSPACE</p>
+        <h1 ref={greeting} tabIndex={-1} id="welcome-heading" className={styles.greeting}>Welcome, <em>Dr. {name}.</em></h1>
+        <p id="welcome-description" className={styles.description}>Your clinical workspace, all in one place.<br />Manage patient information, streamline daily workflows, and access evidence-based medical knowledge.</p>
         <div className={styles.overview} aria-label="Your ClinIQ workspace at a glance">
-          <article className={styles.feature}><div className={styles.featureTop}><span>01</span><FileText size={19} strokeWidth={1.4} /></div><h2>The whole patient story.</h2><p>Review visits, lab results, medications and trends. Ask the AI Assistant questions grounded in the patient’s record.</p></article>
-          <article className={styles.feature}><div className={styles.featureTop}><span>02</span><CalendarDays size={19} strokeWidth={1.4} /></div><h2>A more connected day.</h2><p>Keep appointments, reports awaiting review and visit summaries together in one considered workspace.</p></article>
-          <article className={styles.feature}><div className={styles.featureTop}><span>03</span><BookOpen size={19} strokeWidth={1.4} /></div><h2>Room to explore.</h2><p>Search diabetes research with Knowledge Explorer and follow sources for further reading.</p></article>
+          <article className={styles.feature}><div className={styles.featureTop}><span>01</span><FileText size={19} strokeWidth={1.4} /></div><h2>Patient Records &amp; AI Assistant</h2><p>Access patient histories, lab results, medications, and clinical trends. Ask questions about patient records and receive answers grounded in recorded data.</p></article>
+          <article className={styles.feature}><div className={styles.featureTop}><span>02</span><CalendarDays size={19} strokeWidth={1.4} /></div><h2>Clinical Workflow Management</h2><p>Manage appointments, review pending reports, track tasks, and generate editable visit summaries from one workspace.</p></article>
+          <article className={styles.feature}><div className={styles.featureTop}><span>03</span><BookOpen size={19} strokeWidth={1.4} /></div><h2>Evidence-Based Knowledge Assistant</h2><p>Search ADA and RSSDI diabetes guidelines using AI-powered retrieval. Find relevant medical evidence with direct source references.</p></article>
         </div>
-        <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace} disabled={leaving}>Enter workspace <ArrowRight size={18} strokeWidth={1.5} /></button><span>Press any key to continue. You can revisit “Take a tour” anytime.</span></div>
+        <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace} disabled={leaving}>Explore ClinIQ <ArrowRight size={18} strokeWidth={1.5} /></button><span>Press any key to continue. You can revisit “Take a tour” anytime.</span></div>
       </div>}
 
-      <footer className={styles.footer}><span>Thoughtfully organised. Clinician led.</span><span className={styles.footerRight}>Your judgment stays at the centre.</span></footer>
+      <footer className={styles.footer}><span>Built for doctors. Powered by intelligent assistance.</span><span className={styles.footerRight}>AI assists. Doctors decide.</span></footer>
     </div>
   </dialog>}
   </WelcomeCompleteContext.Provider>;
