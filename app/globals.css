@@ -720,3 +720,6 @@ h1, h2, h3, h4, h5, h6,
 .workflow-dialog :is(h1,h2,h3,h4,h5,h6),
 .record-evidence :is(h1,h2,h3,h4,h5,h6),
 .tour-title { font-family:var(--font-heading); }
+
+.directory .patient-directory-row { cursor: pointer; }
+.directory .patient-directory-row:hover { background: #e5ecf3; }
