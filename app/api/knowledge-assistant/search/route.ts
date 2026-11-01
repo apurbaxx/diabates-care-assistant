@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isSupabaseConfigured, searchWithSupabase } from "@/lib/supabase";
+import { rerankCandidates } from "@/lib/knowledge/rerank";
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || "cliniq-knowledge-internal-key";
@@ -30,16 +31,20 @@ export async function POST(req: NextRequest) {
     if (isSupabaseConfigured()) {
       console.log(`[Knowledge Assistant Search] 🟢 Routing query to SUPABASE PGVECTOR: "${query}"`);
       try {
-        const { results, latency_ms } = await searchWithSupabase(query, limit);
+        const started = Date.now();
+        const candidateCount = process.env.RERANK_SERVICE_URL ? Math.max(50, limit) : limit;
+        const { results: candidates } = await searchWithSupabase(query, candidateCount);
+        const { results, reranking_executed, reranker_fallback_used } =
+          await rerankCandidates(query, candidates, limit, score_threshold);
         return NextResponse.json({
           query,
-          engine: "supabase_pgvector",
+          engine: reranking_executed ? "supabase_pgvector_rerank" : "supabase_pgvector",
           total_results: results.length,
           results,
           semantic_retrieval_executed: true,
-          reranking_executed: true,
-          reranker_fallback_used: false,
-          latency_ms,
+          reranking_executed,
+          reranker_fallback_used,
+          latency_ms: Date.now() - started,
         });
       } catch (err) {
         console.error("Supabase search error:", err);

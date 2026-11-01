@@ -102,7 +102,7 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthResult> {
         total_passages: 0,
         total_documents: 0,
         embedding_model: "sentence-transformers/all-MiniLM-L6-v2 (pgvector)",
-        reranker_model: "Reciprocal Rank Fusion (pgvector)",
+        reranker_model: "Not checked (Supabase retrieval only)",
         message: error.message,
       };
     }
@@ -112,7 +112,7 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthResult> {
       total_passages: count || 2032,
       total_documents: 9,
       embedding_model: "sentence-transformers/all-MiniLM-L6-v2 (pgvector)",
-      reranker_model: "Reciprocal Rank Fusion (pgvector)",
+      reranker_model: "Not checked (Supabase retrieval only)",
     };
   } catch (err) {
     return {
@@ -120,7 +120,7 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthResult> {
       total_passages: 0,
       total_documents: 0,
       embedding_model: "sentence-transformers/all-MiniLM-L6-v2 (pgvector)",
-      reranker_model: "Reciprocal Rank Fusion (pgvector)",
+      reranker_model: "Not checked (Supabase retrieval only)",
       message: err instanceof Error ? err.message : "Supabase connection error",
     };
   }
@@ -166,7 +166,8 @@ export async function searchWithSupabase(
     bm25_rank: row.bm25_rank ?? null,
     semantic_rank: row.semantic_rank ?? null,
     rrf_score: row.rrf_score ? Number(row.rrf_score.toFixed(5)) : null,
-    rerank_score: row.rerank_score ? Number(row.rerank_score.toFixed(4)) : null,
+    // SQL's synthetic score is not a cross-encoder score.
+    rerank_score: null,
     relevance_label: row.relevance_label || "Relevant",
   }));
 
