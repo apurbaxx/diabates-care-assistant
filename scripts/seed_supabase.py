@@ -106,7 +106,8 @@ def main():
     for i in range(0, len(records), args.batch_size):
         batch = records[i : i + args.batch_size]
         try:
-            res = client.post(endpoint, headers=headers, json=batch)
+            # Match the stable passage ID rather than the generated primary key.
+            res = client.post(endpoint, params={"on_conflict": "passage_id"}, headers=headers, json=batch)
             if res.status_code not in (200, 201, 204):
                 print(f"\n[ERROR] Batch {i} to {i+len(batch)} failed (status {res.status_code}): {res.text}")
                 sys.exit(1)
