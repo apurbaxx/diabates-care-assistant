@@ -1,8 +1,5 @@
 # ClinIQ Medical Guideline Knowledge Explorer - ML Service
 
-For the full local search pipeline on Google Cloud Run with automatic Supabase
-fallback, see [the Cloud Run deployment guide](CLOUD_RUN.md).
-
 Evidence-based clinical guideline search and retrieval service for diabetes care. Indexes authorized clinical recommendations from the **American Diabetes Association (ADA) Standards of Care 2026** and the **Research Society for the Study of Diabetes in India (RSSDI) 2024 & 2022 Guidelines**.
 
 ## Architecture
