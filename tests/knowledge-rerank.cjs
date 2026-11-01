@@ -44,6 +44,7 @@ const candidates = [passage('a'), passage('b'), {
     };
     const success = await rerankCandidates('kidney', candidates, 2);
     assert.equal(success.reranking_executed, true);
+    assert.equal(success.reranker_status, 'success');
     assert.equal(success.results[0].text, candidates[1].text);
     assert.equal(success.results[0].official_url, candidates[1].official_url);
     assert.equal(success.results[0].passage_id, 'b');
@@ -63,18 +64,23 @@ const candidates = [passage('a'), passage('b'), {
       assert.equal(fallback.reranker_fallback_used, true);
     }
     global.fetch = async () => { throw Error('Network failure'); };
-    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_fallback_used, true);
+    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_status, 'request_failed');
+    global.fetch = async () => new Response('', { status: 401 });
+    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_status, 'http_401');
+    global.fetch = async () => Response.json({ results: [] });
+    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_status, 'no_relevant_results');
     process.env.RERANK_TIMEOUT_MS = '500';
     global.fetch = async (_url, options) => new Promise((_resolve, reject) => {
       options.signal.addEventListener('abort', () => reject(Error('Timeout')));
     });
-    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_fallback_used, true);
+    assert.equal((await rerankCandidates('kidney', candidates, 2)).reranker_status, 'timeout');
 
     let candidateCount;
     const { POST } = load('app/api/knowledge-assistant/search/route.ts', {
       '@/lib/supabase': { isSupabaseConfigured: () => true,
         searchWithSupabase: async (_query, count) => { candidateCount = count; return { results: candidates }; } },
       '@/lib/knowledge/rerank': { rerankCandidates },
+      '@/lib/knowledge/python-service': { callKnowledgeService: async () => ({ status: 'not_configured' }) },
     });
     const request = () => new Request('http://localhost/api/knowledge-assistant/search', {
       method: 'POST', body: JSON.stringify({ query: 'kidney disease', limit: 2 }),
@@ -86,6 +92,7 @@ const candidates = [passage('a'), passage('b'), {
     assert.equal(candidateCount, 50);
     assert.equal(fallback.engine, 'supabase_pgvector');
     assert.equal(fallback.reranker_fallback_used, true);
+    assert.equal(fallback.reranker_status, 'request_failed');
     assert.deepEqual(fallback.results, candidates.slice(0, 2));
     global.fetch = async () => Response.json({ results: [{ passage_id: 'b', score: 3 }] });
     const reranked = await (await POST(request())).json();

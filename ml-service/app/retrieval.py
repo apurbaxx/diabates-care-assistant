@@ -444,7 +444,8 @@ class HybridSearchEngine:
                     for idx in top_candidates
                 ]
             try:
-                ce_scores = self.model_manager.reranker_model.predict(passage_pairs)
+                # Small batches bound inference memory; scoring logic is shared by local and cloud search.
+                ce_scores = self.model_manager.reranker_model.predict(passage_pairs, batch_size=4)
                 rerank_executed = True
 
                 candidate_scored = []

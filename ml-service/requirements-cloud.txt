@@ -1,0 +1,12 @@
+# Requires Python 3.12+ (NumPy 2.5). Match the verified local library versions.
+fastapi==0.143.3
+uvicorn==0.54.0
+pydantic==2.14.1
+sentence-transformers==6.1.0
+# Require the CPU build so a later install cannot select CUDA dependencies.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1+cpu
+transformers==5.20.1
+rank-bm25==0.2.2
+numpy==2.5.3
+scikit-learn==1.9.1

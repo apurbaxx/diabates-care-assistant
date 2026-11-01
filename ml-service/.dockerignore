@@ -1,0 +1,11 @@
+*
+!Dockerfile
+!requirements-cloud.txt
+!app/
+!app/retrieval.py
+!app/schemas.py
+!app/cloud_search.py
+!data/
+!data/passages.json
+!data/embeddings.npy
+!data/index_metadata.json

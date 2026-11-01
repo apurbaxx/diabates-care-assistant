@@ -1,0 +1,4 @@
+# Preserve artifact bytes across Windows and Linux checkouts.
+data/passages.json -text
+data/index_metadata.json -text
+data/embeddings.npy binary
