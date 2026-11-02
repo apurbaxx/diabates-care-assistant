@@ -39,8 +39,14 @@ const key='cliniq:welcome:v1';
   assert((await dialog.locator('article p').evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(size=>size>=16));
   assert(await dialog.getByRole('heading',{level:1}).evaluate(el=>el.getBoundingClientRect().top>=0),'Mobile starts at the introduction, not the lower CTA');
   await mobile.screenshot({path:'test-results/welcome-demo-mobile.png',fullPage:true});
-  await mobile.getByRole('button',{name:'Explore ClinIQ',exact:true}).click();await dialog.waitFor({state:'hidden'});
+  await mobile.keyboard.press('k');await dialog.waitFor({state:'hidden'});
   await mobile.getByRole('note').getByText('Demo Mode',{exact:true}).waitFor();
+  const automatic=await browser.newPage({reducedMotion:'reduce'});automatic.on('pageerror',e=>errors.push(e.message));
+  await automatic.addInitScript(()=>localStorage.setItem('cliniq:workspace-tour:v1','seen'));
+  await automatic.goto(base);const automaticWelcome=automatic.getByRole('dialog',{name:'Welcome to ClinIQ.'});await automaticWelcome.waitFor();
+  const started=Date.now();await automaticWelcome.waitFor({state:'hidden',timeout:12000});assert(Date.now()-started>=9000,'Automatic entry waits ten seconds after the welcome appears');
+  await automatic.getByRole('heading',{name:'Doctor workspace',exact:true}).waitFor();
+  assert.deepEqual(await automatic.evaluate(k=>JSON.parse(localStorage.getItem(k)),key),{completed:true,mode:'demo'});
   assert.deepEqual(errors,[]);
   console.log('PASS: one-step demo entry, no personal information, feature highlights, readable desktop/mobile text, responsive layout, optional tour, legacy completion, persistence and blocked storage');
  }finally{await browser.close();}

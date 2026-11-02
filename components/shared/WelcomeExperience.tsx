@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styles from "./WelcomeExperience.module.css";
 
 const STORAGE_KEY = "cliniq:welcome:v1";
@@ -50,14 +50,22 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
     const timer=window.setTimeout(()=>setShowDemo(false),5000);
     return ()=>window.clearTimeout(timer);
   },[complete]);
-  function enterWorkspace(){
+  const enterWorkspace=useCallback(()=>{
     try {localStorage.setItem(STORAGE_KEY,JSON.stringify({completed:true,mode:"demo"}));} catch { /* Entry also works without browser storage. */ }
     setVisible(false);
-  }
+  },[]);
+  useEffect(()=>{
+    if(!ready || !visible || phase!=="welcome")return;
+    const timer=window.setTimeout(enterWorkspace,10000);
+    return ()=>window.clearTimeout(timer);
+  },[ready,visible,phase,enterWorkspace]);
   return <WelcomeCompleteContext.Provider value={complete}>
     {complete && showDemo && <div className={styles.demoBar} role="note"><strong>Demo Mode</strong><span>Synthetic patient records. For demonstration.</span></div>}
     {children}
-    {ready && visible && <dialog ref={dialog} className={styles.dialog} aria-labelledby="welcome-heading" aria-describedby={phase==="welcome" ? "welcome-description" : undefined} onCancel={event=>event.preventDefault()}>
+    {ready && visible && <dialog ref={dialog} className={styles.dialog} aria-labelledby="welcome-heading" aria-describedby={phase==="welcome" ? "welcome-description" : undefined} onCancel={event=>event.preventDefault()} onKeyDown={event=>{
+      if(phase!=="welcome" || event.repeat || event.nativeEvent.isComposing || event.ctrlKey || event.metaKey || event.altKey || ["Tab","Shift","Control","Alt","Meta"].includes(event.key))return;
+      event.preventDefault();event.stopPropagation();enterWorkspace();
+    }}>
       <div className={styles.shell}>
         <header className={styles.header}><span className={styles.wordmark}>Clin<span>IQ</span></span><span className={styles.eyebrow}>DEMO MODE</span></header>
         <div className={styles.rule}/>
@@ -69,7 +77,7 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
             <article className={styles.feature}><span className={styles.number}>02</span><h2>Clinical Workflow Management</h2><p>Manage appointments, review pending reports, track tasks, and generate editable visit summaries.</p></article>
             <article className={styles.feature}><span className={styles.number}>03</span><h2>Evidence-Based Knowledge Assistant</h2><p>Retrieve relevant evidence from ADA and RSSDI diabetes guidelines with direct source references.</p></article>
           </div>
-          <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace}>Explore ClinIQ <span aria-hidden="true">&rarr;</span></button><span>No sign-up or personal information required.<br/>Choose &ldquo;Take a tour&rdquo; in the workspace whenever you like.</span></div>
+          <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace}>Explore ClinIQ <span aria-hidden="true">&rarr;</span></button><span>Press any key or select Explore ClinIQ.<br/>The workspace opens automatically after 10 seconds.</span></div>
         </main>}
         <footer className={styles.footer}><span>Patient records. Clinical workflows. Medical knowledge.</span><span>Demo workspace</span></footer>
       </div>

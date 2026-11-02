@@ -1,5 +1,5 @@
-.dialog { --welcome-ink:#172b3d; --welcome-muted:#526473; --welcome-blue:#205ea6; position:fixed; inset:0; margin:auto; width:100%; max-width:none; height:100%; max-height:none; padding:0; border:0; background:#f7f9fa; color:var(--welcome-ink); overflow-y:auto; overscroll-behavior:contain; font-family:var(--font-sans); }
-.dialog::backdrop { background:#f7f9fa; }
+.dialog { --welcome-ink:#172b3d; --welcome-muted:#526473; --welcome-blue:#205ea6; position:fixed; inset:0; margin:auto; width:100%; max-width:none; height:100%; max-height:none; padding:0; border:0; background:rgb(247 249 250 / 82%); color:var(--welcome-ink); overflow-y:auto; overscroll-behavior:contain; font-family:var(--font-sans); }
+.dialog::backdrop { background:rgb(237 243 249 / 30%); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
 .shell { width:min(1160px,calc(100% - 112px)); min-height:100%; margin:auto; display:flex; flex-direction:column; }
 .header { display:flex; justify-content:space-between; align-items:center; gap:24px; padding:30px 0 24px; }
 .wordmark { font:550 32px/1 var(--font-heading); letter-spacing:-1.4px; }
