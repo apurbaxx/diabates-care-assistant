@@ -22,10 +22,26 @@ global.Date = class extends RealDate {
   static now() { return new RealDate(clock).getTime(); }
 };
 const { generatePatient, repairFutureGeneratedVisits } = require('../../lib/data/generator.ts');
-const { buildSeedCohort } = require('../../lib/data/seed.ts');
+const { buildSeedCohort, localizeStoredPatientName } = require('../../lib/data/seed.ts');
 const { runEngine } = require('../../lib/clinical/engine.ts');
 const localDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const opts = { archetypeId: 'therapeutic-inertia', seed: 1008, name: 'Ahmed Hassan', years: 2.5, visitIntervalMonths: 4 };
+const names=buildSeedCohort().map(p=>p.name);
+assert.deepEqual(names,['Meera Iyer','Sunita Mehta','Lakshmi Nair','Priya Sharma','Ananya Rao','Savitri Deshmukh','Vikram Reddy','Arjun Patel']);
+const generated=generatePatient({archetypeId:'therapeutic-inertia',seed:42,years:2,visitIntervalMonths:4});
+assert.equal(generated.name,'Rahul Deshmukh');
+const legacyAuto={...generated,name:'Arun Mueller'};
+const renamed=localizeStoredPatientName(legacyAuto);
+assert.equal(renamed.name,'Rahul Deshmukh');
+assert.equal(renamed.visits,legacyAuto.visits,'Renaming preserves existing clinical records');
+assert.equal(renamed.labReports,legacyAuto.labReports);
+assert.equal(renamed.id,legacyAuto.id);
+assert.equal(localizeStoredPatientName(renamed),renamed,'Name migration is idempotent');
+const custom={...generated,name:'Custom patient name'};
+assert.equal(localizeStoredPatientName(custom),custom,'Custom names are preserved');
+const manualName={...legacyAuto,archetype:undefined};
+assert.equal(localizeStoredPatientName(manualName),manualName,'Manual patients are preserved');
+assert.equal(generatePatient({...opts,name:'Manually supplied name'}).name,'Manually supplied name');
 
 for (const date of ['2026-10-27', '2026-10-31', '2026-03-31', '2028-02-29', '2027-01-01']) {
   // Local midnight catches the previous-UTC-day bug in date serialization.
@@ -79,6 +95,7 @@ global.localStorage = {
 const { useAppStore } = require('../../lib/store.ts');
 const state = useAppStore.getState();
 assert.equal(state.hasHydrated, true);
+assert.equal(state.patients[0].name,'Arjun Patel','Existing saved demo names migrate on hydration');
 assert.equal(state.patients[0].visits.at(-1).date, localDate(new Date()));
 assert.match(runEngine(state.patients[0]).summary.headline, /8\.4% \(recorded 2026-10-27\)/);
 assert.deepEqual(state.dismissedInsightIds, ['keep-me']);

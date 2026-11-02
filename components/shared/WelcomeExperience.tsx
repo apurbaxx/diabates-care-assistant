@@ -1,115 +1,78 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpen, CalendarDays, FileText } from "lucide-react";
 import styles from "./WelcomeExperience.module.css";
 
 const STORAGE_KEY = "cliniq:welcome:v1";
 const WelcomeCompleteContext = createContext(false);
-
-export function useWelcomeComplete() {
-  return useContext(WelcomeCompleteContext);
-}
-
-function cleanName(value: string) {
-  return value.trim().replace(/^dr\.?(?:\s+|$)/i, "").replace(/\s+/g, " ");
-}
+export function useWelcomeComplete() { return useContext(WelcomeCompleteContext); }
 
 export function WelcomeExperience({ ready, children }: { ready: boolean; children: React.ReactNode }) {
-  const [checked, setChecked] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [step, setStep] = useState<"name" | "greeting">("name");
-  const [name, setName] = useState("");
-  const [leaving, setLeaving] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const greeting = useRef<HTMLHeadingElement>(null);
-  const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
+  const [checked,setChecked]=useState(false);
+  const [visible,setVisible]=useState(false);
+  const [phase,setPhase]=useState<"hello"|"transition"|"welcome">("hello");
+  const [showDemo,setShowDemo]=useState(false);
+  const dialog=useRef<HTMLDialogElement>(null);
+  const heading=useRef<HTMLHeadingElement>(null);
+  useEffect(()=>{
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      setVisible(!(saved?.completed === true && typeof saved?.name === "string" && saved.name.trim()));
-    } catch {
-      setVisible(true);
-    }
+      const saved=JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      setVisible(saved?.completed!==true);
+      // Retain prior completion without retaining previously collected personal information.
+      if(saved?.completed===true)localStorage.setItem(STORAGE_KEY,JSON.stringify({completed:true,mode:"demo"}));
+    } catch { setVisible(true); }
     setChecked(true);
-    return () => clearTimeout(exitTimer.current);
-  }, []);
-
-  useEffect(() => {
-    if (!ready || !visible) return;
-    const element = dialog.current;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    element?.showModal();
-    input.current?.focus({ preventScroll: true });
-    return () => {
-      element?.close();
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus({ preventScroll: true });
-    };
-  }, [ready, visible]);
-
-  useEffect(() => {
-    if (step === "greeting") greeting.current?.focus({ preventScroll: true });
-  }, [step]);
-
-  function enterWorkspace() {
-    if (leaving) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: cleanName(name), completed: true }));
-    } catch {
-      // Completion still works for this session when browser storage is unavailable.
-    }
-    setLeaving(true);
-    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 350;
-    exitTimer.current = setTimeout(() => setVisible(false), delay);
+  },[]);
+  useEffect(()=>{
+    if(!ready || !visible)return;
+    const element=dialog.current;
+    const previousFocus=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    element?.showModal();heading.current?.focus({preventScroll:true});
+    if(element)element.scrollTop=0;
+    return ()=>{element?.close();document.body.style.overflow=overflow;previousFocus?.focus({preventScroll:true});};
+  },[ready,visible]);
+  useEffect(()=>{
+    if(!ready || !visible)return;
+    const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const hello=window.setTimeout(()=>setPhase("transition"),reduced ? 700 : 1400);
+    const welcome=window.setTimeout(()=>setPhase("welcome"),reduced ? 700 : 1750);
+    return ()=>{window.clearTimeout(hello);window.clearTimeout(welcome);};
+  },[ready,visible]);
+  useEffect(()=>{
+    if(phase==="welcome" && visible){heading.current?.focus({preventScroll:true});if(dialog.current)dialog.current.scrollTop=0;}
+  },[phase,visible]);
+  const complete=ready && checked && !visible;
+  useEffect(()=>{
+    if(!complete)return;
+    setShowDemo(true);
+    const timer=window.setTimeout(()=>setShowDemo(false),5000);
+    return ()=>window.clearTimeout(timer);
+  },[complete]);
+  function enterWorkspace(){
+    try {localStorage.setItem(STORAGE_KEY,JSON.stringify({completed:true,mode:"demo"}));} catch { /* Entry also works without browser storage. */ }
+    setVisible(false);
   }
-
-  return <WelcomeCompleteContext.Provider value={ready && checked && !visible}>
+  return <WelcomeCompleteContext.Provider value={complete}>
+    {complete && showDemo && <div className={styles.demoBar} role="note"><strong>Demo Mode</strong><span>Synthetic patient records. For demonstration.</span></div>}
     {children}
-    {ready && visible && <dialog ref={dialog} className={`${styles.dialog} ${leaving ? styles.leaving : ""}`} aria-labelledby="welcome-heading" aria-describedby="welcome-description" onCancel={event => event.preventDefault()} onKeyDown={event => {
-      if (step !== "greeting" || event.repeat || event.nativeEvent.isComposing || event.ctrlKey || event.metaKey || event.altKey || ["Tab", "Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
-      event.preventDefault();
-      enterWorkspace();
-    }}>
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <span className={styles.wordmark}>Clin<span>IQ</span><span className={styles.brandDot} aria-hidden="true" /></span>
-        <span className={styles.eyebrow}>DOCTOR PRODUCTIVITY &amp; KNOWLEDGE ASSISTANT</span>
-      </header>
-      <div className={styles.rule} aria-hidden="true"><span /></div>
-
-      {step === "name" ? <div key="name" className={styles.nameStep}>
-        <p className={styles.eyebrow}><span className={styles.stepNumber}>01 /</span> WELCOME TO CLINIQ</p>
-        <h1 id="welcome-heading" className={styles.headline}>Simplifying Clinical Workflows.<br /><em>Supporting Better-Informed Care.</em></h1>
-        <p id="welcome-description" className={styles.description}>ClinIQ brings patient records, clinical workflows, and evidence-based medical knowledge into one unified workspace.<br className={styles.desktopBreak} /> Helping doctors save time, access information faster, and focus on patient care.</p>
-
-        <form className={styles.form} onSubmit={event => { event.preventDefault(); const value = cleanName(name); if (value) { setName(value); setStep("greeting"); } }}>
-          <label htmlFor="welcome-name" className={styles.nameLabel}>Let's personalize your workspace.</label>
-          <div className={styles.nameLine}>
-            <span className={styles.prefix} aria-hidden="true">Dr.</span>
-            <input ref={input} id="welcome-name" name="doctor-name" autoComplete="given-name" aria-label="Your name, prefixed with Dr." value={name} onChange={event => setName(event.target.value)} maxLength={60} placeholder="Your name" required />
-            <button type="submit" className={styles.arrowButton} disabled={!cleanName(name)} aria-label="Continue to your welcome"><ArrowRight size={24} strokeWidth={1.5} /></button>
+    {ready && visible && <dialog ref={dialog} className={styles.dialog} aria-labelledby="welcome-heading" aria-describedby={phase==="welcome" ? "welcome-description" : undefined} onCancel={event=>event.preventDefault()}>
+      <div className={styles.shell}>
+        <header className={styles.header}><span className={styles.wordmark}>Clin<span>IQ</span></span><span className={styles.eyebrow}>DEMO MODE</span></header>
+        <div className={styles.rule}/>
+        {phase!=="welcome" ? <main className={`${styles.greeting} ${phase==="transition" ? styles.greetingLeaving : ""}`}><h1 ref={heading} tabIndex={-1} id="welcome-heading" className={styles.headline}>Hello Doctor,</h1></main> : <main className={`${styles.introduction} ${styles.welcomeEntering}`}>
+          <h1 ref={heading} tabIndex={-1} id="welcome-heading" className={styles.headline}>Welcome to <em>ClinIQ.</em></h1>
+          <p id="welcome-description" className={styles.description}>Explore ClinIQ through a preconfigured demo workspace.<br/>All patient records are synthetic. This platform is intended for demonstration.</p>
+          <div className={styles.overview} aria-label="Explore ClinIQ features">
+            <article className={styles.feature}><span className={styles.number}>01</span><h2>Patient Records &amp; Assistant</h2><p>Explore longitudinal patient records, lab trends, medications, and source-grounded answers from patient data.</p></article>
+            <article className={styles.feature}><span className={styles.number}>02</span><h2>Clinical Workflow Management</h2><p>Manage appointments, review pending reports, track tasks, and generate editable visit summaries.</p></article>
+            <article className={styles.feature}><span className={styles.number}>03</span><h2>Evidence-Based Knowledge Assistant</h2><p>Retrieve relevant evidence from ADA and RSSDI diabetes guidelines with direct source references.</p></article>
           </div>
-          <div className={styles.inputFooter}><span>Just for your welcome. Saved only in this browser.</span><span className={styles.enterHint}>Press Enter <span aria-hidden="true">↵</span></span></div>
-        </form>
-      </div> : <div key="greeting" className={styles.greetingStep}>
-        <p className={styles.eyebrow}><span className={styles.stepNumber}>02 /</span> EXPLORE YOUR WORKSPACE</p>
-        <h1 ref={greeting} tabIndex={-1} id="welcome-heading" className={styles.greeting}>Welcome, <em>Dr. {name}.</em></h1>
-        <p id="welcome-description" className={styles.description}>Your clinical workspace, all in one place.<br />Manage patient information, streamline daily workflows, and access evidence-based medical knowledge.</p>
-        <div className={styles.overview} aria-label="Your ClinIQ workspace at a glance">
-          <article className={styles.feature}><div className={styles.featureTop}><span>01</span><FileText size={19} strokeWidth={1.4} /></div><h2>Patient Records &amp; AI Assistant</h2><p>Access patient histories, lab results, medications, and clinical trends. Ask questions about patient records and receive answers grounded in recorded data.</p></article>
-          <article className={styles.feature}><div className={styles.featureTop}><span>02</span><CalendarDays size={19} strokeWidth={1.4} /></div><h2>Clinical Workflow Management</h2><p>Manage appointments, review pending reports, track tasks, and generate editable visit summaries from one workspace.</p></article>
-          <article className={styles.feature}><div className={styles.featureTop}><span>03</span><BookOpen size={19} strokeWidth={1.4} /></div><h2>Evidence-Based Knowledge Assistant</h2><p>Search ADA and RSSDI diabetes guidelines using AI-powered retrieval. Find relevant medical evidence with direct source references.</p></article>
-        </div>
-        <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace} disabled={leaving}>Explore ClinIQ <ArrowRight size={18} strokeWidth={1.5} /></button><span>Press any key to continue. You can revisit “Take a tour” anytime.</span></div>
-      </div>}
-
-      <footer className={styles.footer}><span>Built for doctors. Powered by intelligent assistance.</span><span className={styles.footerRight}>AI assists. Doctors decide.</span></footer>
-    </div>
-  </dialog>}
+          <div className={styles.actions}><button type="button" className={styles.primaryButton} onClick={enterWorkspace}>Explore ClinIQ <span aria-hidden="true">&rarr;</span></button><span>No sign-up or personal information required.<br/>Choose &ldquo;Take a tour&rdquo; in the workspace whenever you like.</span></div>
+        </main>}
+        <footer className={styles.footer}><span>Patient records. Clinical workflows. Medical knowledge.</span><span>Demo workspace</span></footer>
+      </div>
+    </dialog>}
   </WelcomeCompleteContext.Provider>;
 }

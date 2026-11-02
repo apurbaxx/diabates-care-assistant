@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { LabReport, Patient } from "@/lib/types";
-import { buildSeedCohort } from "@/lib/data/seed";
+import { buildSeedCohort, localizeStoredPatientName } from "@/lib/data/seed";
 import { generatePatient, repairFutureGeneratedVisits, type GenerateOptions } from "@/lib/data/generator";
 import { isCalendarDate } from "./dates";
 import { ANALYTES } from "./clinical/units";
@@ -144,7 +144,7 @@ export const useAppStore = create<AppState>()(
       merge: (persisted, current) => {
         const saved = (persisted ?? {}) as Partial<AppState>;
         const patients = (Array.isArray(saved.patients) ? saved.patients : current.patients)
-          .map(p => repairFutureGeneratedVisits(p));
+          .map(p => localizeStoredPatientName(repairFutureGeneratedVisits(p)));
         const ids = new Set(patients.map(p=>p.id));
         const appointments = (saved.appointments ?? []).filter(a=>appointmentSchema.safeParse(a).success && ids.has(a.patientId));
         const summaries = (saved.summaries ?? []).filter(s=>summarySchema.safeParse(s).success && ids.has(s.patientId) && (!s.appointmentId || appointments.some(a=>a.id===s.appointmentId && a.patientId===s.patientId)));

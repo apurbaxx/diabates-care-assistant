@@ -10,9 +10,26 @@ import { ARCHETYPES, type Checkpoint } from "./archetypes";
 import { mulberry32, randInt, randRange, gaussian, clamp, pick, hashSeedFromString, type Rng } from "./rng";
 import { ckdEpi2021, ageAt } from "@/lib/clinical/derive";
 
-const FIRST_NAMES_M = ["James", "Robert", "Michael", "David", "Arun", "Wei", "Carlos", "Ahmed", "Peter", "George"];
-const FIRST_NAMES_F = ["Mary", "Patricia", "Linda", "Priya", "Fatima", "Elena", "Sarah", "Grace", "Nina", "Olivia"];
-const LAST_NAMES = ["Smith", "Johnson", "Williams", "Kumar", "Chen", "Garcia", "Khan", "Rossi", "Mueller", "Okafor"];
+const FIRST_NAMES_M = ["Arjun", "Rajesh", "Vikram", "Suresh", "Rahul", "Amit", "Rohan", "Nikhil", "Deepak", "Manoj"];
+const FIRST_NAMES_F = ["Meera", "Ananya", "Kavita", "Priya", "Sunita", "Sneha", "Neha", "Pooja", "Lakshmi", "Asha"];
+const LAST_NAMES = ["Sharma", "Patel", "Iyer", "Gupta", "Nair", "Mehta", "Reddy", "Rao", "Deshmukh", "Kulkarni"];
+
+// Retain the old vocabulary only to recognize untouched generated names in saved workspaces.
+const LEGACY_FIRST_M = ["James", "Robert", "Michael", "David", "Arun", "Wei", "Carlos", "Ahmed", "Peter", "George"];
+const LEGACY_FIRST_F = ["Mary", "Patricia", "Linda", "Priya", "Fatima", "Elena", "Sarah", "Grace", "Nina", "Olivia"];
+const LEGACY_LAST = ["Smith", "Johnson", "Williams", "Kumar", "Chen", "Garcia", "Khan", "Rossi", "Mueller", "Okafor"];
+
+/** Rename only a known legacy auto-generated name; never regenerate clinical records. */
+export function localizeGeneratedPatientName(patient: Patient): Patient {
+  const archetype=patient.archetype ? ARCHETYPES[patient.archetype] : undefined;
+  if(!archetype || patient.seed===undefined || patient.id!==`p-${patient.archetype}-${patient.seed}`) return patient;
+  const rng=mulberry32(patient.seed);
+  const sex=archetype.sexBias ?? (rng()>0.5 ? "male" : "female");
+  const firstIndex=Math.floor(rng()*10), lastIndex=Math.floor(rng()*10);
+  const previous=`${(sex==="female" ? LEGACY_FIRST_F : LEGACY_FIRST_M)[firstIndex]} ${LEGACY_LAST[lastIndex]}`;
+  if(patient.name!==previous) return patient;
+  return {...patient,name:`${(sex==="female" ? FIRST_NAMES_F : FIRST_NAMES_M)[firstIndex]} ${LAST_NAMES[lastIndex]}`};
+}
 
 export interface GenerateOptions {
   archetypeId: string;

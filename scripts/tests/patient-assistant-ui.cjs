@@ -12,7 +12,7 @@ const assert = require('node:assert/strict');
   await page.goto(base);await page.getByRole('heading',{name:'Doctor workspace'}).waitFor();
   const ids=await page.evaluate(()=>{
    const saved=JSON.parse(localStorage.getItem('diabetes-care-assistant-store'));
-   const p=saved.state.patients.find(p=>p.name==='Ahmed Hassan');p.visits.at(-1).clinicianNote='Patient reports tingling in a clinician note.';
+   const p=saved.state.patients.find(p=>p.name==='Arjun Patel');p.visits.at(-1).clinicianNote='Patient reports tingling in a clinician note.';
    localStorage.setItem('diabetes-care-assistant-store',JSON.stringify(saved));return {patient:p.id,other:saved.state.patients.find(other=>other.id!==p.id).id};
   });
   const panel=page.locator('#assistant').getByTestId('patient-assistant');
@@ -24,7 +24,7 @@ const assert = require('node:assert/strict');
   await page.locator('.record-references').getByLabel('Question about patient record').fill('Show medications');
   assert.equal(await panel.getByLabel('Question about patient record').inputValue(),'','Assistant inputs remain independent');
   await page.reload();await openAssistant();
-  await panel.getByRole('heading',{name:/Ask about Ahmed/}).waitFor();
+  await panel.getByRole('heading',{name:/Ask about Arjun/}).waitFor();
   const upperPanel=page.locator('.record-references').getByTestId('patient-assistant');
   const suggestion=upperPanel.locator('button.rounded-full').first();
   const suggestionText=await suggestion.innerText();

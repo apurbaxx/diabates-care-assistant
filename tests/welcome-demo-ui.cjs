@@ -1,0 +1,47 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const base=process.env.TEST_BASE_URL || 'http://127.0.0.1:3100';
+const key='cliniq:welcome:v1';
+(async()=>{
+ fs.mkdirSync('test-results',{recursive:true});
+ const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL || 'msedge'});
+ try {
+  const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(45000);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base);
+  await page.getByRole('heading',{name:'Hello Doctor,',exact:true}).waitFor();
+  const welcome=page.getByRole('dialog',{name:'Welcome to ClinIQ.'});
+  await welcome.waitFor();assert.equal(await welcome.getByRole('textbox').count(),0);
+  assert.equal(await welcome.locator('article').count(),3);
+  assert.match(await welcome.innerText(),/All patient records are synthetic/);
+  assert.match(await welcome.innerText(),/preconfigured demo workspace/);
+  assert((await welcome.locator('article p').evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(size=>size>=16));
+  assert(await welcome.evaluate(el=>el.scrollWidth<=el.clientWidth));
+  await page.screenshot({path:'test-results/welcome-demo-desktop.png',fullPage:true});
+  await page.getByRole('button',{name:'Explore ClinIQ',exact:true}).click();await welcome.waitFor({state:'hidden'});
+  await page.getByRole('heading',{name:'Doctor workspace',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Take a tour of your workspace',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Skip tour',exact:true}).first().click();
+  await page.getByRole('note').getByText('Demo Mode',{exact:true}).waitFor();
+  await page.getByRole('note').waitFor({state:'hidden',timeout:7000});
+  assert.deepEqual(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key),{completed:true,mode:'demo'});
+  await page.getByRole('button',{name:'Take a tour',exact:true}).click();await page.getByRole('heading',{name:'Take a tour of your workspace',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Skip tour',exact:true}).first().click();
+  await page.reload();await page.getByRole('heading',{name:'Doctor workspace',exact:true}).waitFor();assert.equal(await welcome.count(),0);
+  await page.evaluate(k=>localStorage.setItem(k,JSON.stringify({completed:true,name:'Old personal name'})),key);
+  await page.reload();await page.getByRole('heading',{name:'Doctor workspace',exact:true}).waitFor();
+  assert.deepEqual(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key),{completed:true,mode:'demo'},'Legacy completion works without retaining personal information');
+  const mobile=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});mobile.on('pageerror',e=>errors.push(e.message));
+  await mobile.addInitScript(()=>{Storage.prototype.getItem=function(){throw new Error('Storage disabled');};Storage.prototype.setItem=function(){throw new Error('Storage disabled');};});
+  await mobile.goto(base);const dialog=mobile.getByRole('dialog',{name:'Welcome to ClinIQ.'});await dialog.waitFor();
+  assert(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),'No horizontal overflow on mobile');
+  assert((await dialog.locator('article p').evaluateAll(els=>els.map(el=>parseFloat(getComputedStyle(el).fontSize)))).every(size=>size>=16));
+  assert(await dialog.getByRole('heading',{level:1}).evaluate(el=>el.getBoundingClientRect().top>=0),'Mobile starts at the introduction, not the lower CTA');
+  await mobile.screenshot({path:'test-results/welcome-demo-mobile.png',fullPage:true});
+  await mobile.getByRole('button',{name:'Explore ClinIQ',exact:true}).click();await dialog.waitFor({state:'hidden'});
+  await mobile.getByRole('note').getByText('Demo Mode',{exact:true}).waitFor();
+  assert.deepEqual(errors,[]);
+  console.log('PASS: one-step demo entry, no personal information, feature highlights, readable desktop/mobile text, responsive layout, optional tour, legacy completion, persistence and blocked storage');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

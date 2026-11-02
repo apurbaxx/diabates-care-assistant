@@ -92,7 +92,7 @@ export function GeneratePatientDialog({ onClose, onCreated }: { onClose: () => v
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Auto-generated if left blank"
+              placeholder="Indian name auto-generated if left blank"
               className="w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
           </div>
