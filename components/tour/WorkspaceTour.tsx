@@ -76,6 +76,15 @@ const STEPS: TourStep[] = [
     placements: ["right", "bottom", "top"],
   },
   {
+    id: "generate",
+    target: "generate-patient",
+    icon: Users,
+    title: "Generate a synthetic patient",
+    description:
+      "Create another demo patient with a clinical archetype, years of history and visit interval. Leave the name blank for an auto-generated name, or enter your own. Use a seed to reproduce the same synthetic record.",
+    placements: ["bottom", "left", "top"],
+  },
+  {
     id: "record",
     target: "patient-record",
     icon: FileText,
@@ -407,13 +416,19 @@ export function WorkspaceTour({ open, onClose, tourSteps = STEPS, storageKey = S
     if (open && step) popoverRef.current?.focus({ preventScroll: true });
   }, [open, step]);
 
-  // Keyboard: Esc = close, arrows = back/next, Tab stays inside the popover
+  // Prevent native button activation so Enter/Space advance exactly one step.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (["Enter", " ", "ArrowRight", "ArrowLeft"].includes(e.key) && e.repeat) { e.preventDefault(); return; }
       if (e.key === "Escape") {
         e.preventDefault();
         finish(index === steps.length - 1 ? "completed" : "skipped");
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (index === steps.length - 1) finish("completed");
+        else move(1);
       } else if (e.key === "ArrowRight" && index < steps.length - 1) {
         e.preventDefault();
         move(1);
@@ -521,7 +536,7 @@ export function WorkspaceTour({ open, onClose, tourSteps = STEPS, storageKey = S
             <p id="tour-desc" className="tour-desc">{step.description}</p>
             {isWelcome && (
               <p className="tour-hint">
-                <Keyboard size={13} aria-hidden="true" /> Use ← → to move, Esc to close
+                <Keyboard size={13} aria-hidden="true" /> Enter / Space: next · ← →: move · Esc: close
               </p>
             )}
           </div>
