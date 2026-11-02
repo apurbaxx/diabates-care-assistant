@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:patient-assistant": "node scripts/tests/patient-assistant.cjs && node scripts/tests/generated-dates.cjs",
+    "test:patient-assistant": "node scripts/tests/patient-assistant.cjs && node tests/patient-assistant-intents.cjs && node scripts/tests/generated-dates.cjs",
     "test:patient-assistant-ui": "node scripts/tests/patient-assistant-ui.cjs",
     "test:welcome-ui": "node scripts/tests/welcome-ui.cjs",
     "test:knowledge-introduction-ui": "node tests/knowledge-introduction-ui.cjs",

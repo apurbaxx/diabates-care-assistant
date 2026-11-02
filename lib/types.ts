@@ -404,9 +404,16 @@ export type AssistantIntent =
   | "general-summary";
 
 export interface AssistantFact {
+  category?: string;
   id: string;
   text: string;
   evidence: EvidenceRef[];
+  /** Deterministic presentation data, validated together with the finding. */
+  table?: {
+    columns: string[];
+    rows: { cells: string[]; evidence: EvidenceRef[] }[];
+    summary?: string;
+  };
 }
 
 export interface AssistantAnswer {

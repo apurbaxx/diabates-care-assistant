@@ -3,9 +3,10 @@ import { planQuestion, type QueryPlan } from "./plan";
 import { createRecordContext, executeRecordQuery } from "./tools";
 import { localDate } from "@/lib/dates";
 
-/** Offline path uses the same record tools as the model-assisted server route. */
+/** Offline path uses the same deterministic planner and tools as the server route. */
 export function composeAnswer(patient: Patient, _engine: EngineResult, question: string, previous?: QueryPlan, asOf = localDate()): AssistantAnswer {
-  return executeRecordQuery(createRecordContext(patient, asOf), planQuestion(question, asOf, previous), question);
+  const ctx=createRecordContext(patient,asOf);
+  return executeRecordQuery(ctx,planQuestion(question,asOf,previous,ctx.medicationNames),question);
 }
 
 export function suggestedQuestions(_engine?: EngineResult): string[] {

@@ -22,8 +22,11 @@ const patientSchema: z.ZodType<Patient> = z.object({
     vitals:z.object({weightKg:z.number().finite().optional(),heightCm:z.number().finite().optional(),systolic:z.number().finite().optional(),diastolic:z.number().finite().optional(),heartRate:z.number().finite().optional()}),
     medications:z.array(medication).max(100), medicationChanges:z.array(change).max(100), clinicianNote:text, sourceReportId:id.optional(),
   })).max(1000),
-  labReports:z.array(z.object({id,patientId:id,date,source:z.enum(["upload","manual","synthetic"]),fileName:text.optional(),labName:text.optional(),rawText:text.optional(),
-    values:z.array(z.object({key:labKey,value:z.number().finite(),reportedUnit:text,reportedValue:z.number().finite(),confidence:z.number().min(0).max(1),sourceLine:text.optional()})).max(50), unmatchedLines:z.array(text).max(500), acknowledged:z.boolean(),
+  labReports:z.array(z.object({id,patientId:id,date,source:z.enum(["upload","manual","synthetic"]),fileName:text.optional(),labName:text.optional(),rawText:text.optional(),pdfExtraction:z.unknown().optional(),
+    values:z.array(z.object({key:labKey,value:z.number().finite(),reportedUnit:text,reportedValue:z.number().finite(),confidence:z.number().min(0).max(1),operator:text.optional(),referenceRange:text.optional(),sourceLine:text.optional(),
+      confidenceCategory:z.enum(["high","needs_review","ambiguous"]).optional(),issues:z.array(text).max(100).optional(),
+      sourceCoordinates:z.object({page:z.number().finite(),bbox:z.array(z.number().finite()).max(100),name:z.array(z.number().finite()).max(100),result:z.array(z.number().finite()).max(100).nullable()}).optional(),
+    })).max(50), unmatchedLines:z.array(text).max(500), acknowledged:z.boolean(),
   })).max(500),
 }) as z.ZodType<Patient>;
 
