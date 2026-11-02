@@ -213,26 +213,26 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
 
   return (
     <div className={styles.workspace}>
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#21262d] bg-[#0d1117]/95 backdrop-blur-md px-6 py-3">
+      <header className={styles.header}>
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2.5 group transition-opacity hover:opacity-90"
+            className={styles.headerBrand}
             title="ClinIQ Knowledge Explorer"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7ce5d5] text-[#0d1514] font-bold shadow-sm">
+            <div className={styles.headerIcon}>
               <Search className="h-4 w-4 stroke-[2.5]" />
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-base font-bold text-white tracking-tight">ClinIQ</span>
-              <span className="text-base font-normal text-slate-400">Knowledge Explorer</span>
+            <div className={styles.headerIdentity}>
+              <span className={styles.headerWordmark}>ClinIQ</span>
+              <span className={styles.headerSubtitle}>Knowledge Explorer</span>
             </div>
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className={styles.headerActions}>
           {/* Index Readiness Pill */}
-          <div className="flex items-center gap-2 rounded-full bg-[#161b22] border border-[#30363d] px-3.5 py-1 text-xs text-slate-300">
+          <div className={styles.headerStatus}>
             {health.status === "ready" ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-[#34d399] inline-block" />
@@ -254,7 +254,7 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
           {/* Link to Patient Management */}
           <Link
             href="/"
-            className="text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-colors"
+            className={styles.headerLink}
           >
             Patient Management
           </Link>
