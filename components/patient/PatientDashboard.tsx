@@ -56,7 +56,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
       <section id="medications" className="record-section"><h2>Medications</h2><p className="record-description">Recorded treatment history, dose changes and supporting evidence.</p><MedicationTimeline visits={visits} insights={engine.insights}/></section>
       <section id="labs" className="record-section"><h2>Labs &amp; evidence</h2><p className="record-description">Upload, review and compare laboratory reports with this record.</p><LabCheck patient={patient}/></section>
       <section id="assistant" className="record-section" aria-labelledby="patient-assistant-title"><h2 id="patient-assistant-title">AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></section>
-    </main><aside className="record-references" aria-labelledby="patient-assistant-sidebar-title"><h2 id="patient-assistant-sidebar-title">AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine}/></aside></div></div><SafetyFooter/>
+    </main><aside className="record-references" aria-labelledby="patient-assistant-sidebar-title"><h2 id="patient-assistant-sidebar-title">AI Assistant</h2><p className="record-description">Ask questions grounded in this patient’s recorded history.</p><AssistantPanel patient={patient} engine={engine} collapseSuggestionsOnSelect/></aside></div></div><SafetyFooter/>
     {summary && <SummaryEditor summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
   </div></EvidenceProvider>;
 }
