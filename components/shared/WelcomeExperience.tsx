@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import styles from "./WelcomeExperience.module.css";
 
@@ -67,7 +68,7 @@ export function WelcomeExperience({ ready, children }: { ready: boolean; childre
       event.preventDefault();event.stopPropagation();enterWorkspace();
     }}>
       <div className={styles.shell}>
-        <header className={styles.header}><span className={styles.wordmark}>Clin<span>IQ</span></span><span className={styles.eyebrow}>DEMO MODE</span></header>
+        <header className={styles.header}><ClinIQLogo size={32} /><span className={styles.eyebrow}>DEMO MODE</span></header>
         <div className={styles.rule}/>
         {phase!=="welcome" ? <main className={`${styles.greeting} ${phase==="transition" ? styles.greetingLeaving : ""}`}><h1 ref={heading} tabIndex={-1} id="welcome-heading" className={styles.headline}>Hello Doctor,</h1></main> : <main className={`${styles.introduction} ${styles.welcomeEntering}`}>
           <h1 ref={heading} tabIndex={-1} id="welcome-heading" className={styles.headline}>Welcome to <em>ClinIQ.</em></h1>

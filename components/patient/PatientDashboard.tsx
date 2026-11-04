@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -43,7 +44,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
   const visits = sortedVisits(patient);
   const dates = [...visits.map(v => v.date), ...patient.labReports.map(r => r.date)].sort();
   return <EvidenceProvider><div className="patient-record">
-    <header className="record-header patient-header print:hidden"><div className="record-brand"><Link href="/" aria-label="Back to patient list"><ArrowLeft size={20}/></Link><Link href="/" className="record-wordmark">CliniQ</Link></div><div className="record-header-actions"><Link href="/knowledge-assistant">Knowledge Explorer</Link><button onClick={() => window.print()}>Print / Export</button><button onClick={() => setSummary(newSummary(patient))}>Generate visit summary</button><button className="record-primary" onClick={() => navigate("assistant")}>AI assistant</button></div></header>
+    <header className="record-header patient-header print:hidden"><div className="record-brand"><Link href="/" aria-label="Back to patient list"><ArrowLeft size={20}/></Link><Link href="/"><ClinIQLogo size={29} /></Link></div><div className="record-header-actions"><Link href="/knowledge-assistant">Knowledge Explorer</Link><button onClick={() => window.print()}>Print / Export</button><button onClick={() => setSummary(newSummary(patient))}>Generate visit summary</button><button className="record-primary" onClick={() => navigate("assistant")}>AI assistant</button></div></header>
     <div className="record-container"><div className="record-hero"><nav aria-label="Breadcrumb"><Link href="/">Patients</Link><span> / {patient.name}</span></nav><h1>{patient.name}</h1><div className="record-identity-row"><div><p className="record-meta">{patient.mrn} · {ageAt(patient.dob,new Date().toISOString().slice(0,10))} · {patient.sex.charAt(0).toUpperCase()+patient.sex.slice(1)} · {patient.diabetesType.replace("type-", "Type ")} · {engine.derived.diabetesDurationYears.toFixed(1)} years history</p><p className="record-provenance">{patient.archetype ? "Synthetic demonstration patient · " : ""}Saved patient record · {visits.length} recorded visit{visits.length === 1 ? "" : "s"}</p></div><p className="record-updated">{dates.length ? `Latest record ${dates.at(-1)}` : "No dated records"}</p></div></div>
     <nav className="record-tabs print:hidden" aria-label="Patient record sections">{TABS.map(([id,label]) => <button key={id} aria-current={activeTab===id ? "location" : undefined} onClick={() => navigate(id)}>{label}</button>)}</nav>
     <div className="record-layout"><main className="record-main">

@@ -1,0 +1,14 @@
+.logo {
+  display:inline-block;
+  flex-shrink:0;
+  font-family:"Newsreader",Georgia,serif;
+  font-weight:600;
+  font-style:normal;
+  line-height:1.5;
+  letter-spacing:normal;
+  text-transform:none;
+  white-space:nowrap;
+  color:#000;
+  margin:0;
+}
+.iq { color:#1f5aa6; }

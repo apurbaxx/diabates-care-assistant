@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Newsreader:wght@600&display=swap");
-
 .screen{
   --bg:#f7f9fb; --ink:#14202e; --accent:#1f5aa6; --muted:#5d6b7c;
   position:fixed; inset:0; z-index:9999;
@@ -15,8 +13,6 @@
   stroke-dasharray:26 100;animation:trace 2.2s linear infinite}
 @keyframes trace{from{stroke-dashoffset:26}to{stroke-dashoffset:-100}}
 .text{display:flex;flex-direction:column;align-items:center;gap:8px}
-.brand{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:30px;margin:0}
-.brand span{color:var(--accent)}
 .cap{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--muted);margin:0}
 .cap i{font-style:normal;animation:blink 1.4s infinite}

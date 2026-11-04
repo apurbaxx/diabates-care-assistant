@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useState, useEffect, useTransition, useMemo, useRef } from "react";
 import Link from "next/link";
 import { Search, AlertCircle, Check, FileText, Layers, X } from "lucide-react";
@@ -9,6 +10,7 @@ import { KnowledgeIntroduction, KNOWLEDGE_INTRODUCTION_KEY } from "./KnowledgeIn
 import type { KnowledgeSource } from "@/lib/knowledge/sources";
 import styles from "./KnowledgeExplorer.module.css";
 import { ShortAnswer, evidenceCardId } from "./ShortAnswer";
+import { KnowledgeSources } from "./KnowledgeSources";
 import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
 export type { PassageResult, SearchResponse } from "@/lib/knowledge/search";
 
@@ -224,7 +226,7 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
               <Search className="h-4 w-4 stroke-[2.5]" />
             </div>
             <div className={styles.headerIdentity}>
-              <span className={styles.headerWordmark}>ClinIQ</span>
+              <ClinIQLogo size={28} />
               <span className={styles.headerSubtitle}>Knowledge Explorer</span>
             </div>
           </Link>
@@ -250,6 +252,8 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
               </>
             )}
           </div>
+
+          <KnowledgeSources />
 
           {/* Link to Patient Management */}
           <Link

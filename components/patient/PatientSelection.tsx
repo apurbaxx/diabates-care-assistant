@@ -1,4 +1,5 @@
 ﻿"use client";
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export function PatientSelection() {
  const schedule=appointments.filter(a=>range==="All dates" || (range==="Today" ? localDate(new Date(a.date))===today : localDate(new Date(a.date))>=today && localDate(new Date(a.date))<=localDate(week))).sort((a,b)=>a.date.localeCompare(b.date));
  const tasks=appointments.filter(a=>a.status==="In Progress" && !summaries.some(s=>s.appointmentId===a.id && s.status==="Finalized"));
  if(!hasHydrated)return <p className="p-8">Loading browser records…</p>;
- return <div className="workspace"><header className="workspace-header"><Link className="wordmark" href="/">ClinIQ</Link><span>Doctor productivity and knowledge assistant (DEMO VERSION)</span><div className="workflow-actions"><button onClick={()=>setTourOpen(true)}>Take a tour</button><Link className="outline-button" href="/knowledge-assistant" data-tour="knowledge-assistant">Knowledge Explorer</Link><button className="primary" data-tour="generate-patient" onClick={()=>setGenerate(true)}>Generate synthetic patient</button></div></header>
+ return <div className="workspace"><header className="workspace-header"><Link href="/"><ClinIQLogo size={28} /></Link><span>Doctor productivity and knowledge assistant (DEMO VERSION)</span><div className="workflow-actions"><button onClick={()=>setTourOpen(true)}>Take a tour</button><Link className="outline-button" href="/knowledge-assistant" data-tour="knowledge-assistant">Knowledge Explorer</Link><button className="primary" data-tour="generate-patient" onClick={()=>setGenerate(true)}>Generate synthetic patient</button></div></header>
  <main className="workspace-main"><div className="workspace-title"><h1>Doctor workspace</h1><p>{new Date().toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short",year:"numeric"})} · synthetic demonstration records</p></div>
  <p className="workspace-status"><a href="#report-queue">{reports.length} reports to verify</a> · {appointments.filter(a=>localDate(new Date(a.date))===today && a.status!=="Cancelled").length} appointments today · {tasks.length} documentation tasks · {drafts.length} draft summaries · {patients.length} patients</p>
  <div className="workspace-columns"><div className="min-w-0"><section data-tour="schedule"><div className="workflow-heading"><h2>Today’s schedule</h2><div className="workflow-actions">{["Today","This week","All dates"].map(r=><button className={range===r?"selected-tab":"text-tab"} onClick={()=>setRange(r)} key={r}>{r}</button>)}<button className="primary" onClick={()=>setEdit("new")}>Create appointment</button></div></div>
