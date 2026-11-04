@@ -21,7 +21,7 @@ export function InsightCard({ insight, compact = false }: { insight: Insight; co
       <div className="min-w-0 flex-1">
         {!compact && (
           <div className="mb-1 flex flex-wrap gap-1.5">
-            <KindBadge kind={insight.kind} />
+            <KindBadge kind={insight.kind} scope={insight.scope} />
           </div>
         )}
         <p className={cn("text-ink", compact ? "text-sm" : "text-sm font-medium")}>{insight.title}</p>

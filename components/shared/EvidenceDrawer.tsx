@@ -30,7 +30,7 @@ export function EvidenceDrawer({
         <div className="sticky top-0 flex items-start justify-between gap-3 border-b border-border bg-surface p-4">
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
-              <KindBadge kind={insight.kind} />
+              <KindBadge kind={insight.kind} scope={insight.scope} />
             </div>
             <h2 className="text-base font-semibold leading-snug text-ink">{insight.title}</h2>
           </div>
@@ -52,7 +52,7 @@ export function EvidenceDrawer({
               </p>
             )}
             <div className="mt-3 flex items-center gap-2 border-t border-gridline pt-2">
-              <span className="text-xs text-muted">{KIND_DESCRIPTION[insight.kind]}</span>
+              <span className="text-xs text-muted">{KIND_DESCRIPTION[insight.scope === "lab-report" && insight.kind === "flagged-for-review" ? "observation" : insight.kind]}</span>
             </div>
             <div className="mt-1">
               <ConfidenceTag confidence={insight.confidence} />

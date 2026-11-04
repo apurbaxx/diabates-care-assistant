@@ -819,7 +819,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
           </div>
 
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-ink">AI insights from this report</h3>
+            <h3 className="mb-2 text-sm font-semibold text-ink">AI observed changes and trends</h3>
             <InsightList insights={comparison.insights} />
           </div>
 

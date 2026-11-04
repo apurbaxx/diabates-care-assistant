@@ -1,5 +1,5 @@
 import { Bookmark, Info, Sparkles, TrendingUp } from "lucide-react";
-import type { Confidence, InsightKind } from "@/lib/types";
+import type { Confidence, InsightKind, InsightScope } from "@/lib/types";
 import { KIND_LABEL, CONFIDENCE_LABEL } from "@/lib/clinical/context";
 
 const KIND_ICON: Record<InsightKind, typeof Info> = {
@@ -8,15 +8,17 @@ const KIND_ICON: Record<InsightKind, typeof Info> = {
   "flagged-for-review": Bookmark,
 };
 
-export function KindBadge({ kind }: { kind: InsightKind }) {
-  const Icon = KIND_ICON[kind];
+export function KindBadge({ kind, scope }: { kind: InsightKind; scope?: InsightScope }) {
+  const labObservation = scope === "lab-report" && kind !== "trend";
+  const Icon = KIND_ICON[labObservation ? "observation" : kind];
+  const label = labObservation ? "Observed change" : KIND_LABEL[kind];
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink-secondary"
-      title={KIND_LABEL[kind]}
+      title={label}
     >
       <Icon className="h-3 w-3" strokeWidth={2.5} />
-      {KIND_LABEL[kind]}
+      {label}
     </span>
   );
 }
