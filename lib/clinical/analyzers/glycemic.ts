@@ -25,7 +25,7 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
         scope: "trend",
         kind: "trend",
         severity: "watch",
-        title: `HbA1c rising: ${sequence} %`,
+        title: `HbA1c trend: ${sequence} %`,
         statement:
           a1cTrend.monotonicRun >= 3
             ? `HbA1c has increased across the last ${a1cTrend.monotonicRun} measurements (${sequence} %), a net rise of ${a1cTrend.totalChange.toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)}.`

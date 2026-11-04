@@ -178,7 +178,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
           scope: "trend",
           kind: confirmed ? "flagged-for-review" : "observation",
           severity: worsening ? (confirmed ? "attention" : "watch") : "info",
-          title: `Albuminuria category ${worsening ? "increased" : "decreased"}: ${stageBefore} → ${stageNow}`,
+          title: `UACR category change: ${stageBefore} → ${stageNow}`,
           statement:
             `UACR moved from ${previous.value.toFixed(0)} mg/g (${stageBefore}) on ${previous.date} to ${latest.value.toFixed(0)} mg/g (${stageNow}) on ${latest.date}. ` +
             (confirmed
