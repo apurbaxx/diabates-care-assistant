@@ -15,7 +15,8 @@
     "test:knowledge-introduction-ui": "node tests/knowledge-introduction-ui.cjs",
     "test:labs": "node scripts/tests/lab-pdf-extraction.cjs",
     "test:medication-observations": "node tests/medication-observations.cjs",
-    "test:startup-recovery": "node tests/startup-recovery.cjs"
+    "test:startup-recovery": "node tests/startup-recovery.cjs",
+    "test:timeline-observations": "node tests/timeline-observations.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

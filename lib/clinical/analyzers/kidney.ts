@@ -4,7 +4,6 @@ import { guidelines } from "../guidelines";
 import { labValueEvidence, computationEvidence } from "../evidence";
 import {
   albuminuriaStage,
-  albuminuriaLabel,
   ckdStage,
   ckdStageLabel,
   CKD_EPI_METHOD,
@@ -12,8 +11,8 @@ import {
 import { describeSpan, daysBetween, monthsBetween } from "../stats";
 
 /**
- * Kidney analysis: eGFR trajectory, CKD stage transitions, albuminuria category
- * changes with the KDIGO confirmation rule, and the expected-dip exception for
+ * Kidney analysis: eGFR trajectory, CKD stage transitions, recorded UACR category
+ * changes, and the expected-dip exception for
  * SGLT2i / RAS blockade so we don't cry wolf on a physiological haemodynamic fall.
  */
 export function analyseKidney(ctx: AnalysisContext): Insight[] {
@@ -158,7 +157,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
     }
   }
 
-  // --- 3. Albuminuria category change + KDIGO confirmation rule -----------
+  // --- 3. Recorded UACR values and category change ------------------------
   if (uacrPoints.length >= 2) {
     const latest = uacrPoints[uacrPoints.length - 1];
     const previous = uacrPoints[uacrPoints.length - 2];
@@ -166,25 +165,13 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
     const stageBefore = albuminuriaStage(previous.value);
 
     if (stageNow !== stageBefore) {
-      // KDIGO: an abnormal UACR needs 2 of 3 specimens over 3–6 months.
-      const recentSameStage = uacrPoints
-        .slice(-3)
-        .filter((p) => albuminuriaStage(p.value) === stageNow).length;
-      const confirmed = recentSameStage >= 2;
-      const worsening = stageNow > stageBefore;
-
       out.push(
         makeInsight({
           scope: "trend",
-          kind: confirmed ? "flagged-for-review" : "observation",
-          severity: worsening ? (confirmed ? "attention" : "watch") : "info",
+          kind: "observation",
+          severity: "info",
           title: `UACR category change: ${stageBefore} → ${stageNow}`,
-          statement:
-            `UACR moved from ${previous.value.toFixed(0)} mg/g (${stageBefore}) on ${previous.date} to ${latest.value.toFixed(0)} mg/g (${stageNow}) on ${latest.date}. ` +
-            (confirmed
-              ? `${recentSameStage} of the last 3 specimens fall in category ${stageNow}, which meets the KDIGO confirmation rule.`
-              : `Only 1 of the last ${Math.min(3, uacrPoints.length)} specimens falls in category ${stageNow} — KDIGO asks for 2 of 3 over 3–6 months before treating the category change as established.`),
-          detail: `${albuminuriaLabel(stageNow)}. UACR has high within-person variability (CV roughly 30–50 %); exercise, fever, infection, heart failure and marked hyperglycaemia can transiently raise it.`,
+          statement: `UACR changed from ${previous.value.toFixed(0)} mg/g (${stageBefore}) on ${previous.date} to ${latest.value.toFixed(0)} mg/g (${stageNow}) on ${latest.date}.`,
           evidence: uacrPoints
             .slice(-3)
             .map((p) =>
@@ -193,8 +180,7 @@ export function analyseKidney(ctx: AnalysisContext): Insight[] {
                 note: `Category ${albuminuriaStage(p.value)}`,
               }),
             ),
-          guidelines: guidelines("KDIGO_ALBUMINURIA_CONFIRM", "KDIGO_STAGING"),
-          confidence: confirmed ? "inferred" : "observed",
+          confidence: "observed",
           parameters: ["uacr"],
           visitIds: uacrPoints.slice(-3).map((p) => p.visitId!).filter(Boolean),
         }),

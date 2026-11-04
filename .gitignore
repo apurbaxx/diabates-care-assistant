@@ -88,3 +88,4 @@ scripts/
 tests/*
 !tests/medication-observations.cjs
 !tests/startup-recovery.cjs
+!tests/timeline-observations.cjs

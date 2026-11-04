@@ -2,9 +2,10 @@
 
 import { medicationReason } from "@/lib/clinical/medication-reason";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { Insight, LabKey, Visit } from "@/lib/types";
+import type { Insight, LabKey, TrendResult, Visit } from "@/lib/types";
+import { timelineObservations } from "@/lib/clinical/timeline-observations";
 import { formatWithUnit, parameterMeta } from "@/lib/clinical/units";
 import { insightsForVisit } from "@/lib/clinical/engine";
 import { describeChange } from "@/lib/clinical/analyzers/medication";
@@ -12,7 +13,7 @@ import { useEvidence } from "@/components/shared/EvidenceContext";
 
 const GLYCEMIA: LabKey[] = ["hba1c", "fastingGlucose", "postprandialGlucose", "randomGlucose"];
 const KIDNEY: LabKey[] = ["creatinine", "egfr", "uacr", "potassium", "sodium"];
-type Filter = "all" | "insights" | "medications";
+type Filter = "all" | "medications";
 
 function Measurements({ title, visit, keys, vitals = false }: { title: string; visit: Visit; keys: LabKey[]; vitals?: boolean }) {
   const recorded = keys.filter(key => visit.labs[key] !== undefined);
@@ -26,14 +27,15 @@ function Measurements({ title, visit, keys, vitals = false }: { title: string; v
   </dl></div>;
 }
 
-export function VisitTimeline({ visits, insights, onCompare }: { visits: Visit[]; insights: Insight[]; onCompare?: (currentId: string, previousId: string) => void }) {
+export function VisitTimeline({ visits, insights, trends, onCompare }: { visits: Visit[]; insights: Insight[]; trends: Record<string, TrendResult>; onCompare?: (currentId: string, previousId: string) => void }) {
   const chronological = [...visits].sort((a, b) => b.date.localeCompare(a.date));
   const [openId, setOpenId] = useState<string | undefined>(chronological[0]?.id);
   const [filter, setFilter] = useState<Filter>("all");
   const [showAll, setShowAll] = useState(false);
   const [selection, setSelection] = useState<string[]>([]);
   const { openInsight } = useEvidence();
-  const filtered = chronological.filter(v => filter === "all" || (filter === "insights" ? insightsForVisit(insights, v.id).length > 0 : v.medicationChanges.some(c => c.type !== "unchanged")));
+  const observations = useMemo(() => timelineObservations(insights, visits, Object.fromEntries(Object.entries(trends).map(([key, trend]) => [key, trend.points]))), [insights, visits, trends]);
+  const filtered = chronological.filter(v => filter === "all" || v.medicationChanges.some(c => c.type !== "unchanged"));
   const condensed = !showAll && filtered.length > 2;
   const visible = condensed ? [filtered[0], filtered[filtered.length - 1]] : filtered;
   const latest = chronological[0];
@@ -51,13 +53,13 @@ export function VisitTimeline({ visits, insights, onCompare }: { visits: Visit[]
 
   return <div className="clinical-timeline-layout"><div className="clinical-timeline-main">
     <div className="clinical-filters" role="group" aria-label="Filter clinical visits">
-      {([["all", "All visits"], ["insights", "With AI insights"], ["medications", "Medication changes"]] as const).map(([value, label]) => <button key={value} aria-pressed={filter === value} onClick={() => {setFilter(value);setShowAll(false);}}>{label}</button>)}
+      {([["all", "All visits"], ["medications", "Medication changes"]] as const).map(([value, label]) => <button key={value} aria-pressed={filter === value} onClick={() => {setFilter(value);setShowAll(false);}}>{label}</button>)}
     </div>
     <div className="clinical-timeline" aria-live="polite">
       {!visible.length && <p className="clinical-empty">No recorded visits match this filter.</p>}
       {visible.map((visit, index) => {
         const isOpen = openId === visit.id;
-        const visitInsights = insightsForVisit(insights, visit.id);
+        const visitInsights = insightsForVisit(observations, visit.id);
         const changes = visit.medicationChanges.filter(c => c.type !== "unchanged");
         const otherLabs = (Object.keys(visit.labs) as LabKey[]).filter(key => !GLYCEMIA.includes(key) && !KIDNEY.includes(key));
         return <Fragment key={visit.id}>
@@ -67,7 +69,7 @@ export function VisitTimeline({ visits, insights, onCompare }: { visits: Visit[]
               <span className="clinical-visit-title"><strong>{visit.date}</strong><span>{visit.reason || "Reason not recorded"}</span>{visit.id === latest?.id && <small>Most recent</small>}</span>
               {isOpen ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
             </button>
-            {visitInsights.length > 0 && <p className="clinical-insight-count">{visitInsights.length} AI insight{visitInsights.length === 1 ? "" : "s"}{isOpen ? " anchored to this visit" : ""}</p>}
+            {visitInsights.length > 0 && <p className="clinical-insight-count">{visitInsights.length} Clinical observation{visitInsights.length === 1 ? "" : "s"} from this visit</p>}
             {isOpen && <div id={`visit-details-${visit.id}`} className="clinical-visit-details">
               <div className="clinical-measurement-grid"><Measurements title="Glycaemia" visit={visit} keys={GLYCEMIA}/><Measurements title="Kidney" visit={visit} keys={KIDNEY}/><Measurements title="Other" visit={visit} keys={otherLabs} vitals/></div>
               <div className="clinical-notes-grid"><div><h3>Medications</h3>{visit.medications.length ? <ul>{visit.medications.map(m => <li key={m.id}>{m.name} {m.dose} {m.unit} {m.frequency}</li>)}</ul> : <p>No medications recorded.</p>}

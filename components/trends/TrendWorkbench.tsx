@@ -114,7 +114,7 @@ export function TrendWorkbench({
         </div>
 
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-ink">AI insights for {meta.label}</h3>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Observed changes for {meta.label}</h3>
           {relatedInsights.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted">
               Nothing flagged for this parameter beyond the trend above.
