@@ -78,6 +78,10 @@ export function StartupScreen({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
+    if (!loading) window.dispatchEvent(new Event("cliniq:startup-ready"));
+  }, [loading]);
+
+  useEffect(() => {
     if (!loading || !canvasRef.current) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
