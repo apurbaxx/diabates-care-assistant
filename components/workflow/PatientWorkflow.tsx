@@ -1,4 +1,5 @@
 "use client";
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { newSummary, localDate, type Appointment, type VisitSummary } from "@/lib/workflow";
@@ -31,7 +32,7 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
   const fields = {patientInfo:"Patient information",complaint:"Chief complaint / reason for visit",history:"Relevant patient history",vitals:"Recorded vitals (source date retained)",labs:"Available laboratory results (source date retained)",observations:"Clinical observations",notes:"Doctor’s notes",instructions:"Follow-up instructions"};
   const readonly=s.status==="Finalized";
   function commit(status:VisitSummary["status"]) {try{save({...s,status,updatedAt:new Date().toISOString()});close();}catch(e){setError((e as Error).message);}}
-  return <Modal title={`${s.status} visit summary`} close={close}><div className="summary-print"><h1>ClinIQ · Visit summary</h1><p>Synthetic patient record · {s.date}</p><p>Linked appointment: {s.appointmentId ? useAppStore.getState().appointments.find(a=>a.id===s.appointmentId)?.date : "Unscheduled visit"}</p>
+  return <Modal title={`${s.status} visit summary`} close={close}><div className="summary-print"><h1><ClinIQLogo size={27} /> · Visit summary</h1><p>Synthetic patient record · {s.date}</p><p>Linked appointment: {s.appointmentId ? useAppStore.getState().appointments.find(a=>a.id===s.appointmentId)?.date : "Unscheduled visit"}</p>
     <div className="workflow-form"><label>Visit date<input disabled={readonly} type="date" max={localDate()} value={s.date} onChange={e=>setS({...s,date:e.target.value})}/></label>
     {Object.entries(fields).map(([key,label])=><label key={key}>{label}{readonly?<div className="summary-text">{s[key as keyof typeof fields] || "Not recorded"}</div>:<><div className="hidden print:block summary-text">{s[key as keyof typeof fields] || "Not recorded"}</div><textarea className="print:hidden" rows={key==="history" || key==="labs"?4:2} value={s[key as keyof typeof fields]} onChange={e=>setS({...s,[key]:e.target.value})}/></>}</label>)}
     <label>Next follow-up date<input type="date" disabled={readonly} min={s.date} value={s.followUp} onChange={e=>setS({...s,followUp:e.target.value})}/></label></div></div>

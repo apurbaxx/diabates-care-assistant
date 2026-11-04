@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight, BookOpen, ChevronDown, FileSearch, Search } from "lucide-react";
 import type { KnowledgeSource } from "@/lib/knowledge/sources";
@@ -43,7 +44,7 @@ export function KnowledgeIntroduction({ sources, onComplete }: { sources: Knowle
     finish();
   }}>
     <div className={welcome.shell}>
-      <header className={welcome.header}><span className={welcome.wordmark}>Clin<span>IQ</span><span className={welcome.brandDot} aria-hidden="true" /></span><span className={welcome.eyebrow}>Knowledge Explorer / A brief introduction</span></header>
+      <header className={welcome.header}><ClinIQLogo size={32} /><span className={welcome.eyebrow}>Knowledge Explorer / A brief introduction</span></header>
       <div className={welcome.rule} aria-hidden="true"><span /></div>
       <div className={`${welcome.greetingStep} ${styles.content}`}>
         <p className={welcome.eyebrow}><span className={welcome.stepNumber}>01 /</span> How Knowledge Explorer works</p>

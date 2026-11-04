@@ -1,5 +1,6 @@
 "use client";
 
+import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import styles from "./StartupScreen.module.css";
@@ -103,7 +104,7 @@ export function StartupScreen({ children }: { children: React.ReactNode }) {
               </svg>
             </div>
             <div className={styles.text}>
-              <h1 className={styles.brand}>Clin<span>IQ</span></h1>
+              <ClinIQLogo as="h1" />
               <p className={styles.cap}>Loading records<i>.</i><i>.</i><i>.</i></p>
             </div>
           </main>
