@@ -25,7 +25,7 @@ export function InsightCard({ insight, compact = false }: { insight: Insight; co
           </div>
         )}
         <p className={cn("text-ink", compact ? "text-sm" : "text-sm font-medium")}>{insight.title}</p>
-        {!compact && <p className="mt-1 text-sm text-ink-secondary line-clamp-2">{insight.statement}</p>}
+        {!compact && <p className={cn("mt-1 whitespace-pre-line text-sm text-ink-secondary", insight.scope !== "medication" && "line-clamp-2")}>{insight.statement}</p>}
       </div>
       <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted opacity-0 transition group-hover:opacity-100" />
     </button>

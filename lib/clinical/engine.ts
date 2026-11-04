@@ -56,7 +56,7 @@ export function runEngine(patient: Patient, asOf = localDate()): EngineResult {
   ];
 
   const insights = validateInsights(raw);
-  const summary = buildSummary(ctx, insights);
+  const summary = buildSummary(ctx);
 
   return { patientId: patient.id, derived, trends, insights, summary };
 }

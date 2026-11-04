@@ -1,4 +1,4 @@
-import type { EngineResult, EvidenceRef, GuidelineRef, Insight, ParameterSeriesPoint } from "@/lib/types";
+import type { EngineResult, EvidenceRef, GuidelineRef, ParameterSeriesPoint } from "@/lib/types";
 import type { AnalysisContext } from "./context";
 import { guidelines } from "./guidelines";
 
@@ -15,7 +15,6 @@ import { guidelines } from "./guidelines";
  */
 export function buildSummary(
   ctx: AnalysisContext,
-  insights: Insight[],
 ): EngineResult["summary"] {
   const { patient, derived, trends } = ctx;
   const paragraphs: string[] = [];
@@ -123,14 +122,6 @@ export function buildSummary(
       );
     }
   }
-
-  // --- Items flagged elsewhere: count only, no restated judgment ----------
-  const flaggedCount = insights.filter((i) => i.kind === "flagged-for-review").length;
-  paragraphs.push(
-    flaggedCount > 0
-      ? `${flaggedCount} item${flaggedCount === 1 ? "" : "s"} flagged for review — see the Trends, Medications, and Safety sections below.`
-      : "",
-  );
 
   return { headline, paragraphs, evidence, guidelines: guidelineRefs };
 }

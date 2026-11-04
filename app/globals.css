@@ -442,8 +442,6 @@ body {
 .record-section-heading > span { font-size:14px; color:#536579; text-align:right; }
 .record-headline { font:700 24px/1.35 var(--font-heading); margin:8px 0; }
 .record-narrative { margin:8px 0; font-size:14px; line-height:1.8; }
-.record-review-banner { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:13px 16px; margin-top:18px; background:#eaf2fb; border-radius:4px; color:#234e79; font-size:14px; }
-.record-review-banner:hover { background:#dceaf8; }
 .record-block { margin-top:38px; scroll-margin-top:24px; }
 .record-block > h2 { margin-bottom:12px; }
 .record-table-scroll { overflow-x:auto; }
@@ -480,7 +478,7 @@ body {
 .record-facts dd { font-size:14px; }
 .record-empty { color:#536579; font-size:14px; padding:16px 0; }
 /* Carry the same document treatment through the interactive record tools. */
-.patient-record .record-section [class*="rounded-xl"],.patient-record .record-section [class*="rounded-lg"],.patient-record #review [class*="rounded-xl"] { border-radius:3px; box-shadow:none; }
+.patient-record .record-section [class*="rounded-xl"],.patient-record .record-section [class*="rounded-lg"] { border-radius:3px; box-shadow:none; }
 .patient-record .record-section [class*="bg-surface"],.patient-record .record-section [class*="bg-page"] { background:transparent; }
 .patient-record .record-section [class*="bg-"][class*="100"] { background:#e9eff6; border-color:#d3dde7; }
 .patient-record .record-section button { cursor:pointer; }
@@ -562,6 +560,9 @@ html:has(.patient-record), body:has(.patient-record) { overflow-x:hidden; }
 .clinical-insight-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; border-bottom:1px solid #d3dde7; padding:12px 0; font-size:14px; }
 .clinical-insight-row button { text-align:left; }
 .clinical-insight-row button:hover { color:#205fa8; }
+.clinical-insight-content { display:flex; flex-direction:column; align-items:flex-start; gap:8px; min-width:0; }
+.clinical-insight-row .clinical-insight-evidence { padding:6px 10px; border:1px solid #bfd1e3; border-radius:4px; color:#205fa8; background:#eaf2fb; font-size:14px; font-weight:600; }
+.clinical-insight-row .clinical-insight-evidence:hover { background:#dceaf8; }
 .clinical-insight-row a { flex-shrink:0; color:#536579; font-size:14px; }
 .clinical-insight-row a:hover { color:#205fa8; text-decoration:underline; }
 .clinical-hidden-visits { position:relative; display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:18px 0 32px; color:#536579; font-size:14px; }
@@ -622,7 +623,6 @@ html:has(.patient-record), body:has(.patient-record) { overflow-x:hidden; }
 .knowledge-warning { max-width:560px; }
 .knowledge-warning > p { margin:16px 0 24px; font-size:16px; line-height:1.75; }
 .record-tabs button[aria-current],.clinical-filters button[aria-pressed="true"] { background:#eaf2fb; }
-.record-review-banner { border:1px solid #bfd1e3; border-left:4px solid #759bc2; padding:16px 20px; font-size:15px; }
 .record-table-scroll,.visit-comparison-scroll { border:1px solid #c6d3e0; border-radius:8px; background:#fff; }
 .patient-record :is(.record-table,.visit-comparison-table,.report-review table) { border-collapse:collapse; font-size:16px; }
 .patient-record :is(.record-table,.visit-comparison-table,.report-review table) thead th { background:#eaf0f7; color:#354e67; font:600 14px/1.5 var(--font-sans); text-transform:none; letter-spacing:0; padding:16px; border-bottom:2px solid #c6d3e0; }

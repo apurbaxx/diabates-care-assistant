@@ -1,4 +1,6 @@
-﻿"use client";
+"use client";
+
+import { medicationReason } from "@/lib/clinical/medication-reason";
 
 import { Fragment, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -69,9 +71,18 @@ export function VisitTimeline({ visits, insights, onCompare }: { visits: Visit[]
             {isOpen && <div id={`visit-details-${visit.id}`} className="clinical-visit-details">
               <div className="clinical-measurement-grid"><Measurements title="Glycaemia" visit={visit} keys={GLYCEMIA}/><Measurements title="Kidney" visit={visit} keys={KIDNEY}/><Measurements title="Other" visit={visit} keys={otherLabs} vitals/></div>
               <div className="clinical-notes-grid"><div><h3>Medications</h3>{visit.medications.length ? <ul>{visit.medications.map(m => <li key={m.id}>{m.name} {m.dose} {m.unit} {m.frequency}</li>)}</ul> : <p>No medications recorded.</p>}
-                {changes.length > 0 && <div className="clinical-medication-changes"><h4>Treatment changes</h4><ul>{changes.map(c => <li key={c.id}>{describeChange(c)}{c.reason ? ` · ${c.reason}` : ""}</li>)}</ul></div>}
+                {changes.length > 0 && <div className="clinical-medication-changes"><h4>Treatment changes</h4><ul>{changes.map(c => <li key={c.id}>{describeChange(c)}{c.reason ? ` · ${medicationReason(c.reason, visits, visit.date)}` : ""}</li>)}</ul></div>}
               </div><div><h3>Clinician note</h3><p>{visit.clinicianNote || "No clinician note recorded."}</p></div></div>
-              {visitInsights.length > 0 && <div className="clinical-insights"><div className="clinical-insights-heading"><h3>AI insights for this visit</h3><span>Generated from the record</span></div>{visitInsights.map(insight => <div key={insight.id} className="clinical-insight-row"><button onClick={() => openInsight(insight)}>{insight.title}<span className="sr-only"> — View evidence</span></button><a href={insight.scope === "medication" ? "#medications" : "#trends"}>{insight.scope === "medication" ? "View medications" : "View in Trends"} →</a></div>)}</div>}
+              {visitInsights.length > 0 && <div className="clinical-insights">
+                <div className="clinical-insights-heading"><h3>AI Record Observations & Trends</h3><span>Generated from the record</span></div>
+                {visitInsights.map(insight => <div key={insight.id} className="clinical-insight-row">
+                  <div className="clinical-insight-content">
+                    <button type="button" onClick={() => openInsight(insight)}>{insight.title}<span className="sr-only"> — View evidence</span></button>
+                    <button type="button" className="clinical-insight-evidence" onClick={() => openInsight(insight)} aria-label={`Show details and evidence: ${insight.title}`}>Show details and evidence</button>
+                  </div>
+                  <a href={insight.scope === "medication" ? "#medications" : "#trends"}>{insight.scope === "medication" ? "View medications" : "View in Trends"} →</a>
+                </div>)}
+              </div>}
             </div>}
           </article>
         </Fragment>;

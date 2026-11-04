@@ -13,7 +13,8 @@
     "test:workspace-tour-ui": "node tests/workspace-tour-ui.cjs",
     "test:welcome-ui": "node tests/welcome-demo-ui.cjs",
     "test:knowledge-introduction-ui": "node tests/knowledge-introduction-ui.cjs",
-    "test:labs": "node scripts/tests/lab-pdf-extraction.cjs"
+    "test:labs": "node scripts/tests/lab-pdf-extraction.cjs",
+    "test:medication-observations": "node tests/medication-observations.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

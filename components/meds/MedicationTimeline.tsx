@@ -1,5 +1,7 @@
 "use client";
 
+import { medicationReason } from "@/lib/clinical/medication-reason";
+
 import { useMemo } from "react";
 import { Pill } from "lucide-react";
 import type { Insight, Medication, MedicationChange, Visit } from "@/lib/types";
@@ -74,7 +76,7 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
         const med = [...allMeds.values()].find((m) => m.name === c.medicationName);
         if (!med) continue;
         const arr = changesByMed.get(med.id) ?? [];
-        arr.push({ date: v.date, change: c });
+        arr.push({ date: v.date, change: { ...c, reason: medicationReason(c.reason, sorted, v.date) } });
         changesByMed.set(med.id, arr);
       }
     }
@@ -95,7 +97,7 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
             <hba1cStyle.icon className="h-4 w-4 shrink-0" style={{ color: hba1cStyle.accent }} strokeWidth={2.25} />
-            HbA1c, for alignment with regimen changes
+            Recorded HbA1c measurements
           </h3>
           <span className="text-xs text-muted">{rangeLabel}</span>
         </div>
@@ -133,8 +135,9 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
       )}
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-ink">AI insights — medications &amp; response</h3>
-        <InsightList insights={medInsights} emptyText="No medication-related insights flagged for this patient." />
+        <h3 className="mb-2 text-sm font-semibold text-ink">AI Record Observations — Medications &amp; Trends</h3>
+        <p className="mb-3 text-sm text-muted">Recorded medication history and laboratory measurements, shown separately with supporting sources.</p>
+        <InsightList insights={medInsights} emptyText="No medication record observations available." />
       </div>
     </div>
   );

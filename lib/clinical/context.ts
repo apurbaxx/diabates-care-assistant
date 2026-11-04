@@ -120,7 +120,7 @@ export function makeInsight(input: {
 }
 
 export const KIND_LABEL: Record<InsightKind, string> = {
-  observation: "Observed change",
+  observation: "Record observation",
   trend: "Detected trend",
   "flagged-for-review": "Flagged for review",
 };

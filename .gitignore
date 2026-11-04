@@ -85,4 +85,5 @@ __pycache__/
 *.pyc
 
 scripts/
-tests/
+tests/*
+!tests/medication-observations.cjs

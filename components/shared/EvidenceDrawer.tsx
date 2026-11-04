@@ -45,7 +45,7 @@ export function EvidenceDrawer({
 
         <div className="flex-1 space-y-5 p-4">
           <section>
-            <p className="text-sm leading-relaxed text-ink">{insight.statement}</p>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{insight.statement}</p>
             {insight.detail && (
               <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-secondary">
                 {insight.detail}

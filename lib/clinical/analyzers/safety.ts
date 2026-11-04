@@ -4,7 +4,6 @@ import { guidelines } from "../guidelines";
 import {
   labValueEvidence,
   medicationEvidence,
-  computationEvidence,
 } from "../evidence";
 import { yearsBetween } from "../stats";
 
@@ -212,36 +211,6 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         }),
       );
     }
-  }
-
-  // --- Statin gap ----------------------------------------------------------
-  const statin = activeMedications.find((m) => m.medClass === "statin");
-  const ldl = lastVisit.labs.ldl;
-  if (!statin && derived.ageYears >= 40 && derived.ageYears <= 75) {
-    out.push(
-      makeInsight({
-        scope: "medication",
-        kind: "observation",
-        severity: "watch",
-        title: "No statin on the active list in the 40–75 age band",
-        statement: `Patient is ${derived.ageYears} years old with diabetes and no statin appears on the current medication list${ldl !== undefined ? `; most recent LDL-C is ${ldl.toFixed(0)} mg/dL` : ""}.`,
-        evidence: [
-          computationEvidence("Age at latest visit", lastVisit.date, `${derived.ageYears} years`, `Derived from date of birth ${patient.dob}`),
-          ...(ldl !== undefined
-            ? [labValueEvidence("ldl", ldl, lastVisit.date, { visitId: lastVisit.id })]
-            : []),
-          medicationEvidence(
-            lastVisit,
-            "Lipid-lowering therapy",
-            activeMedications.filter((m) => m.medClass === "statin").map((m) => m.name).join(", ") || "none recorded",
-          ),
-        ],
-        guidelines: guidelines("ADA_STATIN"),
-        confidence: "inferred",
-        parameters: ["ldl"],
-        visitIds: [lastVisit.id],
-      }),
-    );
   }
 
   return out;
