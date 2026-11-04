@@ -9,6 +9,7 @@ import { KnowledgeIntroduction, KNOWLEDGE_INTRODUCTION_KEY } from "./KnowledgeIn
 import type { KnowledgeSource } from "@/lib/knowledge/sources";
 import styles from "./KnowledgeExplorer.module.css";
 import { ShortAnswer, evidenceCardId } from "./ShortAnswer";
+import { KnowledgeSources } from "./KnowledgeSources";
 import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
 export type { PassageResult, SearchResponse } from "@/lib/knowledge/search";
 
@@ -250,6 +251,8 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
               </>
             )}
           </div>
+
+          <KnowledgeSources />
 
           {/* Link to Patient Management */}
           <Link

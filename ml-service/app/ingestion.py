@@ -21,7 +21,7 @@ DOC_REGISTRY: Dict[str, Dict[str, Any]] = {
         "title": "RSSDI Clinical Practice Recommendations for the Management of Type 2 Diabetes Mellitus 2022",
         "source_org": "Research Society for the Study of Diabetes in India (RSSDI)",
         "year": 2022,
-        "official_url":"https://www.rssdi.in/newwebsite/RSSDI-Clinical-Practice-Recommendations-2022%20(1).pdf",
+"official_url": "https://www.rssdi.in/newwebsite/RSSDI-Clinical-Practice-Recommendations-2022%20(1).pdf",
         "ref_start_page": 99,
     },
     "Classification and diagnosis of Diabetes.pdf": {
