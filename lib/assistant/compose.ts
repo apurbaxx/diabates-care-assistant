@@ -10,5 +10,5 @@ export function composeAnswer(patient: Patient, _engine: EngineResult, question:
 }
 
 export function suggestedQuestions(_engine?: EngineResult): string[] {
-  return ["Show HbA1c measurements over the last six months.", "What has changed since the last visit?", "Show the medication history.", "Which measurements are missing from the record?", "Search notes for documented symptoms."];
+  return ["Show HbA1c measurements over the last six months.", "What has changed since the last visit?", "Show the medication history.", "Which measurements are missing from the record?"];
 }
