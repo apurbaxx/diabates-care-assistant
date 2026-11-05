@@ -3,7 +3,6 @@
 import { X, FlaskConical, Calendar, Pill, FileText, Calculator } from "lucide-react";
 import type { EvidenceRef, Insight } from "@/lib/types";
 import { KindBadge, ConfidenceTag } from "./Badges";
-import { GuidelineCitation } from "./GuidelineCitation";
 import { KIND_DESCRIPTION } from "@/lib/clinical/context";
 
 const EVIDENCE_ICON: Record<EvidenceRef["kind"], typeof FlaskConical> = {
@@ -22,7 +21,6 @@ export function EvidenceDrawer({
   onClose: () => void;
 }) {
   if (!insight) return null;
-  const guidelines = insight.scope === "lab-report" ? [] : insight.guidelines;
 
   return (
     <div className="record-evidence fixed inset-0 z-50 flex justify-end">
@@ -99,20 +97,7 @@ export function EvidenceDrawer({
             </section>
           )}
 
-          {guidelines.length > 0 && (
-            <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Guideline basis ({guidelines.length})
-              </h3>
-              <div className="space-y-2">
-                {guidelines.map((g) => (
-                  <GuidelineCitation key={g.id} guideline={g} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {insight.evidence.length === 0 && guidelines.length === 0 && (
+          {insight.evidence.length === 0 && (
             <p className="text-sm text-muted">No supporting evidence recorded for this insight.</p>
           )}
         </div>
