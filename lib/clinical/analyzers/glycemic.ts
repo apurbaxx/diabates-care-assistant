@@ -3,7 +3,8 @@ import { makeInsight, type AnalysisContext } from "../context";
 import { guidelines } from "../guidelines";
 import { labValueEvidence, computationEvidence } from "../evidence";
 import { estimatedAverageGlucose, EAG_METHOD } from "../derive";
-import { describeSpan, monthsBetween } from "../stats";
+import { monthsBetween } from "../stats";
+import { trendObservation } from "../trend-observation";
 
 /** Glycaemic control: trajectory and HbA1c/glucose coherence, from the record alone. */
 export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
@@ -16,84 +17,17 @@ export function analyseGlycemic(ctx: AnalysisContext): Insight[] {
   const latest = points[points.length - 1];
   const latestVisit = visits.find((v) => v.id === latest.visitId);
 
-  // --- 1. Trend across the series ----------------------------------------
-  if (a1cTrend.direction === "rising" && a1cTrend.exceedsNoise) {
-    const runPoints = points.slice(-Math.max(a1cTrend.monotonicRun, 3));
-    const sequence = runPoints.map((p) => p.value.toFixed(1)).join(" → ");
-    out.push(
-      makeInsight({
-        scope: "trend",
-        kind: "trend",
-        severity: "watch",
-        title: `HbA1c trend: ${sequence} %`,
-        statement:
-          a1cTrend.monotonicRun >= 3
-            ? `HbA1c has increased across the last ${a1cTrend.monotonicRun} measurements (${sequence} %), a net rise of ${a1cTrend.totalChange.toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)}.`
-            : `HbA1c has risen by ${a1cTrend.totalChange.toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)} (${sequence} %).`,
-        detail: `Theil–Sen slope ${a1cTrend.slopePerYear.toFixed(2)} %/year, Kendall's τ ${a1cTrend.tau.toFixed(2)}. The rise exceeds the 0.4 % analytical + biological variability threshold, so it is unlikely to be assay noise alone.`,
-        evidence: runPoints.map((p) =>
-          labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
-        ),
-        guidelines: guidelines("ADA_A1C_GENERAL", "ADA_PHARM_INERTIA"),
-        parameters: ["hba1c"],
-        visitIds: runPoints.map((p) => p.visitId!).filter(Boolean),
-      }),
-    );
-  } else if (a1cTrend.direction === "falling" && a1cTrend.exceedsNoise) {
-    const runPoints = points.slice(-Math.max(a1cTrend.monotonicRun, 3));
-    const sequence = runPoints.map((p) => p.value.toFixed(1)).join(" → ");
-    out.push(
-      makeInsight({
-        scope: "trend",
-        kind: "trend",
-        severity: "info",
-        title: `HbA1c falling: ${sequence} %`,
-        statement: `HbA1c has fallen by ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points over ${describeSpan(points[0].date, latest.date)} (${sequence} %).`,
-        detail: `Theil–Sen slope ${a1cTrend.slopePerYear.toFixed(2)} %/year.`,
-        evidence: runPoints.map((p) =>
-          labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
-        ),
-        guidelines: guidelines("ADA_A1C_GENERAL"),
-        parameters: ["hba1c"],
-        visitIds: runPoints.map((p) => p.visitId!).filter(Boolean),
-      }),
-    );
-  } else if (a1cTrend.direction === "variable" && points.length >= 3) {
-    const values = points.map((p) => p.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    out.push(
-      makeInsight({
-        scope: "trend",
-        kind: "observation",
-        severity: "watch",
-        title: `HbA1c: ${min.toFixed(1)}–${max.toFixed(1)} % across ${points.length} measurements`,
-        statement: `HbA1c ranged from ${min.toFixed(1)} % to ${max.toFixed(1)} % across ${points.length} measurements between ${points[0].date} and ${latest.date}.`,
-        detail: `Recorded values: ${points.map((p) => `${p.value.toFixed(1)} % (${p.date})`).join(", ")}.`,
-        evidence: points.map((p) =>
-          labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
-        ),
-        guidelines: guidelines("ADA_CGM_TIR"),
-        parameters: ["hba1c"],
-        visitIds: points.map((p) => p.visitId!).filter(Boolean),
-      }),
-    );
-  } else if (a1cTrend.direction === "stable" && points.length >= 3) {
-    out.push(
-      makeInsight({
-        scope: "trend",
-        kind: "observation",
-        severity: "info",
-        title: `HbA1c: ${points[0].value.toFixed(1)} → ${latest.value.toFixed(1)} % across ${points.length} measurements`,
-        statement: `HbA1c changed from ${points[0].value.toFixed(1)} % (${points[0].date}) to ${latest.value.toFixed(1)} % (${latest.date}) across ${points.length} measurements over ${describeSpan(points[0].date, latest.date)} — a net change of ${a1cTrend.totalChange > 0 ? "+" : ""}${a1cTrend.totalChange.toFixed(1)} percentage points.`,
-        detail: `This analyte's measurement-variability threshold is 0.4 percentage points; the net change recorded here is ${Math.abs(a1cTrend.totalChange).toFixed(1)} percentage points.`,
-        evidence: points.map((p) =>
-          labValueEvidence("hba1c", p.value, p.date, { visitId: p.visitId }),
-        ),
-        parameters: ["hba1c"],
-        visitIds: points.map((p) => p.visitId!).filter(Boolean),
-      }),
-    );
+  // Preserve statistical selection; present the complete dataset used by that selection.
+  if ((a1cTrend.direction === "rising" || a1cTrend.direction === "falling") && a1cTrend.exceedsNoise) {
+    out.push(makeInsight({
+      scope: "trend", kind: "trend", severity: a1cTrend.direction === "rising" ? "watch" : "info",
+      ...trendObservation("hba1c", points),
+    }));
+  } else if ((a1cTrend.direction === "variable" || a1cTrend.direction === "stable") && points.length >= 3) {
+    out.push(makeInsight({
+      scope: "trend", kind: "observation", severity: a1cTrend.direction === "variable" ? "watch" : "info",
+      ...trendObservation("hba1c", points),
+    }));
   }
 
   // --- 2. HbA1c vs measured glucose coherence -----------------------------

@@ -89,3 +89,4 @@ tests/*
 !tests/medication-observations.cjs
 !tests/startup-recovery.cjs
 !tests/timeline-observations.cjs
+!tests/trend-observations.cjs

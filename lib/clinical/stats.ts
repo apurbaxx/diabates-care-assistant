@@ -12,8 +12,8 @@ import { parameterMeta } from "./units";
  * robust non-parametric methods rather than ordinary least squares:
  *  - Theil–Sen slope: median of pairwise slopes, resistant to a single outlier visit
  *  - Kendall's tau: rank-based monotonicity, tells us whether direction is consistent
- *  - a noise gate from analytical + biological variability, so we never call a
- *    within-assay wobble a "trend"
+ *  - a configured magnitude threshold for selecting observations; this is not
+ *    a statistical test of assay noise or clinical significance
  */
 
 const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
@@ -150,7 +150,7 @@ export function analyseTrend(
     percentChange,
     exceedsNoise,
     points: sorted,
-    summary: summarise(parameter, sorted, totalChange),
+    summary: summariseRecordedChange(parameter, sorted),
   };
 }
 
@@ -161,20 +161,38 @@ export function analyseTrend(
  * for internal gating (e.g. deciding whether an insight fires at all); they
  * are never turned into words like "stable" or "concerning" here.
  */
-function summarise(
+export function summariseRecordedChange(
   parameter: string,
   points: ParameterSeriesPoint[],
-  totalChange: number,
 ): string {
+  if (!points.length) return "No measurements recorded.";
   const meta = parameterMeta(parameter);
   const n = points.length;
-  const fmt = (v: number) => v.toFixed(meta.decimals);
+  const fmt = (v: number) => v.toFixed(seriesDisplayPrecision(parameter, points));
   const first = points[0];
   const last = points[n - 1];
+  if (n === 1) return `${meta.label}: ${fmt(first.value)} ${meta.unit} (${first.date}). One measurement recorded; no change can be calculated.`;
+  const totalChange = last.value - first.value;
   const span = describeSpan(first.date, last.date);
-  const magnitude = `${totalChange > 0 ? "+" : ""}${fmt(totalChange)} ${meta.unit}`;
+  const changeUnit = parameter === "hba1c" ? "percentage points" : meta.unit;
+  const change = Number(fmt(totalChange)) === 0
+    ? totalChange === 0 ? "No net change" : "No net change at displayed precision"
+    : `Net ${totalChange > 0 ? "increase" : "decrease"}: ${fmt(Math.abs(totalChange))} ${changeUnit}`;
 
-  return `${meta.label} changed from ${fmt(first.value)} ${meta.unit} (${first.date}) to ${fmt(last.value)} ${meta.unit} (${last.date}) — a change of ${magnitude} across ${n} measurement${n === 1 ? "" : "s"} over ${span}.`;
+  return `${meta.label} changed from ${fmt(first.value)} ${meta.unit} (${first.date}) to ${fmt(last.value)} ${meta.unit} (${last.date}). ${change} across all ${n} measurements over ${span}.`;
+}
+
+/** Keep displayed endpoints and their difference consistent without altering raw statistics. */
+export function seriesDisplayPrecision(parameter: string, points: ParameterSeriesPoint[]): number {
+  const minimum = parameterMeta(parameter).decimals;
+  if (points.length < 2) return minimum;
+  const first = points[0].value;
+  const last = points[points.length - 1].value;
+  for (let decimals = minimum; decimals <= minimum + 4; decimals++) {
+    const displayedDifference = Number((Number(last.toFixed(decimals)) - Number(first.toFixed(decimals))).toFixed(decimals));
+    if (Math.abs(displayedDifference - Number((last - first).toFixed(decimals))) < 10 ** -decimals / 2) return decimals;
+  }
+  return minimum + 4;
 }
 
 export function describeSpan(fromIso: string, toIso: string): string {

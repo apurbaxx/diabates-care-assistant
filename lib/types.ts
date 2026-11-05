@@ -332,7 +332,7 @@ export interface TrendResult {
   monotonicDirection: "up" | "down" | "none";
   totalChange: number;
   percentChange: number;
-  /** Did the change clear assay + biological variability? */
+  /** Did the net change meet the configured magnitude threshold? Not a significance test. */
   exceedsNoise: boolean;
   points: ParameterSeriesPoint[];
   summary: string;

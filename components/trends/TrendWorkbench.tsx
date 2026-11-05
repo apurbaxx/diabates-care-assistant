@@ -85,14 +85,14 @@ export function TrendWorkbench({
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] print:block">
         <div className="rounded-xl border border-border bg-surface p-4 print:break-inside-avoid">
-          <div className="mb-2 flex items-baseline justify-between">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
               <style.icon className="h-4 w-4 shrink-0" style={{ color: style.accent }} strokeWidth={2.25} />
               {meta.label}
             </h3>
             {trend && trend.points.length > 0 && (
               <span className="text-xs text-muted">
-                {trend.points.length} measurement{trend.points.length === 1 ? "" : "s"}
+                {trend.points.length} measurement{trend.points.length === 1 ? "" : "s"} · {trend.points[0].date} to {trend.points[trend.points.length - 1].date}
               </span>
             )}
           </div>
@@ -117,7 +117,7 @@ export function TrendWorkbench({
           <h3 className="mb-2 text-sm font-semibold text-ink">Observed changes for {meta.label}</h3>
           {relatedInsights.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted">
-              Nothing flagged for this parameter beyond the trend above.
+              No additional record observations for this parameter.
             </p>
           ) : (
             <div className="space-y-2">

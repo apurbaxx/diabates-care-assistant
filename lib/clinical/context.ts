@@ -129,7 +129,7 @@ export const KIND_DESCRIPTION: Record<InsightKind, string> = {
   observation:
     "A value or change that is simply true of this record. No interpretation applied.",
   trend:
-    "A directional pattern across ≥3 measurements that exceeded this analyte's measurement-variability threshold.",
+    "A pattern calculated from the recorded measurements listed below. This does not establish a diagnosis or explain the cause of a change.",
   "flagged-for-review":
     "Surfaced because it may be relevant to management. Not a diagnosis or a recommendation — read alongside the record and guideline citation shown, and decide accordingly.",
 };
