@@ -6,6 +6,7 @@ import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { slides } from "./deck";
 import { Scene } from "./Scene";
 import "./presentation.css";
+import "./scenes.css";
 
 const Launch = createContext<(() => void) | null>(null);
 export function PresentationButton() {
