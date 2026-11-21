@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { StartupScreen } from "@/components/shared/StartupScreen";
 import { STARTUP_RECOVERY_SCRIPT } from "@/lib/startup-recovery";
 import "./globals.css";
+import { Presentation } from "@/components/presentation/Presentation";
 
 const fraunces = localFont({
   src: "./fonts/Fraunces-Variable.ttf",
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p style={{ margin: "16px 0" }}>Check your connection and reload the page to try again.</p>
           <a href="" style={{ display: "inline-block", padding: "10px 18px", borderRadius: 6, background: "#205fa8", color: "#fff" }}>Reload ClinIQ</a>
         </div>
-        <StartupScreen>{children}</StartupScreen>
+        <Presentation><StartupScreen>{children}</StartupScreen></Presentation>
       </body>
     </html>
   );
