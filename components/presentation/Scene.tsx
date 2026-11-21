@@ -23,7 +23,7 @@ function Count({value}:{value:string}) {
   return <span aria-label={value}>{display}</span>;
 }
 function CoverArt(){
-  return <div className="cover-art" aria-hidden="true"><div className="folio back">Guidelines</div><div className="folio middle">Visit history</div><div className="folio front"><BookOpen/><span>Patient record</span><svg viewBox="0 0 300 80"><path pathLength="1" d="M0 48H65L75 40 84 51 97 13 108 68 119 43 130 48H164Q176 48 184 37Q194 24 204 41Q211 48 225 48H300"/></svg></div></div>;
+  return <div className="cover-art" aria-hidden="true"><div className="folio back">CARE CONTINUITY</div><div className="folio middle">Visit history</div><div className="folio front"><BookOpen/><span>Patient record</span><svg viewBox="0 0 300 80"><path pathLength="1" d="M0 48H65L75 40 84 51 97 13 108 68 119 43 130 48H164Q176 48 184 37Q194 24 204 41Q211 48 225 48H300"/></svg></div></div>;
 }
 function Evaluation({rows}:{rows:[string,string][]}){
   const [feedback,setFeedback]=useState(false);
