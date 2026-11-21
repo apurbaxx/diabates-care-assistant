@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 const paths = [
   {name:"Patient records", question:"What changed between visits?", steps:[["Input","Selected patient’s labs, vitals, visits and medications."],["Analysis","Deterministic comparisons and rule-based trend analysis."],["Output","Findings traceable to the patient’s own record."]]},
-  {name:"Clinical guidelines", question:"Where is the supporting passage?", steps:[["Index","pypdf extracts passages from ADA and RSSDI documents."],["Retrieve","SentenceTransformers embeddings in pgvector plus BM25 lexical search."],["Rank & cite","A cross-encoder reranks results. Each passage carries its section and page."]]}
+  {name:"Knowledge assistant", question:"Where is the supporting passage?", steps:[["Index","pypdf extracts passages from ADA and RSSDI documents."],["Retrieve","SentenceTransformers embeddings in pgvector plus BM25 lexical search."],["Rank & cite","A cross-encoder reranks results. Each passage carries its section and page."]]}
 ];
 export function EngineDiagram(){
   const [active,setActive]=useState(0);

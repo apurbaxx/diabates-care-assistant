@@ -11,7 +11,7 @@ import "./scenes.css";
 const Launch = createContext<(() => void) | null>(null);
 export function PresentationButton() {
   const launch = useContext(Launch);
-  return launch && <button onClick={launch}><MonitorPlay size={16} aria-hidden="true"/> Presentation Mode</button>;
+  return launch && <button onClick={launch}> Presentation Mode</button>;
 }
 
 type Position = {index:number; live:boolean};
@@ -88,7 +88,7 @@ export function Presentation({children}:{children:React.ReactNode}) {
     {active && !live && <dialog ref={deck} tabIndex={-1} aria-label="ClinIQ presentation" className={'keynote '+(preview?'split':'')} onCancel={e=>{e.preventDefault();exit();}}>
       <header><ClinIQLogo/><span>Health-a-thon 2026</span><button onClick={exit} aria-label="Exit presentation"><X size={18}/></button></header>
       <Scene key={index} slide={slide} enter={enter}/>
-      <footer><span>{String(index+1).padStart(2,"0")} / {slides.length}</span><progress value={index+1} max={slides.length}/><label>Demo keys <select aria-label="Demo shortcut modifiers" value={alt?"alt":"ctrl"} onChange={e=>setAlt(e.target.value==="alt")}><option value="ctrl">Ctrl ⇧ ←/→</option><option value="alt">Alt ⇧ ←/→</option></select></label><button disabled={!index} aria-label="Previous slide" onClick={()=>go(index-1)}><ChevronLeft/></button><button aria-label={index===slides.length-1?"Finish presentation":"Advance presentation"} onClick={next}><ChevronRight/></button></footer>
+      <footer><span>{String(index+1).padStart(2,"0")} / {slides.length}</span><progress value={index+1} max={slides.length}/><label>Key: <select aria-label="Demo shortcut modifiers" value={alt?"alt":"ctrl"} onChange={e=>setAlt(e.target.value==="alt")}><option value="ctrl">Ctrl ⇧ ←/→</option><option value="alt">Alt ⇧ ←/→</option></select></label><button disabled={!index} aria-label="Previous slide" onClick={()=>go(index-1)}><ChevronLeft/></button><button aria-label={index===slides.length-1?"Finish presentation":"Advance presentation"} onClick={next}><ChevronRight/></button></footer>
     </dialog>}
     {live && <nav className="demo-nav" aria-label="Live demonstration"><span>Live demo</span><button onClick={()=>go(index-1)} aria-label="Previous slide"><ChevronLeft size={16}/></button><button onClick={()=>go(index+1)}>Continue <kbd>{alt?"Alt":"Ctrl"} ⇧ →</kbd></button><button aria-label="Exit presentation" onClick={exit}><X size={15}/></button></nav>}
   </Launch.Provider>;

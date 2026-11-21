@@ -9,7 +9,7 @@
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-1.0-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![Supabase pgvector](https://img.shields.io/badge/Supabase-pgvector-3ECF8E?style=flat&logo=supabase)](https://supabase.com/)
-[![Clinical Guidelines](https://img.shields.io/badge/Guidelines-ADA%20%7C%20RSSDI-e11d48)](https://diabetesjournals.org/care)
+[![Knowledge Assistant](https://img.shields.io/badge/Guidelines-ADA%20%7C%20RSSDI-e11d48)](https://diabetesjournals.org/care)
 
 ---
 
@@ -209,7 +209,7 @@ ClinIQ features two specialized assistants designed to help doctors retrieve pat
 
 #### B. Medical Guideline Knowledge Assistant
 
-- **Trusted Medical Guidelines:** Provides access to diabetes-related clinical guidelines from the American Diabetes Association (ADA) and the Research Society for the Study of Diabetes in India (RSSDI).
+- **Trusted Medical Guidelines:** Provides access to diabetes-related clinical knowledge from the American Diabetes Association (ADA) and the Research Society for the Study of Diabetes in India (RSSDI).
 - **AI-Powered Guideline Search:** Combines keyword search and semantic search to find relevant information from medical guidelines.
 - **Relevant Answer Retrieval:** Identifies and extracts information directly related to a doctor's question instead of displaying lengthy, unrelated guideline passages.
 - **Source-Linked Answers:** Displays answers supported by original guideline text, including document titles and page references.
