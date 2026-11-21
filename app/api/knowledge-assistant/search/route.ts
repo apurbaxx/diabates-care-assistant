@@ -3,6 +3,7 @@ import { z } from "zod";
 import { isSupabaseConfigured, searchWithSupabase } from "@/lib/supabase";
 import { rerankCandidates } from "@/lib/knowledge/rerank";
 import { callKnowledgeService } from "@/lib/knowledge/python-service";
+import { withEvidenceCitations } from "@/lib/knowledge/evidence-citations";
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 const ML_SERVICE_API_KEY = process.env.ML_SERVICE_API_KEY || "cliniq-knowledge-internal-key";
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       primaryStatus = primary.status;
       if (primary.data) {
         return NextResponse.json({
-          ...primary.data, engine: "cloud_python", primary_fallback_used: false,
+          ...withEvidenceCitations(primary.data), engine: "cloud_python", primary_fallback_used: false,
           latency_ms: Date.now() - started,
           ...(include_debug ? { primary_service_status: primaryStatus } : {}),
         });
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
         if (reranker_fallback_used) {
           console.warn("[Knowledge Assistant Search] Using Supabase fallback:", reranker_status);
         }
-        return NextResponse.json({
+        return NextResponse.json(withEvidenceCitations({
           query,
           engine: reranking_executed ? "supabase_pgvector_rerank" : "supabase_pgvector",
           total_results: results.length,
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
           ...(include_debug ? { primary_service_status: primaryStatus, reranker_status,
             candidate_count: candidates.length } : {}),
           latency_ms: Date.now() - started,
-        });
+        }));
       } catch (err) {
         console.error("Supabase search error:", err);
         return NextResponse.json(
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     const searchResponse = await backendRes.json();
     return NextResponse.json({
-      ...searchResponse,
+      ...withEvidenceCitations(searchResponse),
       engine: "local_python",
     });
   } catch (err: unknown) {

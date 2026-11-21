@@ -470,8 +470,11 @@ def run_ingestion_pipeline(docs_dir: str, output_json_path: str) -> Dict[str, An
 
 
 if __name__ == "__main__":
+    from citation_formatting import OUTPUT_PATH, write_citation_formatting
+
     docs_directory = os.path.join(os.path.dirname(__file__), "..", "..", "documents")
     output_file = os.path.join(os.path.dirname(__file__), "..", "data", "passages.json")
     summary = run_ingestion_pipeline(docs_directory, output_file)
+    write_citation_formatting(docs_directory, output_file, OUTPUT_PATH, DOC_REGISTRY)
     print("\nIngestion Summary:")
     print(json.dumps(summary, indent=2))

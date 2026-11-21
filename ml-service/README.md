@@ -31,12 +31,14 @@ pip install -r ml-service/requirements.txt
 
 ### 3. Ingestion & Index Generation
 ```bash
-# Extract text, structure passages, strip boilerplate, exclude bibliographies:
+# Extract and structure passages, and generate display ranges from the PDF layout:
 python ml-service/app/ingestion.py
 
 # Generate dense embeddings (atomically saved) and initialize BM25 index:
 python ml-service/app/retrieval.py
 ```
+
+To refresh citation formatting for an existing index, run only `citation_formatting.py` and rebuild the Next.js app with the generated `lib/knowledge/citation-formatting.json`. The command reads the indexed passages and PDFs and writes a separate display file. It does not rewrite the passages or embeddings.
 
 ### 4. Start the Service
 ```bash

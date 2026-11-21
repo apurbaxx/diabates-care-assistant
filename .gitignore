@@ -85,8 +85,13 @@ __pycache__/
 *.pyc
 
 scripts/
+scripts/
 tests/*
 !tests/medication-observations.cjs
 !tests/startup-recovery.cjs
 !tests/timeline-observations.cjs
 !tests/trend-observations.cjs
+!tests/evidence-citations.cjs
+!/ml-service/tests/
+!/ml-service/tests/test_citation_formatting.py
+

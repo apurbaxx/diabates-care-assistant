@@ -11,6 +11,7 @@ import type { KnowledgeSource } from "@/lib/knowledge/sources";
 import styles from "./KnowledgeExplorer.module.css";
 import { ShortAnswer, evidenceCardId } from "./ShortAnswer";
 import { KnowledgeSources } from "./KnowledgeSources";
+import { PassageExcerpt } from "./PassageExcerpt";
 import { searchKnowledge, type PassageResult, type SearchResponse } from "@/lib/knowledge/search";
 export type { PassageResult, SearchResponse } from "@/lib/knowledge/search";
 
@@ -71,16 +72,6 @@ function getMatchConfidence(passage: PassageResult): { bars: number; label: stri
     return { bars: 3, label: "Good match" };
   }
   return { bars: 0, label: "Match unavailable" };
-}
-
-function renderPassageText(text: string) {
-  if (!text) return null;
-  const paragraphs = text.split(/\n{2,}|\r\n\r\n/);
-  return paragraphs.map((para, pIdx) => (
-    <p key={pIdx} className={styles.paragraph}>
-      {para}
-    </p>
-  ));
 }
 
 export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
@@ -312,7 +303,7 @@ export function KnowledgeExplorer({ sources }: { sources: KnowledgeSource[] }) {
                   <span className={styles.match}><span className={styles.bars} aria-hidden="true">{[1,2,3,4].map(n => <i key={n} className={n <= confidence.bars ? styles.filled : ""}/>)}</span>{confidence.label}</span>
                 </div>
                 {passage.section && <p className={styles.breadcrumb}>{formatBreadcrumb(passage.section)}</p>}
-                {!collapsed && <div id={`excerpt-${index}`} className={styles.excerpt}>{renderPassageText(passage.text)}</div>}
+                {!collapsed && <div id={`excerpt-${index}`} className={styles.excerpt}><PassageExcerpt passage={passage} className={styles.paragraph} /></div>}
                 <button className={styles.textLink} aria-expanded={!collapsed} aria-controls={`excerpt-${index}`} onClick={e => { e.stopPropagation(); setCollapsedIds(ids => collapsed ? ids.filter(id => id !== passage.passage_id) : [...ids, passage.passage_id]); }}>{collapsed ? "Expand excerpt" : "Collapse excerpt"}</button>
               </article>;
             })}

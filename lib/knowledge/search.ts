@@ -9,6 +9,7 @@ export interface PassageResult {
   official_url: string;
   content_type: string;
   text: string;
+  citation_superscripts?: readonly (readonly [start: number, end: number])[];
   read_article_link: string;
   bm25_rank?: number | null;
   semantic_rank?: number | null;

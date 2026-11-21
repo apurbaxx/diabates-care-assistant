@@ -7,6 +7,8 @@ import styles from "./KnowledgeExplorer.module.css";
 
 export const evidenceCardId = (id: string) => `guideline-evidence-${encodeURIComponent(id)}`;
 
+const stripInlineReferences = (text: string) => text.replace(/ ?(?:\[\d+\])+/g, "");
+
 export function ShortAnswer({ response, passages, loading = false, onCitation }: {
   response?: SearchResponse; passages: PassageResult[]; loading?: boolean; onCitation?: (id: string) => void;
 }) {
@@ -22,8 +24,8 @@ export function ShortAnswer({ response, passages, loading = false, onCitation }:
       : result.answer && <>
         {result.answer.insufficient_evidence && <strong>Insufficient evidence</strong>}
         <p>{result.answer.sentences.length ? result.answer.sentences.map((sentence, index) =>
-          <span key={index}>{index > 0 && " "}{sentence.text}{" "}<a href={`#${evidenceCardId(sentence.passage_id)}`} onClick={() => onCitation?.(sentence.passage_id)} aria-label={`Evidence for sentence ${index + 1}`}>[{result.answer!.citations.findIndex(c => c.passage_id === sentence.passage_id) + 1}]</a></span>
-        ) : result.answer.answer}</p>
+          <span key={index}>{index > 0 && " "}{stripInlineReferences(sentence.text)}</span>
+        ) : stripInlineReferences(result.answer.answer)}</p>
         {!!result.answer.citations.length && <ul>{result.answer.citations.map((c, index) => <li key={c.passage_id}><a href={`#${evidenceCardId(c.passage_id)}`} onClick={() => onCitation?.(c.passage_id)}>[{index + 1}] {c.doc_title} · Page {c.page_number}</a></li>)}</ul>}
       </>}
     <p>Extracts from retrieved guideline evidence, not patient-specific advice. Consult the cited sources for full context; differences between guidelines may remain.</p>
