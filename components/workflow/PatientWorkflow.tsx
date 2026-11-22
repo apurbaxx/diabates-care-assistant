@@ -1,14 +1,18 @@
 "use client";
 import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
-import { useEffect, useRef, useState } from "react";
+import { GeneticHistoryEditor } from "@/components/patient/GeneticHistoryEditor";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { hasGeneticHistory } from "@/lib/genetic-history";
 import { useAppStore } from "@/lib/store";
 import { newSummary, localDate, type Appointment, type VisitSummary } from "@/lib/workflow";
 import type { Patient } from "@/lib/types";
 
-function Modal({title,close,children}:{title:string;close:()=>void;children:React.ReactNode}) {
+function Modal({title,close,children,className=""}:{title:string;close:()=>void;children:React.ReactNode;className?:string}) {
   const ref=useRef<HTMLDialogElement>(null);
+  const titleId=useId();
   useEffect(()=>{const d=ref.current;d?.showModal();return ()=>d?.close();},[]);
-  return <dialog ref={ref} onCancel={close} className="workflow-dialog"><div className="workflow-heading"><h2>{title}</h2><button type="button" onClick={close} aria-label="Close dialog">Close</button></div>{children}</dialog>;
+  return <dialog ref={ref} onCancel={close} className={`workflow-dialog ${className}`} aria-labelledby={titleId}><div className="workflow-heading"><h2 id={titleId}>{title}</h2><button type="button" onClick={close} aria-label="Close dialog">Close</button></div>{children}</dialog>;
 }
 export function AppointmentEditor({patientId,appointment,close}:{patientId?:string;appointment?:Appointment;close:()=>void}) {
   const patients=useAppStore(s=>s.patients); const save=useAppStore(s=>s.saveAppointment);
@@ -28,20 +32,45 @@ export function AppointmentEditor({patientId,appointment,close}:{patientId?:stri
 }
 export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;patient:Patient;close:()=>void}) {
   const [s,setS]=useState(summary);const [error,setError]=useState("");const save=useAppStore(s=>s.saveSummary);
+  const [editingGenetics, setEditingGenetics] = useState(false);
+  const [historySaved, setHistorySaved] = useState(false);
+  const geneticsButton = useRef<HTMLButtonElement>(null);
+  const geneticsPanelId = useId();
   const all=useAppStore(s=>s.summaries);const [previous,setPrevious]=useState("");
   const fields = {patientInfo:"Patient information",complaint:"Chief complaint / reason for visit",history:"Relevant patient history",vitals:"Recorded vitals (source date retained)",labs:"Available laboratory results (source date retained)",observations:"Clinical observations",notes:"Doctor’s notes",instructions:"Follow-up instructions"};
   const readonly=s.status==="Finalized";
+  useEffect(() => {
+    if (editingGenetics) geneticsButton.current?.scrollIntoView({ block: "start" });
+  }, [editingGenetics]);
   function commit(status:VisitSummary["status"]) {try{save({...s,status,updatedAt:new Date().toISOString()});close();}catch(e){setError((e as Error).message);}}
-  return <Modal title={`${s.status} visit summary`} close={close}><div className="summary-print"><h1><ClinIQLogo size={27} /> · Visit summary</h1><p>Synthetic patient record · {s.date}</p><p>Linked appointment: {s.appointmentId ? useAppStore.getState().appointments.find(a=>a.id===s.appointmentId)?.date : "Unscheduled visit"}</p>
+  return <Modal title={`${s.status} visit summary`} close={close} className="visit-summary-dialog">
+    <div className="summary-print"><h1 className="hidden print:block"><ClinIQLogo size={27} /> · Visit summary</h1><p>Synthetic patient record · {s.date}</p><p>Linked appointment: {s.appointmentId ? useAppStore.getState().appointments.find(a=>a.id===s.appointmentId)?.date : "Unscheduled visit"}</p>
     <div className="workflow-form"><label>Visit date<input disabled={readonly} type="date" max={localDate()} value={s.date} onChange={e=>setS({...s,date:e.target.value})}/></label>
     {Object.entries(fields).map(([key,label])=><label key={key}>{label}{readonly?<div className="summary-text">{s[key as keyof typeof fields] || "Not recorded"}</div>:<><div className="hidden print:block summary-text">{s[key as keyof typeof fields] || "Not recorded"}</div><textarea className="print:hidden" rows={key==="history" || key==="labs"?4:2} value={s[key as keyof typeof fields]} onChange={e=>setS({...s,[key]:e.target.value})}/></>}</label>)}
     <label>Next follow-up date<input type="date" disabled={readonly} min={s.date} value={s.followUp} onChange={e=>setS({...s,followUp:e.target.value})}/></label></div></div>
-    <div className="print:hidden workflow-form"><p>Recorded values are historical, not findings from this visit. Blank fields remain unrecorded. No AI clinical decisions are generated.</p>
+    <div className="summary-tools workflow-form"><p>Recorded values are historical, not findings from this visit. Blank fields remain unrecorded. No AI clinical decisions are generated.</p>
     <label>Compare a previous summary<select value={previous} onChange={e=>setPrevious(e.target.value)}><option value="">Choose previous visit</option>{all.filter(x=>x.patientId===patient.id && x.id!==s.id).sort((a,b)=>b.date.localeCompare(a.date)).map(x=><option key={x.id} value={x.id}>{x.date} · {x.status}</option>)}</select></label>
     {previous && <div className="summary-text">{Object.entries(fields).map(([k,label])=><p key={k}><strong>{label}: </strong>{all.find(x=>x.id===previous)?.[k as keyof typeof fields] || "Not recorded"}</p>)}</div>}
-    <a href="#comparison" onClick={close}>Compare recorded vitals and labs in patient history</a>
+    <a className="record-link" href="#comparison" onClick={close}>Compare recorded vitals and labs in patient history</a>
+    {!readonly && <div className="genetic-history-control">
+      <button ref={geneticsButton} className="genetic-history-toggle" type="button" aria-expanded={editingGenetics} aria-controls={geneticsPanelId} onClick={() => {
+        setHistorySaved(false);
+        setEditingGenetics(open => !open);
+      }}>
+        {hasGeneticHistory(patient.geneticHistory) ? "Update genetic history" : "Add genetic history"}
+        <ChevronDown size={16} aria-hidden="true" />
+      </button>
+      <div id={geneticsPanelId} hidden={!editingGenetics}>
+        {editingGenetics && <GeneticHistoryEditor key={patient.id} patient={patient} close={saved => {
+          setHistorySaved(saved);
+          setEditingGenetics(false);
+          geneticsButton.current?.focus();
+        }} />}
+      </div>
+      {historySaved && <p className="genetic-history-status" role="status">Genetic history saved.</p>}
+    </div>}
     {error && <p role="alert" className="workflow-error">{error}</p>}
-    <div className="workflow-actions">{!readonly && <><button onClick={()=>commit("Draft")}>Save draft</button><button className="primary" onClick={()=>commit("Finalized")}>Finalize summary</button></>}<button onClick={()=>window.print()}>Print summary</button></div></div>
+    <div className="workflow-actions summary-actions"><button type="button" onClick={()=>window.print()}>Print summary</button>{!readonly && <><button type="button" onClick={()=>commit("Draft")}>Save draft</button><button type="button" className="primary" onClick={()=>commit("Finalized")}>Finalize summary</button></>}</div></div>
   </Modal>;
 }
 export function PatientSummaries({patient}:{patient:Patient}) {

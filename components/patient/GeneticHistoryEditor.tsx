@@ -1,206 +1,105 @@
 "use client";
 
-import { useState } from "react";
-import type { Patient, GeneticHistory, FamilyHistoryEntry } from "@/lib/types";
+import { Plus } from "lucide-react";
+import { useId, useRef, useState } from "react";
+import type { FamilyHistoryEntry, GeneticHistory, Patient } from "@/lib/types";
+import { hasGeneticHistory } from "@/lib/genetic-history";
 import { useAppStore } from "@/lib/store";
 
-export function GeneticHistoryEditor({ patient }: { patient: Patient }) {
-  const updatePatientGeneticHistory = useAppStore(
-    (state) => state.updatePatientGeneticHistory
-  );
+export function GeneticHistoryEditor({ patient, close }: { patient: Patient; close: (saved: boolean) => void }) {
+  const initial = patient.geneticHistory;
+  const updateHistory = useAppStore(s => s.updatePatientGeneticHistory);
+  const conditions = useId();
+  const [family, setFamily] = useState(initial?.familyHistory ?? []);
+  const [noneKnown, setNoneKnown] = useState(initial?.status === "none-known");
+  const [geneticConditions, setGeneticConditions] = useState(initial?.knownGeneticConditions?.join(", ") ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [error, setError] = useState("");
+  const addedRelative = useRef<string | null>(null);
 
-  const initialHistory = patient.geneticHistory;
-
-  const [status, setStatus] = useState<GeneticHistory["status"]>(
-    initialHistory?.status ?? "unknown"
-  );
-
-  const [familyHistory, setFamilyHistory] = useState<FamilyHistoryEntry[]>(
-    initialHistory?.familyHistory ?? []
-  );
-
-  const [relationship, setRelationship] = useState("");
-  const [condition, setCondition] = useState("");
-  const [diabetesType, setDiabetesType] = useState("");
-
-  const [geneticConditions, setGeneticConditions] = useState(
-    initialHistory?.knownGeneticConditions?.join(", ") ?? ""
-  );
-
-  const [notes, setNotes] = useState(initialHistory?.notes ?? "");
-  const [saved, setSaved] = useState(false);
-
-  function addFamilyHistory() {
-    if (!relationship.trim() || !condition.trim()) return;
-
-    const entry: FamilyHistoryEntry = {
-      id: crypto.randomUUID(),
-      relationship: relationship.trim(),
-      condition: condition.trim(),
-      ...(diabetesType.trim()
-        ? { diabetesType: diabetesType.trim() }
-        : {}),
-    };
-
-    setFamilyHistory((previous) => [...previous, entry]);
-
-    setRelationship("");
-    setCondition("");
-    setDiabetesType("");
-    setSaved(false);
+  function addRelative() {
+    const id = crypto.randomUUID();
+    addedRelative.current = id;
+    setFamily(entries => [...entries, { id, relationship: "", condition: "" }]);
   }
 
-  function removeFamilyHistory(id: string) {
-    setFamilyHistory((previous) =>
-      previous.filter((entry) => entry.id !== id)
-    );
-    setSaved(false);
+  function editEntry(id: string, values: Partial<FamilyHistoryEntry>) {
+    setFamily(entries => entries.map(entry => entry.id === id ? { ...entry, ...values } : entry));
+    setError("");
   }
 
-  function saveHistory() {
-    const geneticHistory: GeneticHistory = {
-      status,
-      familyHistory,
-      knownGeneticConditions: geneticConditions
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+  function save(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const entries = family.map(entry => ({
+      ...entry,
+      relationship: entry.relationship.trim(),
+      condition: entry.condition.trim(),
+      diabetesType: entry.diabetesType?.trim() || undefined,
+    })).filter(entry => entry.relationship || entry.condition || entry.diabetesType || entry.notes);
+
+    if (entries.some(entry => !entry.relationship || !entry.condition)) {
+      setError("Enter a relationship and condition for each relative, or remove the incomplete entry.");
+      return;
+    }
+
+    const knownGeneticConditions = geneticConditions.split(",").map(condition => condition.trim()).filter(Boolean);
+    const history: GeneticHistory = {
+      status: entries.length ? "recorded" : noneKnown ? "none-known" : "unknown",
+      familyHistory: entries,
+      knownGeneticConditions,
       notes: notes.trim(),
     };
 
-    updatePatientGeneticHistory(patient.id, geneticHistory);
-    setSaved(true);
+    try {
+      updateHistory(patient.id, hasGeneticHistory(history) ? history : undefined);
+      close(true);
+    } catch (error) {
+      setError((error as Error).message);
+    }
   }
 
   return (
-    <section id="genetic-history" className="record-section">
-      <div className="record-section-heading">
-        <h2>Genetic History</h2>
-        <span>Patient information</span>
+    <form className="workflow-form genetic-history-editor" onSubmit={save} aria-label="Genetic history">
+      <div className="genetic-history-heading">
+        <h3>Family history</h3>
+        <button className="genetic-history-add" type="button" onClick={addRelative}>
+          <Plus size={16} aria-hidden="true" />
+          Add relative
+        </button>
       </div>
-
-      <p className="record-description">
-        Record reported family history and known genetic conditions.
-        This information is for documentation and clinician review.
-      </p>
-
-      <div className="record-facts">
-        <div>
-          <label htmlFor="family-status">Family history status</label>
-          <select
-            id="family-status"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as GeneticHistory["status"]);
-              setSaved(false);
-            }}
-          >
-            <option value="unknown">Unknown / Not recorded</option>
-            <option value="recorded">Information recorded</option>
-            <option value="none-known">
-              No known relevant family history reported
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <h3>Family history entries</h3>
-
-      {familyHistory.length > 0 ? (
-        familyHistory.map((entry) => (
-          <div key={entry.id} className="record-facts">
-            <div>
-              <strong>{entry.relationship}</strong>
-              <span> — {entry.condition}</span>
-              {entry.diabetesType && (
-                <span> ({entry.diabetesType})</span>
-              )}
-
-              <button
-                type="button"
-                onClick={() => removeFamilyHistory(entry.id)}
-              >
-                Remove
-              </button>
-            </div>
+      {family.map((entry, index) => (
+        <fieldset className="genetic-history-relative" key={entry.id}>
+          <legend>Relative {index + 1}</legend>
+          <div className="genetic-history-relative-fields">
+            <label>Relationship
+              <input value={entry.relationship} onChange={e => editEntry(entry.id, { relationship: e.target.value })} ref={input => {
+                if (input && entry.id === addedRelative.current) {
+                  addedRelative.current = null;
+                  input.focus();
+                }
+              }} />
+            </label>
+            <label>Condition<input value={entry.condition} onChange={e => editEntry(entry.id, { condition: e.target.value })} /></label>
+            {entry.diabetesType !== undefined && <label>Diabetes type<input value={entry.diabetesType} onChange={e => editEntry(entry.id, { diabetesType: e.target.value })} /></label>}
           </div>
-        ))
-      ) : (
-        <p className="record-empty">
-          No family history entries added.
-        </p>
-      )}
-
-      <div className="record-facts">
-        <div>
-          <label htmlFor="relationship">Relationship</label>
-          <input
-            id="relationship"
-            value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
-            placeholder="e.g. Mother, Father, Sibling"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="condition">Condition</label>
-          <input
-            id="condition"
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-            placeholder="e.g. Type 2 diabetes"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="diabetes-type">Diabetes type (optional)</label>
-          <input
-            id="diabetes-type"
-            value={diabetesType}
-            onChange={(e) => setDiabetesType(e.target.value)}
-            placeholder="e.g. Type 1 or Type 2"
-          />
-        </div>
-
-        <button type="button" onClick={addFamilyHistory}>
-          + Add family history
-        </button>
-      </div>
-
-      <h3>Known genetic conditions</h3>
-
-      <input
-        value={geneticConditions}
-        onChange={(e) => {
-          setGeneticConditions(e.target.value);
-          setSaved(false);
-        }}
-        placeholder="Enter conditions separated by commas"
-      />
-
-      <h3>Additional notes</h3>
-
-      <textarea
-        value={notes}
-        onChange={(e) => {
-          setNotes(e.target.value);
-          setSaved(false);
-        }}
-        placeholder="Enter additional recorded information..."
-        rows={4}
-      />
-
+          {entry.notes && <p>{entry.notes}</p>}
+          <button className="genetic-history-remove" type="button" onClick={() => { setFamily(entries => entries.filter(item => item.id !== entry.id)); setError(""); }}>Remove relative</button>
+        </fieldset>
+      ))}
+      {family.length === 0 && <label className="genetic-history-checkbox">
+        <input type="checkbox" checked={noneKnown} onChange={e => setNoneKnown(e.target.checked)} />
+        No known relevant family history reported
+      </label>}
       <div>
-        <button type="button" onClick={saveHistory}>
-          Save Genetic History
-        </button>
-
-        {saved && (
-          <p role="status">
-            Genetic history saved successfully.
-          </p>
-        )}
+        <label>Known genetic conditions<input value={geneticConditions} aria-describedby={conditions} onChange={e => setGeneticConditions(e.target.value)} /></label>
+        <p id={conditions}>Separate conditions with commas.</p>
       </div>
-    </section>
+      <label>Notes<textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></label>
+      {error && <p className="workflow-error" role="alert">{error}</p>}
+      <div className="workflow-actions genetic-history-actions">
+        <button type="button" onClick={() => close(false)}>Cancel</button>
+        <button type="submit" className="primary">Save genetic history</button>
+      </div>
+    </form>
   );
 }

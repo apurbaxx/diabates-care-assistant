@@ -45,7 +45,7 @@ interface AppState {
 
   updatePatientGeneticHistory: (
     patientId: string,
-    geneticHistory: GeneticHistory
+    geneticHistory: GeneticHistory | undefined
   ) => void;
 
   resetToSeedCohort: () => void;
@@ -279,15 +279,17 @@ export const useAppStore = create<AppState>()(
           }),
         })),
 
-      // NEW: Update genetic history for an individual patient.
       updatePatientGeneticHistory: (patientId, geneticHistory) =>
-        set((state) => ({
-          patients: state.patients.map((patient) =>
-            patient.id === patientId
-              ? { ...patient, geneticHistory }
-              : patient
-          ),
-        })),
+        set((state) => {
+          if (!state.patients.some(patient => patient.id === patientId))
+            throw new Error("Patient not found");
+
+          return {
+            patients: state.patients.map(patient =>
+              patient.id === patientId ? { ...patient, geneticHistory } : patient
+            ),
+          };
+        }),
 
       resetToSeedCohort: () =>
         set({

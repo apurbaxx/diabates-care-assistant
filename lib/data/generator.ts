@@ -290,12 +290,6 @@ export function generatePatient(opts: GenerateOptions): Patient {
     allergies: [],
     smoking: pick(rng, ["never", "never", "never", "former", "current"] as const),
     background: `Synthetic patient generated from archetype "${archetype.label}".`,
-
-    geneticHistory: {
-    status: "unknown",
-    familyHistory: [],
-    notes: "",
-    },
     hypoglycemiaHistory: !!archetype.hypoglycemiaHistory,
     limitedLifeExpectancy: !!archetype.limitedLifeExpectancy,
     visits,

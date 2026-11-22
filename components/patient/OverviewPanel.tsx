@@ -1,6 +1,7 @@
 "use client";
 
 import type { EngineResult, Patient, ParameterSeriesPoint } from "@/lib/types";
+import { hasGeneticHistory } from "@/lib/genetic-history";
 import { createRecordContext } from "@/lib/clinical/record";
 import { parameterMeta, formatValue } from "@/lib/clinical/units";
 import { useEvidence } from "@/components/shared/EvidenceContext";
@@ -10,6 +11,9 @@ const MEASURES = ["hba1c", "fastingGlucose", "systolic", "egfr", "uacr", "weight
 export function OverviewPanel({ patient, engine }: { patient: Patient; engine: EngineResult }) {
   const { openInsight } = useEvidence();
   const meds = createRecordContext(patient).activeMedications;
+  const history = patient.geneticHistory;
+  const family = history?.familyHistory ?? [];
+  const geneticConditions = history?.knownGeneticConditions?.filter(condition => condition.trim()) ?? [];
   return <div className="record-overview">
     <div className="record-section-heading"><h2>Summary</h2><span>Generated from this record · check against the details below</span></div>
     <h3 className="record-headline">{engine.summary.headline}</h3>
@@ -31,5 +35,33 @@ export function OverviewPanel({ patient, engine }: { patient: Patient; engine: E
     <div className="record-block"><div className="record-section-heading"><h2>Current regimen</h2><a className="record-link" href="#medications">Open medications</a></div>
       {meds.length ? <div className="record-table-scroll"><table className="record-table regimen-table"><thead><tr><th>Medication</th><th>Dose</th><th>Frequency</th></tr></thead><tbody>{meds.map(m => <tr key={m.id}><th scope="row">{m.name}</th><td>{m.dose} {m.unit}</td><td>{m.frequency}</td></tr>)}</tbody></table></div> : <p className="record-empty">No medications recorded.</p>}
     </div>
+    {hasGeneticHistory(history) && <section className="record-block regimen-genetic-history">
+      <h2 id="regimen-genetic-history-title">Genetic history</h2>
+      <div className="record-table-scroll">
+        <table className="record-table genetic-history-table" aria-labelledby="regimen-genetic-history-title">
+          <thead>
+            <tr><th scope="col">History</th><th scope="col">Details</th></tr>
+          </thead>
+          <tbody>
+            {family.map(entry => (
+              <tr key={entry.id}>
+                <th scope="row">{entry.relationship}</th>
+                <td>
+                  {entry.condition}{entry.diabetesType && ` (${entry.diabetesType})`}
+                  {entry.notes?.trim() && <div>{entry.notes}</div>}
+                </td>
+              </tr>
+            ))}
+            {family.length === 0 && history.status === "none-known" && (
+              <tr><th scope="row">Family history</th><td>No known relevant family history reported.</td></tr>
+            )}
+            {geneticConditions.length > 0 && (
+              <tr><th scope="row">Known genetic conditions</th><td>{geneticConditions.join(", ")}</td></tr>
+            )}
+            {history.notes?.trim() && <tr><th scope="row">Notes</th><td>{history.notes}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </section>}
   </div>;
 }

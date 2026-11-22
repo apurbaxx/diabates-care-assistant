@@ -247,7 +247,7 @@ body {
 @media print{body:has(dialog[open]) *{visibility:hidden!important}body:has(dialog[open]) dialog[open],body:has(dialog[open]) dialog[open] .summary-print,body:has(dialog[open]) dialog[open] .summary-print *{visibility:visible!important}body:has(dialog[open]) dialog[open]{position:absolute;inset:0;border:0;width:100%;max-height:none;overflow:visible;background:white}dialog[open]>.workflow-heading{display:none}dialog[open] .summary-print input{border:0;padding:0}dialog[open] .summary-print textarea{height:auto;min-height:100px}.summary-print label{break-inside:avoid}}
 
 /* Patient summary action sits directly below the record's AI summary. */
-.patient-summaries .workflow-actions > button,
+.patient-summaries > .workflow-actions > button,
 .patient-summaries .summary-history button,
 .report-actions button {
   border: 1px solid #afbed0;
@@ -259,7 +259,7 @@ body {
   background: #fff;
   color: #172530;
 }
-.patient-summaries button.primary,
+.patient-summaries > .workflow-actions > button.primary,
 .report-actions button.primary {
   background: #205ea6;
   border-color: #205ea6;
@@ -286,7 +286,7 @@ body {
 .report-values dd { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .report-values dd span { font-size: 11px; font-weight: 400; color: #536579; }
 .report-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.report-actions button:hover, .patient-summaries button:hover { filter: brightness(.96); }
+.report-actions button:hover, .patient-summaries > .workflow-actions button:hover { filter: brightness(.96); }
 .report-review table { min-width: 640px; }
 @media (max-width: 600px) {
   .patient-summaries .workflow-actions { align-items: stretch; }
@@ -444,6 +444,9 @@ body {
 .record-narrative { margin:8px 0; font-size:14px; line-height:1.8; }
 .record-block { margin-top:38px; scroll-margin-top:24px; }
 .record-block > h2 { margin-bottom:12px; }
+.regimen-genetic-history { margin-top:24px; }
+.genetic-history-table { table-layout:fixed; overflow-wrap:anywhere; }
+.genetic-history-table th:first-child { width:max(34%,120px); }
 .record-table-scroll { overflow-x:auto; }
 .record-table { width:100%; border-collapse:collapse; text-align:left; font-size:14px; }
 .measurement-table { min-width:735px; }
@@ -452,6 +455,7 @@ body {
 .record-table tbody th { font-weight:600; }
 .measurement-table td { font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:nowrap; }
 .record-table td:last-child { padding-right:0; text-align:right; }
+.genetic-history-table td:last-child { text-align:left; white-space:pre-wrap; }
 .record-measure-value { font-size:23px; font-weight:700; }
 .record-unit { margin-left:5px; font-size:14px; color:#46586d; }
 .record-previous { color:#46586d; font-size:14px !important; }
@@ -712,6 +716,53 @@ html:has(.patient-record), body:has(.patient-record) { overflow-x:hidden; }
 .patient-record .report-status.pending { background:#edf1f5; color:#43566b; }
 .patient-record .report-status.verified { background:#eaf2fb; color:#234e79; }
 @media print { .patient-record #comparison .visit-comparison-table { min-width:0; } .patient-record #comparison .visit-comparison-table th:first-child { min-width:0; } }
+
+.workflow-dialog.visit-summary-dialog { background:#fff; border-color:#d3dde7; border-radius:10px; }
+.visit-summary-dialog > .workflow-heading { margin-bottom:14px; flex-wrap:nowrap; }
+.visit-summary-dialog > .workflow-heading h2 { min-width:0; border-left:4px solid #759bc2; padding-left:12px; }
+.visit-summary-dialog > .workflow-heading button { flex:none; }
+.visit-summary-dialog .summary-print > p { margin:4px 0; font-size:14px; color:var(--color-muted); }
+.visit-summary-dialog .summary-print > .workflow-form { margin-top:18px; }
+.visit-summary-dialog .workflow-form { grid-template-columns:minmax(0,1fr); }
+.visit-summary-dialog .workflow-form label { font-size:14px; }
+.visit-summary-dialog .workflow-form :is(input,select,textarea) { min-width:0; border-color:#c3cfdb; font-size:16px; font-weight:400; line-height:1.5; }
+.visit-summary-dialog .workflow-form input[type="date"] { justify-self:start; }
+.visit-summary-dialog .summary-tools { margin-top:20px; padding-top:16px; border-top:1px solid #d3dde7; }
+.workflow-dialog.visit-summary-dialog button {
+  min-height:44px; padding:8px 14px; border:1px solid #afbed0; border-radius:5px;
+  background:#fff; color:#172530; font-size:14px; font-weight:600;
+}
+.workflow-dialog.visit-summary-dialog button:hover { background:#eaf0f7; }
+.workflow-dialog.visit-summary-dialog button.primary { background:#205fa8; border-color:#205fa8; color:#fff; }
+.workflow-dialog.visit-summary-dialog button.primary:hover { background:#174b88; }
+.visit-summary-dialog .summary-actions { justify-content:flex-end; padding-top:16px; border-top:1px solid #d3dde7; }
+.workflow-dialog.visit-summary-dialog :is(.genetic-history-toggle,.genetic-history-add) {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; color:var(--color-brand-500);
+}
+.visit-summary-dialog .genetic-history-toggle { scroll-margin-top:16px; }
+.genetic-history-toggle[aria-expanded="true"] svg { transform:rotate(180deg); }
+.genetic-history-control .genetic-history-status { margin-top:8px; }
+.genetic-history-editor { margin-top:12px; padding:16px; border:1px solid #d3dde7; border-radius:8px; background:#f1f5fa; }
+.genetic-history-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.genetic-history-heading h3 { font-size:18px; font-weight:700; }
+.genetic-history-relative { min-width:0; border:1px solid #d3dde7; border-radius:5px; padding:0 12px 8px; background:#fff; }
+.genetic-history-relative legend { padding:0 5px; font-size:14px; font-weight:600; color:#43566b; }
+.genetic-history-relative-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.workflow-dialog.visit-summary-dialog .genetic-history-remove {
+  margin-top:4px; padding:0; border:0; background:transparent; color:var(--color-brand-500); text-decoration:underline;
+}
+.genetic-history-editor .genetic-history-checkbox { display:flex; gap:8px; align-items:center; font-weight:400; }
+.genetic-history-checkbox input { flex:none; width:16px; height:16px; padding:0; accent-color:var(--color-brand-500); }
+.genetic-history-actions { justify-content:flex-end; padding-top:12px; border-top:1px solid #d3dde7; }
+@media (max-width:520px) {
+  .visit-summary-dialog > .workflow-heading { gap:12px; }
+  .visit-summary-dialog > .workflow-heading h2 { font-size:22px; }
+  .genetic-history-editor { padding:12px; }
+  .genetic-history-relative-fields { grid-template-columns:minmax(0,1fr); }
+  .visit-summary-dialog .summary-actions > button,.genetic-history-actions > button { flex:1 1 auto; }
+  .visit-summary-dialog .summary-actions > .primary { flex-basis:100%; }
+}
+@media print { .visit-summary-dialog .summary-tools { display:none; } }
 
 /* Shared heading typeface, including section labels and dialog titles. */
 h1, h2, h3, h4, h5, h6,

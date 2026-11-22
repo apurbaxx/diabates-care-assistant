@@ -10,7 +10,6 @@ import { sortedVisits, ageAt } from "@/lib/clinical/derive";
 import { EvidenceProvider } from "@/components/shared/EvidenceContext";
 import { SafetyFooter } from "@/components/shared/SafetyFooter";
 import { OverviewPanel } from "./OverviewPanel";
-import { GeneticHistoryEditor } from "./GeneticHistoryEditor";
 import { VisitTimeline } from "@/components/history/VisitTimeline";
 import { VisitComparison } from "@/components/history/VisitComparison";
 import { TrendWorkbench } from "@/components/trends/TrendWorkbench";
@@ -52,10 +51,7 @@ export function PatientDashboard({ patientId }: { patientId: string }) {
       <section id="overview"><OverviewPanel patient={patient} engine={engine}/></section>
       <section id="history" className="record-section"><div className="record-section-heading"><h2>Clinical timeline</h2><span>{visits.length} recorded visits</span></div><p className="record-description">Explore recorded measurements, treatment changes and clinician notes by visit.</p>{visits.length ? <VisitTimeline visits={visits} insights={engine.insights} trends={engine.trends} onCompare={(current, previous) => { setComparisonPair({current, previous}); navigate("comparison"); }}/> : <p className="record-empty">No visits recorded.</p>}</section>
       <section className="record-section"><h2>Visit summaries</h2><p className="record-description">Create, review and print summaries from this patient’s saved record.</p><PatientSummaries key={patient.id} patient={patient}/></section>
-      <section id="background" className="record-section"><h2>Patient history</h2><dl className="record-facts"><div><dt>Diagnosed</dt><dd>{patient.diagnosisDate}</dd></div><div><dt>Smoking</dt><dd>{patient.smoking}</dd></div><div><dt>Comorbidities</dt><dd>{patient.comorbidities.map(c => c.replace(/-/g," ")).join(", ") || "None recorded"}</dd></div><div><dt>Allergies</dt><dd>{patient.allergies.join(", ") || "None recorded"}</dd></div><div><dt>Background</dt><dd>{patient.background || "Not recorded"}</dd></div></dl></section> <GeneticHistoryEditor
-      key={patient.id}
-      patient={patient}
-      />
+      <section id="background" className="record-section"><h2>Patient history</h2><dl className="record-facts"><div><dt>Diagnosed</dt><dd>{patient.diagnosisDate}</dd></div><div><dt>Smoking</dt><dd>{patient.smoking}</dd></div><div><dt>Comorbidities</dt><dd>{patient.comorbidities.map(c => c.replace(/-/g," ")).join(", ") || "None recorded"}</dd></div><div><dt>Allergies</dt><dd>{patient.allergies.join(", ") || "None recorded"}</dd></div><div><dt>Background</dt><dd>{patient.background || "Not recorded"}</dd></div></dl></section>
       <section id="trends" className="record-section"><h2>Trends &amp; patterns</h2><p className="record-description">Measurement trajectories across the available record.</p><TrendWorkbench trends={engine.trends} insights={engine.insights}/></section>
       <section id="comparison" className="record-section"><h2>Visit comparison</h2><p className="record-description">Compare measurements between recorded visits.</p><VisitComparison key={comparisonPair ? `${comparisonPair.current}:${comparisonPair.previous}` : patient.id} patient={patient} initialCurrentId={comparisonPair?.current} initialPreviousId={comparisonPair?.previous}/></section>
       <section id="medications" className="record-section"><h2>Medications</h2><p className="record-description">Recorded treatment history, dose changes and supporting evidence.</p><MedicationTimeline visits={visits} insights={engine.insights}/></section>
