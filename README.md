@@ -60,9 +60,6 @@ ClinIQ is engineered to address the heavy cognitive load and administrative fric
 * **Complex Multi-Drug Regimens:** Maps medication start, stop, and titration events directly alongside glycaemic and renal markers.
 * **Strict Non-Diagnostic Safety:** Operates as a purely assistive, non-prescriptive platform. Incorporates algorithmic causality filters that strictly eliminate speculative or unsupported causal claims.
 
-### EHR Mode
-
-ClinIQ can import synthetic patient records from an independent OpenMRS installation over its authenticated FHIR R4 API. The imported patient opens in the existing workspace with dated visits, lab results, vitals and notes. EHR Mode appears when an OpenMRS source is configured. [Run the demonstration and tests](ehr/README.md).
 
 ---
 
