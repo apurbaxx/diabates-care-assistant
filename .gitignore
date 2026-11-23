@@ -92,6 +92,8 @@ tests/*
 !tests/timeline-observations.cjs
 !tests/trend-observations.cjs
 !tests/evidence-citations.cjs
+!tests/summary-translation-ui.cjs
+!tests/summary-translation-proxy.cjs
 !/ml-service/tests/
 !/ml-service/tests/test_citation_formatting.py
 

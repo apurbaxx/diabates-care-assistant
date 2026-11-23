@@ -354,6 +354,40 @@ If you wish to run the local hybrid BM25 + Cross-Encoder reranking service and P
    ML_SERVICE_API_KEY=cliniq-knowledge-internal-key
    ```
 
+### Visit Summary translation in development
+
+To enable translation of the four editable visit summary fields, run Next.js in
+development mode and start FastAPI on a private or loopback address. Configure
+the processes as follows.
+
+| Variable | Process | Value |
+| --- | --- | --- |
+| `SARVAM_TRANSLATION_ENABLED` | Next.js and FastAPI | `true` to opt in explicitly |
+| `CLINIQ_RUNTIME_MODE` | FastAPI | `development` for local translation. The bundled launcher sets `production`. |
+| `CLINIQ_TRANSLATION_ACCESS_TOKEN` | Next.js | A separate random secret of at least 32 characters. Enter it when the development editor prompts for it. |
+| `ML_SERVICE_URL` | Next.js | FastAPI base URL. Use HTTPS for remote hosts. HTTP is accepted for `localhost`, `127.0.0.1`, and `[::1]`. |
+| `ML_SERVICE_API_KEY` | Next.js and FastAPI | The same private internal key in both processes. The default development key is rejected. |
+| `SARVAM_API_KEY` | FastAPI only | Sarvam subscription key supplied through the Python process environment |
+
+Configure the Sarvam key separately from the Next.js process and its environment
+files. Translation is unavailable when the opt-in is unset. FastAPI sends the
+fields requiring translation to Sarvam AI. Use synthetic data until the
+provider's data-handling terms and the applicable privacy requirements have been
+reviewed. Translations require bilingual clinician review before clinical use.
+
+The proxy and FastAPI each accept up to 32 KiB per request and allow 12 requests
+per process per rolling minute. FastAPI allows 24 outbound attempts per process
+per rolling minute. FastAPI does not cache summary text across requests.
+The editor retains the original English and saves translations only when the user
+saves or finalizes the summary.
+
+For a failure returned by the development proxy, the same line shows the code
+and request ID. Search for that ID in the Next.js and FastAPI terminals. A
+failure blocked in the browser has a local code and no server request ID.
+The mocked HTTP failure and retry can be reproduced with
+`node tests/summary-translation-ui.cjs` while the development server is listening
+on `127.0.0.1:3100`.
+
 ---
 
 ## Clinical Safety & Regulatory Disclaimer
