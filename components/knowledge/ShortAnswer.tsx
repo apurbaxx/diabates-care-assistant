@@ -7,8 +7,6 @@ import styles from "./KnowledgeExplorer.module.css";
 
 export const evidenceCardId = (id: string) => `guideline-evidence-${encodeURIComponent(id)}`;
 
-const stripInlineReferences = (text: string) => text.replace(/ ?(?:\[\d+\])+/g, "");
-
 export function ShortAnswer({ response, passages, loading = false, onCitation }: {
   response?: SearchResponse; passages: PassageResult[]; loading?: boolean; onCitation?: (id: string) => void;
 }) {
@@ -23,9 +21,10 @@ export function ShortAnswer({ response, passages, loading = false, onCitation }:
       : result.error ? <p>Short Answer is unavailable. You can still review the evidence below.</p>
       : result.answer && <>
         {result.answer.insufficient_evidence && <strong>Insufficient evidence</strong>}
-        <p>{result.answer.sentences.length ? result.answer.sentences.map((sentence, index) =>
-          <span key={index}>{index > 0 && " "}{stripInlineReferences(sentence.text)}</span>
-        ) : stripInlineReferences(result.answer.answer)}</p>
+        <div className={styles.answerParagraphs}>
+          {(result.answer.paragraphs.length ? result.answer.paragraphs : [result.answer.answer])
+            .map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        </div>
         {!!result.answer.citations.length && <ul>{result.answer.citations.map((c, index) => <li key={c.passage_id}><a href={`#${evidenceCardId(c.passage_id)}`} onClick={() => onCitation?.(c.passage_id)}>[{index + 1}] {c.doc_title} · Page {c.page_number}</a></li>)}</ul>}
       </>}
     <p>Extracts from retrieved guideline evidence, not patient-specific advice. Consult the cited sources for full context; differences between guidelines may remain.</p>
