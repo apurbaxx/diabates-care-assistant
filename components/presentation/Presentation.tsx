@@ -31,15 +31,20 @@ export function Presentation({children}:{children:React.ReactNode}) {
   useEffect(()=>{
     try {
       const saved = JSON.parse(sessionStorage.getItem(sessionKey) || "null");
-      if(saved && Number.isInteger(saved.index) && slides[saved.index])
-        setPosition({index:saved.index,live:!!slides[saved.index].demo && saved.live===true});
+      if(saved && Number.isInteger(saved.index)){
+        // Older sessions stored an index in the deck that preceded the EHR slide.
+        const kind = saved.kind ?? slides.filter(s=>s.kind!=="ehr")[saved.index]?.kind;
+        const restored = slides.findIndex(s=>s.kind===kind);
+        if(restored>=0)setPosition({index:restored,live:!!slides[restored].demo && saved.live===true});
+      }
       setAlt(localStorage.getItem(sessionKey+":alt")==="true");
     } catch {}
     setReady(true);
   },[]);
   useEffect(()=>{
     if(!ready)return;
-    try { sessionStorage.setItem(sessionKey, JSON.stringify(position)); localStorage.setItem(sessionKey+":alt",String(alt)); } catch {}
+    const saved = position && {...position,kind:slides[position.index].kind};
+    try { sessionStorage.setItem(sessionKey, JSON.stringify(saved)); localStorage.setItem(sessionKey+":alt",String(alt)); } catch {}
   },[position,alt,ready]);
   useLayoutEffect(()=>{
     const el=deck.current;
