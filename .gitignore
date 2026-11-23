@@ -92,6 +92,10 @@ tests/*
 !tests/timeline-observations.cjs
 !tests/trend-observations.cjs
 !tests/evidence-citations.cjs
+!tests/ehr-mode.cjs
+!tests/ehr-browser.cjs
+/ehr/.hapi-users
+/ehr/.data/
 !/ml-service/tests/
 !/ml-service/tests/test_citation_formatting.py
 

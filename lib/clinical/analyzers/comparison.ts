@@ -73,7 +73,7 @@ export function compareReport(patient: Patient, report: LabReport): LabCompariso
       trendSummary: trend.summary,
       referenceRange: meta.referenceRange,
       evidence: [
-        labValueEvidence(key, current, report.date, { reportId: report.id, note: "New report" }),
+        labValueEvidence(key, current, report.date, { reportId: report.id, note: report.source === "ehr" ? parsed.sourceLine ?? "Imported FHIR result" : "New report" }),
         ...(previous
           ? [labValueEvidence(key, previous.value, previous.date, { visitId: previous.visitId, note: "Previous result" })]
           : []),

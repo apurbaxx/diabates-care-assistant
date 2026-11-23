@@ -1,0 +1,54 @@
+name: cliniq-openmrs
+
+services:
+  gateway:
+    image: openmrs/openmrs-reference-application-3-gateway:3.7.1
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "127.0.0.1:${OPENMRS_PORT:-8096}:80"
+
+  frontend:
+    image: openmrs/openmrs-reference-application-3-frontend:3.7.1
+    environment:
+      SPA_PATH: /openmrs/spa
+      API_URL: /openmrs
+      SPA_CONFIG_URLS: /openmrs/spa/config-core_demo.json
+
+  backend:
+    image: openmrs/openmrs-reference-application-3-backend:3.7.1
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-Dinitializer.domains=!ocl,drugs -Dinitializer.exclude.concepts=*drugs_concepts*"
+      OMRS_CONFIG_CREATE_TABLES: "true"
+      OMRS_CONFIG_AUTO_UPDATE_DATABASE: "true"
+      OMRS_CONFIG_CONNECTION_SERVER: db
+      OMRS_CONFIG_CONNECTION_DATABASE: openmrs
+      OMRS_CONFIG_CONNECTION_USERNAME: openmrs
+      OMRS_CONFIG_CONNECTION_PASSWORD: openmrs
+    volumes:
+      - openmrs-data:/openmrs/data
+      - ./openmrs-demo-settings.xml:/openmrs/distribution/openmrs_config/globalproperties/referenceapplication-demo/zz-cliniq.xml:ro
+
+  db:
+    image: mariadb:10.11.7
+    environment:
+      MARIADB_DATABASE: openmrs
+      MARIADB_USER: openmrs
+      MARIADB_PASSWORD: openmrs
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - openmrs-db:/var/lib/mysql
+
+volumes:
+  openmrs-data:
+  openmrs-db:

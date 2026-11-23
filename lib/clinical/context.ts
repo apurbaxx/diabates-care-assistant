@@ -40,8 +40,9 @@ export function buildSeries(visits: Visit[], demographics?: Pick<Patient, "dob" 
   for (const visit of visits) {
     for (const key of Object.keys(ANALYTES) as LabKey[]) {
       const value = visit.labs[key];
+      const reportId = visit.ehrSource?.labReportIds[key] ?? visit.sourceReportId;
       if (value !== undefined && series[key]) {
-        series[key].push({ date: visit.date, value, visitId: visit.id, ...(visit.sourceReportId ? { reportId: visit.sourceReportId } : {}) });
+        series[key].push({ date: visit.date, value, visitId: visit.id, ...(reportId ? { reportId } : {}) });
       }
     }
     for (const key of Object.keys(VITAL_META)) {
@@ -56,7 +57,8 @@ export function buildSeries(visits: Visit[], demographics?: Pick<Patient, "dob" 
       series.bmi.push({ date: visit.date, value: bmi(weightKg, heightCm), visitId: visit.id, method: "weight (kg) / height (m) squared" });
     }
     if (demographics && visit.labs.egfr === undefined && visit.labs.creatinine !== undefined && visit.labs.creatinine > 0) {
-      series.egfr.push({ date: visit.date, value: ckdEpi2021(visit.labs.creatinine, ageAt(demographics.dob, visit.date), demographics.sex), visitId: visit.id, method: CKD_EPI_METHOD, ...(visit.sourceReportId ? { reportId: visit.sourceReportId } : {}) });
+      const reportId = visit.ehrSource?.labReportIds.creatinine ?? visit.sourceReportId;
+      series.egfr.push({ date: visit.date, value: ckdEpi2021(visit.labs.creatinine, ageAt(demographics.dob, visit.date), demographics.sex), visitId: visit.id, method: CKD_EPI_METHOD, ...(reportId ? { reportId } : {}) });
     }
   }
   return series;

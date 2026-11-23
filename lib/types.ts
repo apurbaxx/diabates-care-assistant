@@ -21,7 +21,7 @@ export type Comorbidity =
   | "hypothyroidism"
   | "depression";
 
-export type SmokingStatus = "never" | "former" | "current";
+export type SmokingStatus = "never" | "former" | "current" | "unknown";
 
 export interface LabPanel {
 
@@ -121,9 +121,16 @@ export interface Visit {
   medicationChanges: MedicationChange[];
   clinicianNote: string;
   sourceReportId?: string;
+  ehrSource?: {
+    encounterId: string;
+    observationIds: Record<string, string>;
+    labReportIds: Partial<Record<LabKey, string>>;
+    impressionIds?: string[];
+    noteObservationIds?: string[];
+  };
 }
 
-export type LabReportSource = "upload" | "manual" | "synthetic";
+export type LabReportSource = "upload" | "manual" | "synthetic" | "ehr";
 
 export interface ParsedLabValue {
   key: LabKey;
@@ -156,6 +163,7 @@ export interface LabReport {
   values: ParsedLabValue[];
   unmatchedLines: string[];
   acknowledged: boolean;
+  ehrReportId?: string;
 }
 
 
@@ -192,12 +200,20 @@ export interface Patient {
 
   geneticHistory?: GeneticHistory;
 
-  hypoglycemiaHistory: boolean;
-  limitedLifeExpectancy: boolean;
+  hypoglycemiaHistory?: boolean;
+  limitedLifeExpectancy?: boolean;
   visits: Visit[];
   labReports: LabReport[];
   archetype?: string;
   seed?: number;
+  ehrSource?: {
+    provider?: "openmrs";
+    baseUrl: string;
+    patientId: string;
+    conditionIds: string[];
+    importedAt: string;
+    skippedObservations?: number;
+  };
 }
 
 

@@ -33,7 +33,7 @@ export function pointEvidence(key: string, p: ParameterSeriesPoint): EvidenceRef
 }
 
 export function visitSource(v: Visit, label = "Visit record"): EvidenceRef {
-  return {id: `visit:${v.id}`, kind: "visit", label, date: v.date, visitId: v.id, reportId: v.sourceReportId};
+  return {id: `visit:${v.id}`, kind: "visit", label, date: v.date, visitId: v.id, reportId: v.sourceReportId, ...(v.ehrSource ? { note: `FHIR Encounter/${v.ehrSource.encounterId}` } : {})};
 }
 
 const NOTE_SYNONYMS = [

@@ -35,6 +35,7 @@ interface AppState {
   selectPatient: (id: string | undefined) => void;
 
   addGeneratedPatient: (opts: GenerateOptions) => Patient;
+  addImportedPatient: (patient: Patient) => Patient;
   addLabReport: (patientId: string, report: LabReport) => void;
 
   acknowledgeLabReport: (
@@ -177,6 +178,16 @@ export const useAppStore = create<AppState>()(
           patients: [...s.patients, patient],
         }));
 
+        return patient;
+      },
+
+      addImportedPatient: (patient) => {
+        const source = patient.ehrSource;
+        if (!source) throw new Error("The imported patient is missing its EHR source.");
+        const existing = get().patients.find(p => p.id === patient.id ||
+          (p.ehrSource?.baseUrl === source.baseUrl && p.ehrSource.patientId === source.patientId));
+        if (existing) return existing;
+        set(s => ({ patients: [...s.patients, patient] }));
         return patient;
       },
 

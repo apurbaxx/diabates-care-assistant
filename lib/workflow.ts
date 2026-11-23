@@ -32,7 +32,7 @@ export function newSummary(p: Patient, a?: Appointment): VisitSummary {
     return point ? [`${meta.label}: ${point.value.toFixed(meta.decimals)} ${meta.unit} (recorded ${point.date}${point.method ? "; calculated" : ""})`] : [];
   }).join("\n");
   return { id: crypto.randomUUID(), patientId:p.id, appointmentId:a?.id, date,
-    patientInfo:`${p.name} | ${p.mrn} | DOB ${p.dob} | ${p.sex} | Synthetic record`,
+    patientInfo:`${p.name} | ${p.mrn} | DOB ${p.dob} | ${p.sex} | Synthetic record${p.ehrSource ? ` | FHIR Patient/${p.ehrSource.patientId}` : ""}`,
     complaint:a?.reason ?? "", history:`${v?.clinicianNote ? `Previous note (${v.date}): ${v.clinicianNote}\n` : ""}${p.diabetesType}; diagnosed ${p.diagnosisDate}\n${p.comorbidities.join(", ")}\nAllergies: ${p.allergies.join(", ") || "None recorded"}\n${p.background}`,
     vitals:latestText(["weightKg","heightCm","systolic","diastolic","heartRate"]),
     labs:latestText(Object.keys(ANALYTES)),

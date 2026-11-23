@@ -340,11 +340,11 @@ export function LabCheck({ patient }: { patient: Patient }) {
                     <div>
                       <h3>{report.fileName ?? "Laboratory report"}</h3>
                       <p>
-                        {report.date} · {report.source}
+                        {report.date} · {report.ehrReportId ? `FHIR DiagnosticReport/${report.ehrReportId}` : report.source === "ehr" ? "OpenMRS FHIR observations" : report.source}
                       </p>
                     </div>
                     <span className={`report-status ${report.acknowledged ? "verified" : "pending"}`}>
-                      {report.acknowledged ? "Verified" : "Awaiting verification"}
+                      {report.source === "ehr" ? report.ehrReportId ? "Final in EHR" : "From OpenMRS" : report.acknowledged ? "Verified" : "Awaiting verification"}
                     </span>
                   </div>
                   <dl className="report-values">
@@ -364,7 +364,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
                     <button className="primary" onClick={() => reviewReport(report)}>
                       {report.acknowledged ? "View report" : "Review report"}
                     </button>
-                    <button
+                    {report.source !== "ehr" && <button
                       onClick={() =>
                         downloadReportFile(report.id, patient.id).catch(() => {
                           if (report.rawText) {
@@ -381,7 +381,7 @@ export function LabCheck({ patient }: { patient: Patient }) {
                       }
                     >
                       Download source
-                    </button>
+                    </button>}
                   </div>
                 </article>
               ))}
@@ -746,13 +746,13 @@ export function LabCheck({ patient }: { patient: Patient }) {
               <h3 className="text-lg font-semibold">{activeReport?.fileName ?? "Laboratory report"}</h3>
               <p className="text-sm text-muted">
                 {patient.name} · {activeReport?.date ?? comparison.reportDate} ·{" "}
-                {activeReport?.acknowledged ? "Verified" : "Awaiting clinician verification"}
+                {activeReport?.source === "ehr" ? activeReport.ehrReportId ? "Final in EHR" : "From OpenMRS" : activeReport?.acknowledged ? "Verified" : "Awaiting clinician verification"}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="outline-button text-xs" onClick={() => setStage("review")}>
+              {activeReport?.source !== "ehr" && <button className="outline-button text-xs" onClick={() => setStage("review")}>
                 Back to edit extracted values
-              </button>
+              </button>}
               <button className="outline-button text-xs" onClick={reset}>
                 New upload
               </button>
