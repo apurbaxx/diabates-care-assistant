@@ -122,6 +122,8 @@
 .shortAnswer { margin: 0 0 22px; padding: 18px 22px; border: 1px solid var(--color-gridline); border-radius: 4px; background: var(--color-surface); overflow-wrap: anywhere; }
 .shortAnswer h2 { margin: 0 0 8px; font: 600 20px/1.4 var(--font-heading); }
 .shortAnswer p { margin: 6px 0; }
+.answerParagraphs { line-height: 1.6; }
+.answerParagraphs p + p { margin-top: 12px; }
 .shortAnswer strong, .shortAnswer ul { font-size: 12px; color: var(--color-ink-secondary); }
 .shortAnswer ul { margin: 10px 0 0; padding-left: 18px; }
 .main h1 { font: 650 clamp(28px, 2.5vw, 40px)/1.13 var(--font-heading); letter-spacing: -.45px; margin: 0 0 10px; overflow-wrap: anywhere; }

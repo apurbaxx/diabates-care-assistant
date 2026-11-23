@@ -17,7 +17,7 @@ Module._load = function(id, ...args) {
   if (id.includes('anthropic')) throw new Error('Short Answer must not load Anthropic');
   return originalLoad.call(this, id, ...args);
 };
-const { answerGuidelineQuestion: answer } = require('../../lib/knowledge/answer.ts');
+const { answerGuidelineQuestion: answer, cleanAnswerExcerpt } = require('../../lib/knowledge/answer.ts');
 const { ShortAnswer } = require('../../components/knowledge/ShortAnswer.tsx');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
@@ -79,7 +79,34 @@ function trace(result, passages) {
     assert.match(html, /RSSDI Guideline/);
     assert.match(html, /Page 12/);
     assert.match(html, /href="#guideline-evidence-p1"/);
-    assert.match(html, /Evidence for sentence 1/);
+    assert.match(html, /Extracts from retrieved guideline evidence, not patient-specific advice\. Consult the cited sources for full context; differences between guidelines may remain\./);
+    const journalText = '4 International Journal of Clinical Metabolism and Diabetes TIR is the percentage of time the glucose level is within the preferred glycemic range.8 Reduced TIR can be a predictor of microvascular complications. Time-above-range (TAR) and time-below-range (TBR) can help in assessing treatment efficacy.33 A higher level of TIR is associated with a lower level of HbA1c.';
+    const journal = { ...base, text: journalText };
+    const journalAnswer = answer('What is time in range (TIR)?', [journal]);
+    assert.deepEqual(journalAnswer.paragraphs, [
+      'Time in Range (TIR) is the percentage of time the glucose level is within the preferred glycemic range. Reduced TIR can be a predictor of microvascular complications. Time-above-range (TAR) and time-below-range (TBR) can help in assessing treatment efficacy. A higher level of TIR is associated with a lower level of HbA1c.',
+    ]);
+    assert.equal(journal.text, journalText);
+    assert.deepEqual(journalAnswer.citations, [{ passage_id: 'p1', doc_title: 'RSSDI Guideline', page_number: 12 }]);
+    const separate = { ...base, text: 'HbA1c monitoring reflects\naverage blood glucose[8, 9].\n\nHbA1c monitoring complements glucose pattern assessment⁴. 19 Different sources provide context.' };
+    assert.deepEqual(answer(query, [separate]).paragraphs, [
+      'HbA1c monitoring reflects average blood glucose.',
+      'HbA1c monitoring complements glucose pattern assessment.',
+    ]);
+    const marked = { ...base, text: 'HbA1c monitoring reflects average blood glucose.21,22HbA1c also helps assess glucose patterns.' };
+    const markerStart = marked.text.indexOf('21,22');
+    marked.citation_superscripts = [[markerStart, markerStart + 5]];
+    assert.deepEqual(answer(query, [marked]).paragraphs, [
+      'HbA1c monitoring reflects average blood glucose. HbA1c also helps assess glucose patterns.',
+    ]);
+    assert.match(marked.text, /21,22/);
+    assert.equal(cleanAnswerExcerpt('HbA1c was 7.8% in 2024. Target range [70–180] mg/dL; dose 2.5 mg at 8 AM. eGFR was 60 mL/min/1.73m². Type 2 diabetes affects 8 patients.'),
+      'HbA1c was 7.8% in 2024. Target range [70–180] mg/dL; dose 2.5 mg at 8 AM. eGFR was 60 mL/min/1.73m². Type 2 diabetes affects 8 patients.');
+    assert.equal(cleanAnswerExcerpt('A glucose threshold of [70–180] was recorded on 24/11/2026.'),
+      'A glucose threshold of [70–180] was recorded on 24/11/2026.');
+    assert.equal(cleanAnswerExcerpt('The recorded change was [5].'), 'The recorded change was [5].');
+    assert.equal(cleanAnswerExcerpt('Clinical outcomes improved8. Markers¹² were measured. 13 Results varied.'),
+      'Clinical outcomes improved. Markers were measured. Results varied.');
     assert(!html.includes('unavailable'));
     assert.match(renderToStaticMarkup(React.createElement(ShortAnswer, { passages: [], loading: true })), /role="status"/);
     assert.match(renderToStaticMarkup(React.createElement(ShortAnswer, { response, passages: [] })), /Insufficient evidence/);

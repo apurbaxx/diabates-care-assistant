@@ -17,7 +17,7 @@ const { chromium } = require('playwright');
     const base = { passage_id: 'first', doc_title: 'RSSDI Guideline', page_number: 12, text: 'Retinal screening identifies changes in the retinal blood vessels.', source_org: 'RSSDI', year: 2022, content_type: 'narrative', section: '', official_url: '', read_article_link: '' };
     const results = [base, { ...base, passage_id: 'second' }, {
       ...base, passage_id: 'third', doc_title: 'ADA Standards', page_number: 42, source_org: 'ADA',
-      text: 'HbA1c reflects average blood glucose over the previous three months. HbA1c monitoring complements the assessment of glucose patterns over time.',
+      text: 'HbA1c reflects average\nblood glucose over the previous three months.8\n\nHbA1c monitoring complements the assessment of glucose patterns over time².',
     }];
     await page.route('**/api/knowledge-assistant/search', async route => {
       assert.deepEqual(route.request().postDataJSON(), { query: 'What does HbA1c monitoring reflect?', limit: 5 });
@@ -33,12 +33,18 @@ const { chromium } = require('playwright');
     const short = page.getByRole('region', { name: 'Short Answer', exact: true });
     await short.getByRole('status').waitFor();
     finishSearch();
-    await short.getByText(/HbA1c reflects average/).waitFor();
+    await short.getByText('HbA1c reflects average blood glucose over the previous three months.', { exact: true }).waitFor();
+    await short.getByText('HbA1c monitoring complements the assessment of glucose patterns over time.', { exact: true }).waitFor();
+    assert.deepEqual((await short.locator('p').allTextContents()).slice(0, 2), [
+      'HbA1c reflects average blood glucose over the previous three months.',
+      'HbA1c monitoring complements the assessment of glucose patterns over time.',
+    ]);
     assert.equal(await page.locator('article').count(), 2);
     await short.getByRole('link', { name: '[1] ADA Standards · Page 42', exact: true }).click();
     await page.locator('#guideline-evidence-third').waitFor();
     assert.equal(await page.locator('article').count(), 3);
     assert.match(await page.getByRole('complementary', { name: 'Passage details' }).innerText(), /ADA Standards/);
+    assert.match(await page.locator('#guideline-evidence-third').innerText(), /months\.8/);
     await page.getByRole('button', { name: 'RSSDI Guidelines', exact: true }).click();
     await short.getByText('Insufficient evidence', { exact: true }).waitFor();
     assert.equal(await page.locator('article').count(), 2);
