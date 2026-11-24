@@ -21,6 +21,7 @@ export function Presentation({children}:{children:React.ReactNode}) {
   const [position,setPosition] = useState<Position|null>(null);
   const [ready,setReady] = useState(false);
   const [alt,setAlt] = useState(false);
+  const [ehrVisited,setEhrVisited] = useState(false);
   const deck = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLElement|null>(null);
   const index = position?.index ?? 0;
@@ -53,9 +54,10 @@ export function Presentation({children}:{children:React.ReactNode}) {
     el.focus({preventScroll:true});
     return ()=>el.close();
   },[active,live,preview]);
-  function exit() {setPosition(null);requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));}
+  function exit() {setPosition(null);setEhrVisited(false);requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));}
   function go(to:number) {
     if(to>=slides.length){exit();return;}
+    if(slide.kind==="ehr")setEhrVisited(true);
     if(slides[to]?.kind==="workspace" && location.pathname==="/knowledge-assistant")router.push("/");
     setPosition({index:Math.max(0,to),live:false});
   }
@@ -92,7 +94,7 @@ export function Presentation({children}:{children:React.ReactNode}) {
     <div className={'keynote-app '+(active?'staged ':'')+(preview?'preview':'')} inert={active && !live && !preview}>{children}</div>
     {active && !live && <dialog ref={deck} tabIndex={-1} aria-label="ClinIQ presentation" className={'keynote '+(preview?'split':'')} onCancel={e=>{e.preventDefault();exit();}}>
       <header><ClinIQLogo/><span>Health-a-thon 2026</span><button onClick={exit} aria-label="Exit presentation"><X size={18}/></button></header>
-      <Scene key={index} slide={slide} enter={enter}/>
+      <Scene key={index} slide={slide} enter={enter} animateEhr={!ehrVisited}/>
       <footer><span>{String(index+1).padStart(2,"0")} / {slides.length}</span><progress value={index+1} max={slides.length}/><label>Key: <select aria-label="Demo shortcut modifiers" value={alt?"alt":"ctrl"} onChange={e=>setAlt(e.target.value==="alt")}><option value="ctrl">Ctrl ⇧ ←/→</option><option value="alt">Alt ⇧ ←/→</option></select></label><button disabled={!index} aria-label="Previous slide" onClick={()=>go(index-1)}><ChevronLeft/></button><button aria-label={index===slides.length-1?"Finish presentation":"Advance presentation"} onClick={next}><ChevronRight/></button></footer>
     </dialog>}
     {live && <nav className="demo-nav" aria-label="Live demonstration"><span>Live demo</span><button onClick={()=>go(index-1)} aria-label="Previous slide"><ChevronLeft size={16}/></button><button onClick={()=>go(index+1)}>Continue <kbd>{alt?"Alt":"Ctrl"} ⇧ →</kbd></button><button aria-label="Exit presentation" onClick={exit}><X size={15}/></button></nav>}
