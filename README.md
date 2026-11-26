@@ -303,6 +303,8 @@ ClinIQ runs out of the box with zero external configuration. On first run, a rea
 4. **Open the application:**
    Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
+To run the integrated EHR demo, follow the [OpenMRS and ClinIQ setup guide](ehr/README.md).
+
 ---
 
 ### Optional: Setting Up Supabase pgvector for Knowledge Explorer

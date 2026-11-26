@@ -1,9 +1,81 @@
-# How ClinIQ connects to OpenMRS
+# Run the ClinIQ and OpenMRS demo locally
 
 OpenMRS stores the original patient chart. ClinIQ reads a copy of the supported chart data and turns it into a timeline, lab comparisons, answers about the record, and a visit-summary draft. In the demo, we open the same synthetic chart in both systems.
 
-- [Run the demo and fix common problems](RUNBOOK.md)
-- [Rehearse the pitch and judge Q&A](PITCH-QA.md)
+## Where to open each app
+
+| App | Open in your browser |
+| --- | --- |
+| OpenMRS | [http://127.0.0.1:8096/openmrs/spa](http://127.0.0.1:8096/openmrs/spa) to sign in and view the original patient chart. |
+| ClinIQ | [http://localhost:3000](http://localhost:3000) to open the Doctor workspace and import the chart with **EHR Mode**. Use the URL printed by `npm.cmd run dev` if it selects a different port. |
+
+Run the commands below in **Windows PowerShell**, from the repository folder that contains `package.json`.
+
+### 1. Start OpenMRS if it is offline
+
+Open the OpenMRS link first. If the sign-in page works, go to step 2. If OpenMRS is offline and Docker is installed inside Ubuntu WSL, run this in one PowerShell window and leave it open while you use the demo.
+
+```powershell
+wsl -d Ubuntu -u root --exec docker compose -f ehr/compose.openmrs.yml up
+```
+
+The containers run inside Ubuntu WSL. Windows can reach their gateway on port `8096`. The first startup can take several minutes while OpenMRS initializes MariaDB. Check readiness with this command in a second PowerShell window. A JSON response with `"authenticated": false` means the API is ready for sign-in.
+
+```powershell
+curl.exe -fsS http://127.0.0.1:8096/openmrs/ws/rest/v1/session
+```
+
+If Docker is already running and `docker compose version` works directly in Windows, you can start OpenMRS with `npm.cmd run ehr:start` instead. Use one startup method for the demo.
+
+### 2. Sign in to OpenMRS
+
+Open the OpenMRS link in your browser. A fresh local demo uses username `admin` and password `Admin123`. If the password was changed, use the current one. When prompted, pick a login location. [OpenMRS demo credentials](https://openmrs.org/demo/)
+
+### 3. Create a synthetic chart and start ClinIQ
+
+In the second PowerShell window, run `npm.cmd ci` if you still need to install the project dependencies. Set the three connection variables below in that same window. Choose a strong password for the separate `cliniq-reader` account and replace the placeholder. If the account already exists, use its existing password.
+
+```powershell
+$env:EHR_FHIR_BASE_URL = 'http://127.0.0.1:8096/openmrs/ws/fhir2/R4'
+$env:EHR_FHIR_USERNAME = 'cliniq-reader'
+$env:EHR_FHIR_PASSWORD = 'replace-with-your-reader-password'
+```
+
+On the first run, create the reader account and a synthetic patient chart. Replace `Admin123` below if your local demo uses a different administrator password. Each successful run creates another chart. Keep the `CLINIQ-SYN-...` ID printed by the command so you can find that chart in both apps.
+
+```powershell
+$env:OPENMRS_ADMIN_PASSWORD = 'Admin123'
+npm.cmd run ehr:create-patient
+Remove-Item Env:OPENMRS_ADMIN_PASSWORD
+```
+
+Start ClinIQ in the same PowerShell window so it receives the reader settings.
+
+```powershell
+npm.cmd run dev
+```
+
+For future sessions, set the same reader variables again before starting ClinIQ, or save the three `EHR_FHIR_*` values in `.env.local` in the repository root. You can reuse the chart already in OpenMRS and skip the seed command.
+
+### 4. View the same chart in both apps
+
+1. In **OpenMRS**, use patient search with the `CLINIQ-SYN-...` ID to open the source chart for **Rivera ClinIQSynthetic**.
+2. In **ClinIQ**, open the **Doctor workspace**, click **EHR Mode** in the header, find that same ID, and click **Import patient**. ClinIQ reads the chart through OpenMRS's FHIR R4 API and saves a copy in the browser. The original chart stays in OpenMRS.
+
+### Check or stop OpenMRS in WSL
+
+Use `ps` to see the containers and `logs` to check backend startup from a separate PowerShell window.
+
+```powershell
+wsl -d Ubuntu -u root --exec docker compose -f ehr/compose.openmrs.yml ps
+wsl -d Ubuntu -u root --exec docker compose -f ehr/compose.openmrs.yml logs --tail 50 backend
+```
+
+Press **Ctrl+C** in the window running Compose to stop OpenMRS. If the stack was started in the background, run the following command. The database volume keeps the charts for the next startup.
+
+```powershell
+wsl -d Ubuntu -u root --exec docker compose -f ehr/compose.openmrs.yml stop
+```
 
 ## Four terms to know
 
@@ -30,7 +102,7 @@ flowchart LR
     Browser --> Local[("Browser storage · imported snapshot and drafts")]
 ```
 
-`npm run ehr:start` runs Docker Compose using [compose.openmrs.yml](compose.openmrs.yml). Compose starts four services:
+Both startup methods use [compose.openmrs.yml](compose.openmrs.yml). Compose starts four services.
 
 | Service | Job |
 | --- | --- |
