@@ -15,6 +15,7 @@ from app.schemas import SearchRequest, SearchResponse, HealthResponse
 from app.retrieval import ModelManager, GuidelineIndex, HybridSearchEngine
 from app.patient_records import PatientSearchRequest, search_patient_documents
 from app.lab_pdf import extract_pdf, MAX_BYTES
+from app.summary_translation import router as summary_translation_router
 
 # Configure privacy-preserving logging (do NOT log query terms or patient data)
 logging.basicConfig(
@@ -75,6 +76,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.include_router(summary_translation_router)
 
 # Allow CORS for Next.js app communication
 app.add_middleware(

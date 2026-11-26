@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
+from app.summary_translation import router as summary_translation_router
 
 try:
     from app.lab_pdf import extract_pdf, MAX_BYTES
@@ -40,6 +41,9 @@ app = FastAPI(
     description="Lightweight layout-aware PDF extraction microservice without ML model overhead.",
     version="1.0.0",
 )
+
+app.include_router(summary_translation_router)
+
 
 @app.middleware("http")
 async def normalize_path_middleware(request: Request, call_next):

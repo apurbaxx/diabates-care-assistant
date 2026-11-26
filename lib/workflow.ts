@@ -4,6 +4,7 @@ import { ANALYTES } from "./clinical/units";
 import { localDate } from "./dates";
 import { createRecordContext } from "./clinical/record";
 import { parameterMeta } from "./clinical/units";
+import { translationStateSchema } from "./summary-translation";
 export { localDate } from "./dates";
 export const appointmentSchema = z.object({
   id: z.string().min(1), patientId: z.string().min(1),
@@ -20,6 +21,7 @@ export const summarySchema = z.object({
   observations: z.string(), notes: z.string(), instructions: z.string(),
   followUp: z.string().refine(v => !v || /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v))),
   status: z.enum(["Draft", "Finalized"]), updatedAt: z.string(),
+  translation: translationStateSchema.optional(),
 });
 export type VisitSummary = z.infer<typeof summarySchema>;
 export function newSummary(p: Patient, a?: Appointment): VisitSummary {

@@ -10,10 +10,10 @@ if [ -n "$SUPABASE_URL" ]; then
     echo ">>> Starting Next.js on port ${PORT:-3000}..."
     echo ">>> ======================================================="
     cd /app/ml-service
-    python -m uvicorn app.pdf_server:app --host 127.0.0.1 --port 8000 &
+    CLINIQ_RUNTIME_MODE=production python -m uvicorn app.pdf_server:app --host 127.0.0.1 --port 8000 &
     ML_PID=$!
     cd /app
-    node_modules/.bin/next start -p ${PORT:-3000} &
+    env -u SARVAM_API_KEY node_modules/.bin/next start -p ${PORT:-3000} &
     NEXT_PID=$!
     wait -n $ML_PID $NEXT_PID
     EXIT_CODE=$?
@@ -25,12 +25,12 @@ fi
 echo ">>> [LOCAL FALLBACK MODE] SUPABASE_URL not detected."
 echo ">>> Starting local Python ML service on port 8000..."
 cd /app/ml-service
-uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+CLINIQ_RUNTIME_MODE=production uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 ML_PID=$!
 
 echo ">>> Starting Next.js on port ${PORT:-3000}..."
 cd /app
-node_modules/.bin/next start -p ${PORT:-3000} &
+env -u SARVAM_API_KEY node_modules/.bin/next start -p ${PORT:-3000} &
 NEXT_PID=$!
 
 wait -n $ML_PID $NEXT_PID
