@@ -1,0 +1,952 @@
+[
+  {
+    "resourceType": "Patient",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.028Z"
+    },
+    "active": true,
+    "name": [
+      {
+        "use": "official",
+        "given": [
+          "Synthetic"
+        ],
+        "family": "Rivera"
+      }
+    ],
+    "identifier": [
+      {
+        "system": "https://ehr.example/identifier/demo-mrn",
+        "value": "SYN-BA94C2C9",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+              "code": "MR",
+              "display": "Medical record number"
+            }
+          ]
+        }
+      }
+    ],
+    "gender": "unknown",
+    "birthDate": "1974-05-18",
+    "extension": [
+      {
+        "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+        "valueCode": "F"
+      }
+    ],
+    "id": "98381d87-84c4-428e-bc5b-2f914502c042"
+  },
+  {
+    "resourceType": "Condition",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "onsetDateTime": "2016-04-12",
+    "code": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "E11.9",
+          "display": "Type 2 diabetes mellitus without complications"
+        }
+      ]
+    },
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "active",
+          "display": "Active"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "id": "0d765f4a-d0a6-48f7-8f47-3db77ed337b9"
+  },
+  {
+    "resourceType": "Condition",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "onsetDateTime": "2019-09-11",
+    "code": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/sid/icd-10-cm",
+          "code": "I10",
+          "display": "Essential hypertension"
+        }
+      ]
+    },
+    "clinicalStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+          "code": "active",
+          "display": "Active"
+        }
+      ]
+    },
+    "verificationStatus": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+          "code": "confirmed",
+          "display": "Confirmed"
+        }
+      ]
+    },
+    "id": "10f80e97-d244-4f91-8080-9c54d011b7aa"
+  },
+  {
+    "resourceType": "Encounter",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "status": "finished",
+    "class": {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "AMB",
+      "display": "ambulatory"
+    },
+    "period": {
+      "start": "2025-03-06T10:00:00+05:30"
+    },
+    "reasonCode": [
+      {
+        "text": "Diabetes follow-up"
+      }
+    ],
+    "id": "5f30138b-3cb2-40c9-be40-e4befbc799cb"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "4548-4",
+          "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 8.4,
+      "system": "http://unitsofmeasure.org",
+      "code": "%",
+      "unit": "%"
+    },
+    "id": "c4a89b2e-6575-4d3c-9ab4-41f4fe0131ee"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "1558-6",
+          "display": "Fasting glucose [Mass/volume] in Serum or Plasma"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 158,
+      "system": "http://unitsofmeasure.org",
+      "code": "mg/dL",
+      "unit": "mg/dL"
+    },
+    "id": "4603a957-7f1c-4420-864f-a6ebaa39951f"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "2160-0",
+          "display": "Creatinine [Mass/volume] in Serum or Plasma"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 0.92,
+      "system": "http://unitsofmeasure.org",
+      "code": "mg/dL",
+      "unit": "mg/dL"
+    },
+    "id": "46ad5b01-58c4-467c-b05e-b29dcf6b6ea8"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "29463-7",
+          "display": "Body weight"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 81.4,
+      "system": "http://unitsofmeasure.org",
+      "code": "kg",
+      "unit": "kg"
+    },
+    "id": "ddecab97-d403-4adc-a831-098bb51ecf79"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "8302-2",
+          "display": "Body height"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 166,
+      "system": "http://unitsofmeasure.org",
+      "code": "cm",
+      "unit": "cm"
+    },
+    "id": "28ea4102-b4bc-47b9-9c00-66fc4cef33b4"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "85354-9",
+          "display": "Blood pressure panel"
+        }
+      ]
+    },
+    "component": [
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8480-6",
+              "display": "Systolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 138,
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]",
+          "unit": "mmHg"
+        }
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8462-4",
+              "display": "Diastolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 84,
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]",
+          "unit": "mmHg"
+        }
+      }
+    ],
+    "id": "16b97f9a-7d37-4eeb-8f31-a2fa6904da42"
+  },
+  {
+    "resourceType": "DiagnosticReport",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "final",
+    "code": {
+      "text": "Diabetes monitoring panel"
+    },
+    "result": [
+      {
+        "reference": "Observation/c4a89b2e-6575-4d3c-9ab4-41f4fe0131ee"
+      },
+      {
+        "reference": "Observation/4603a957-7f1c-4420-864f-a6ebaa39951f"
+      },
+      {
+        "reference": "Observation/46ad5b01-58c4-467c-b05e-b29dcf6b6ea8"
+      }
+    ],
+    "id": "81f6c30f-5ad7-4050-80c3-dcaf4fd887e3"
+  },
+  {
+    "resourceType": "ClinicalImpression",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/5f30138b-3cb2-40c9-be40-e4befbc799cb"
+    },
+    "effectiveDateTime": "2025-03-06T10:00:00+05:30",
+    "status": "completed",
+    "summary": "Home glucose log has several missing entries.",
+    "id": "613359f3-d05e-4328-b759-c6040fa63a2e"
+  },
+  {
+    "resourceType": "Encounter",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "status": "finished",
+    "class": {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "AMB",
+      "display": "ambulatory"
+    },
+    "period": {
+      "start": "2025-06-12T10:00:00+05:30"
+    },
+    "reasonCode": [
+      {
+        "text": "Review glucose log"
+      }
+    ],
+    "id": "da73b395-52c8-4495-af5f-72163d407587"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "4548-4",
+          "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 7.2,
+      "system": "http://unitsofmeasure.org",
+      "code": "%",
+      "unit": "%"
+    },
+    "id": "60e43d8e-1eb2-483b-bb5e-e91703541139"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "1558-6",
+          "display": "Fasting glucose [Mass/volume] in Serum or Plasma"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 129,
+      "system": "http://unitsofmeasure.org",
+      "code": "mg/dL",
+      "unit": "mg/dL"
+    },
+    "id": "32f09f8b-82cb-4ec1-a21a-58c939a417fc"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "laboratory",
+            "display": "laboratory"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "2160-0",
+          "display": "Creatinine [Mass/volume] in Serum or Plasma"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 0.89,
+      "system": "http://unitsofmeasure.org",
+      "code": "mg/dL",
+      "unit": "mg/dL"
+    },
+    "id": "a9fe7d57-d337-4ecd-a4c7-b9f6df1d676b"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "29463-7",
+          "display": "Body weight"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 79.8,
+      "system": "http://unitsofmeasure.org",
+      "code": "kg",
+      "unit": "kg"
+    },
+    "id": "db7f2665-5004-411c-a0b3-931b9525811d"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "8302-2",
+          "display": "Body height"
+        }
+      ]
+    },
+    "valueQuantity": {
+      "value": 166,
+      "system": "http://unitsofmeasure.org",
+      "code": "cm",
+      "unit": "cm"
+    },
+    "id": "24e14672-6ce1-4e33-8fb4-29112bb0d6df"
+  },
+  {
+    "resourceType": "Observation",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/vitalsigns"
+      ],
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "category": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+            "code": "vital-signs",
+            "display": "vital-signs"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "85354-9",
+          "display": "Blood pressure panel"
+        }
+      ]
+    },
+    "component": [
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8480-6",
+              "display": "Systolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 128,
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]",
+          "unit": "mmHg"
+        }
+      },
+      {
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8462-4",
+              "display": "Diastolic blood pressure"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 78,
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]",
+          "unit": "mmHg"
+        }
+      }
+    ],
+    "id": "d553e55f-a62a-4f7f-b32d-b2772db6fb20"
+  },
+  {
+    "resourceType": "DiagnosticReport",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "final",
+    "code": {
+      "text": "Diabetes monitoring panel"
+    },
+    "result": [
+      {
+        "reference": "Observation/60e43d8e-1eb2-483b-bb5e-e91703541139"
+      },
+      {
+        "reference": "Observation/32f09f8b-82cb-4ec1-a21a-58c939a417fc"
+      },
+      {
+        "reference": "Observation/a9fe7d57-d337-4ecd-a4c7-b9f6df1d676b"
+      }
+    ],
+    "id": "fd5c1bea-e912-412b-9938-b65f4695443e"
+  },
+  {
+    "resourceType": "ClinicalImpression",
+    "meta": {
+      "tag": [
+        {
+          "system": "https://cliniq.example/fhir/CodeSystem/data-origin",
+          "code": "synthetic"
+        }
+      ],
+      "lastUpdated": "2026-11-23T10:07:23.029Z"
+    },
+    "subject": {
+      "reference": "Patient/98381d87-84c4-428e-bc5b-2f914502c042"
+    },
+    "encounter": {
+      "reference": "Encounter/da73b395-52c8-4495-af5f-72163d407587"
+    },
+    "effectiveDateTime": "2025-06-12T10:00:00+05:30",
+    "status": "completed",
+    "summary": "Home glucose log was available for review. The synthetic patient reported better adherence.",
+    "id": "7bcaf242-9948-407a-8d65-d6eb2307a656"
+  }
+]

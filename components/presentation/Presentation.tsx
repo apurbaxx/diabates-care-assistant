@@ -1,12 +1,13 @@
 "use client";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, MonitorPlay, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Sun, X } from "lucide-react";
 import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { slides } from "./deck";
 import { Scene } from "./Scene";
 import "./presentation.css";
 import "./scenes.css";
+import "./stage.css";
 
 const Launch = createContext<(() => void) | null>(null);
 export function PresentationButton() {
@@ -16,11 +17,13 @@ export function PresentationButton() {
 
 type Position = {index:number; live:boolean};
 const sessionKey = "cliniq:presentation:v1";
+const themeKey = "cliniq:presentation:theme";
 export function Presentation({children}:{children:React.ReactNode}) {
   const router = useRouter();
   const [position,setPosition] = useState<Position|null>(null);
   const [ready,setReady] = useState(false);
   const [alt,setAlt] = useState(false);
+  const [dark,setDark] = useState(false);
   const [ehrVisited,setEhrVisited] = useState(false);
   const deck = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLElement|null>(null);
@@ -30,6 +33,7 @@ export function Presentation({children}:{children:React.ReactNode}) {
   const preview = !!position && !live && slide.kind === "workspace";
   const active = !!position;
   useEffect(()=>{
+    try { setDark(localStorage.getItem(themeKey) === "dark"); } catch {}
     try {
       const saved = JSON.parse(sessionStorage.getItem(sessionKey) || "null");
       if(saved && Number.isInteger(saved.index)){
@@ -42,6 +46,10 @@ export function Presentation({children}:{children:React.ReactNode}) {
     } catch {}
     setReady(true);
   },[]);
+  function toggleTheme() {
+    setDark(!dark);
+    try { localStorage.setItem(themeKey, dark ? "light" : "dark"); } catch {}
+  }
   useEffect(()=>{
     if(!ready)return;
     const saved = position && {...position,kind:slides[position.index].kind};
@@ -92,8 +100,12 @@ export function Presentation({children}:{children:React.ReactNode}) {
   });
   return <Launch.Provider value={active?null:()=>{trigger.current=document.activeElement as HTMLElement;setPosition({index:0,live:false});}}>
     <div className={'keynote-app '+(active?'staged ':'')+(preview?'preview':'')} inert={active && !live && !preview}>{children}</div>
-    {active && !live && <dialog ref={deck} tabIndex={-1} aria-label="ClinIQ presentation" className={'keynote '+(preview?'split':'')} onCancel={e=>{e.preventDefault();exit();}}>
-      <header><ClinIQLogo/><span>Health-a-thon 2026</span><button onClick={exit} aria-label="Exit presentation"><X size={18}/></button></header>
+    {active && !live && <dialog ref={deck} tabIndex={-1} aria-label="ClinIQ presentation" data-theme={dark ? "dark" : "light"} className={'keynote '+(preview?'split':'')} onCancel={e=>{e.preventDefault();exit();}}>
+      <header><ClinIQLogo className="deck-logo"/><span>Health-a-thon 2026</span>
+        <button className="theme-toggle" onClick={toggleTheme} aria-label="Dark presentation theme" aria-pressed={dark} title={dark ? "Switch to light theme" : "Switch to dark theme"}>
+          {dark ? <Sun size={18}/> : <Moon size={18}/>}
+        </button>
+        <button onClick={exit} aria-label="Exit presentation"><X size={18}/></button></header>
       <Scene key={index} slide={slide} enter={enter} animateEhr={!ehrVisited}/>
       <footer><span>{String(index+1).padStart(2,"0")} / {slides.length}</span><progress value={index+1} max={slides.length}/><label>Key: <select aria-label="Demo shortcut modifiers" value={alt?"alt":"ctrl"} onChange={e=>setAlt(e.target.value==="alt")}><option value="ctrl">Ctrl ⇧ ←/→</option><option value="alt">Alt ⇧ ←/→</option></select></label><button disabled={!index} aria-label="Previous slide" onClick={()=>go(index-1)}><ChevronLeft/></button><button aria-label={index===slides.length-1?"Finish presentation":"Advance presentation"} onClick={next}><ChevronRight/></button></footer>
     </dialog>}

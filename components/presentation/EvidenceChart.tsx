@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const colors = ["#245adb", "#348977", "#8196ad"];
+const colors = ["var(--chart-records, #245adb)", "var(--chart-care, #348977)", "var(--chart-other, #8196ad)"];
 export function EvidenceChart({rows}:{rows:[string,string][]}) {
   const [selected, select] = useState(0);
   const [label, share] = rows[selected];

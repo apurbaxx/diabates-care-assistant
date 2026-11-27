@@ -53,9 +53,7 @@ function CoverArt(){
   return <div className="cover-art" aria-hidden="true"><div className="folio back">CARE CONTINUITY</div><div className="folio middle">Visit history</div><div className="folio front"><BookOpen/><span>Patient record</span><svg viewBox="0 0 300 80"><path pathLength="1" d="M0 48H65L75 40 84 51 97 13 108 68 119 43 130 48H164Q176 48 184 37Q194 24 204 41Q211 48 225 48H300"/></svg></div></div>;
 }
 function Evaluation({rows}:{rows:[string,string][]}){
-  const [feedback,setFeedback]=useState(false);
-  const values=feedback?[["88%","Found responses clinically useful"],["75%","Felt guideline lookup saved time"],["87%","Would use it in routine practice"]]:rows;
-  return <section className="evaluation"><div className="engine-choices">{["Retrieval performance","Physician feedback"].map((t,i)=><button key={t} onClick={()=>setFeedback(!!i)} aria-pressed={feedback===!!i}>{t}</button>)}</div><div className="entries" aria-live="polite">{values.map(([v,l])=><div key={l}><strong><Count value={v}/></strong><span>{l}</span></div>)}</div></section>;
+  return <section className="evaluation"><h2>Retrieval performance</h2><div className="entries">{rows.map(([v,l])=><div key={l}><strong><Count value={v}/></strong><span>{l}</span></div>)}</div></section>;
 }
 export function Scene({slide,enter,animateEhr}:{slide:Slide;enter:()=>void;animateEhr:boolean}){
   const {kind,rows=[]}=slide;
@@ -69,7 +67,10 @@ export function Scene({slide,enter,animateEhr}:{slide:Slide;enter:()=>void;anima
     {kind==="chart" && <><EvidenceChart rows={rows}/><p className="encounter"><b>16 min 14 sec</b> mean EHR time per outpatient encounter in a separate US study of approximately 155,000 physicians. <a href="https://pubmed.ncbi.nlm.nih.gov/31931523/" target="_blank" rel="noreferrer">Overhage & McCallie, 2020 ↗</a></p></>}
     {kind==="architecture" && <EngineDiagram/>}
     {kind==="metrics" && <Evaluation rows={rows}/>}
-    {!["architecture","chart","metrics"].includes(kind) && rows.length>0 && <div className="entries">{rows.map(([label,detail],i)=>{
+    {kind==="cost" && <dl className="pilot-costs">{rows.map(([label,amount],i)=>
+      <div key={label}><dt>{label}</dt><dd>{amount} <span>{i < 2 ? "/month" : "one-time"}</span></dd></div>
+    )}</dl>}
+    {!["architecture","chart","metrics","cost"].includes(kind) && rows.length>0 && <div className="entries">{rows.map(([label,detail],i)=>{
       const Icon=journeyIcons[i];
       return <div key={label} style={{"--order":i} as CSSProperties}>{kind==="journey" && <Icon aria-hidden="true"/>}<strong>{label}</strong><span>{detail}</span></div>;
     })}</div>}
