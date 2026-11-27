@@ -55,7 +55,19 @@ export function TrendChart({
   const allValues = [...values, ...referenceMarks.map((r) => r.value)];
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
-  const pad = (max - min) * 0.15 || max * 0.1 || 1;
+  const pad = (max - min) * 0.15 || Math.abs(max) * 0.1 || 1;
+  const lower = min >= 0 ? Math.max(0, min - pad) : min - pad;
+  const upper = max + pad;
+
+  // Use round grid values and limit precision for very narrow ranges.
+  const targetStep = Math.max((upper - lower) / 4, 10 ** -(meta.decimals + 2));
+  const stepMagnitude = Math.floor(Math.log10(targetStep));
+  const tickUnit = 10 ** stepMagnitude;
+  const tickStep = Math.ceil(targetStep / tickUnit) * tickUnit;
+  const firstTick = Math.floor(lower / tickStep);
+  const lastTick = Math.ceil(upper / tickStep);
+  const ticks = Array.from({ length: lastTick - firstTick + 1 }, (_, i) => (firstTick + i) * tickStep);
+  const tickDecimals = Math.max(0, -stepMagnitude);
 
   return (
     <div
@@ -74,7 +86,9 @@ export function TrendChart({
           />
           <YAxis
             width={58}
-            domain={[min - pad, max + pad]}
+            domain={[ticks[0], ticks[ticks.length - 1]]}
+            ticks={ticks}
+            tickFormatter={(value: number) => value.toFixed(tickDecimals)}
             tick={{ fontSize: 14, fill: "var(--color-muted)" }}
             axisLine={false}
             tickLine={false}
