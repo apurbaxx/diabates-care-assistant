@@ -1,6 +1,6 @@
 import type { AssistantAnswer, AssistantFact, EvidenceRef, ParameterSeriesPoint } from "@/lib/types";
 import { ANALYTES, VITAL_META, parameterMeta } from "@/lib/clinical/units";
-import { activeMedicationsAt } from "@/lib/clinical/context";
+import { activeMedicationsAt, medicationHistoryAt } from "@/lib/clinical/context";
 import { ageAt } from "@/lib/clinical/derive";
 import { createRecordContext, pointEvidence, searchRecordDocuments, visitSource, type RecordContext } from "./record";
 import { requestsInterpretation, planQuestion, queryPlanSchema, type QueryPlan } from "./plan";
@@ -66,26 +66,29 @@ export function executeRecordQuery(ctx: RecordContext, plan: QueryPlan, question
   };
   const showMedications = () => {
     const visits=ctx.visits.filter(v=>v.date<=plan.to && !v.sourceReportId && !v.id.includes("-v-report-"));
-    const latest=visits.at(-1);
+    const latest=visits.findLast(v=>!v.sourceSummaryId);
     const matches=(name:string, medClass?:string)=>(!(plan.medicationClasses?.length) || !!medClass && plan.medicationClasses.includes(medClass)) && (!(plan.medications?.length || plan.medication) || (plan.medications ?? [plan.medication!]).some(term=>name.toLowerCase().includes(term.toLowerCase())));
     const active=activeMedicationsAt(visits,plan.to);
+    const historyById=new Map(medicationHistoryAt(visits,plan.to).map(med=>[med.id,med]));
     const statusFilter=plan.medicationStatus ?? "current";
     // Include the baseline snapshot for an interval, plus all snapshots within it.
-    const baseline=plan.from ? visits.filter(v=>v.date<plan.from!).at(-1) : undefined;
-    const scoped=visits.filter(v=>inPeriod(v.date) || v===baseline);
+    const baseline=plan.from ? visits.findLast(v=>!v.sourceSummaryId && v.date<plan.from!) : undefined;
+    const scoped=visits.filter(v=>inPeriod(v.date) || v===baseline || v.sourceSummaryId);
     const entries=new Map<string,{med:typeof active[number]; sources:EvidenceRef[]; first:string; last:string}>();
     for (const v of scoped) for (const med of v.medications.filter(m=>matches(m.name,m.medClass) && m.startDate<=plan.to && (!plan.from || !m.endDate || m.endDate>=plan.from))) {
-      const key=JSON.stringify([med.name.toLowerCase(),med.dose,med.unit,med.frequency,med.startDate]);
+      const key=JSON.stringify([med.prescription ? med.id : med.name.toLowerCase(),med.dose,med.unit,med.frequency,med.startDate]);
       const entry=entries.get(key);
       if(entry) {entry.sources.push({...visitSource(v,"Recorded prescription"),kind:"medication"});entry.last=v.date;entry.med={...med,endDate:med.endDate ?? entry.med.endDate};}
       else entries.set(key,{med,sources:[{...visitSource(v,"Recorded prescription"),kind:"medication"}],first:v.date,last:v.date});
     }
     const count=findings.length;
     for(const {med,sources,first,last} of entries.values()) {
-      const stop=visits.flatMap(v=>v.medicationChanges.filter(c=>c.type==="stop" && c.medicationName.toLowerCase()===med.name.toLowerCase()).map(c=>({visit:v,change:c}))).filter(e=>e.visit.date>=med.startDate).at(-1);
-      const current=active.some(m=>m.name.toLowerCase()===med.name.toLowerCase() && m.dose===med.dose && m.unit===med.unit && m.frequency===med.frequency && m.startDate===med.startDate);
-      const episode=visits.flatMap(v=>v.medications.filter(m=>m.name.toLowerCase()===med.name.toLowerCase() && m.startDate===med.startDate && m.endDate).map(m=>({med:m,visit:v}))).at(-1);
-      const endDate=med.endDate ?? episode?.med.endDate;
+      const resolvedEnd=med.prescription ? historyById.get(med.id)?.endDate : undefined;
+      const stop=visits.flatMap(v=>v.medicationChanges.filter(c=>c.type==="stop" && c.medicationName.toLowerCase()===med.name.toLowerCase()).map(c=>({visit:v,change:c}))).filter(e=>e.visit.date>=med.startDate && (!med.prescription || e.visit.date===resolvedEnd)).at(-1);
+      const sameMedication=(m:typeof med)=>med.prescription ? m.id===med.id : m.name.toLowerCase()===med.name.toLowerCase();
+      const current=active.some(m=>sameMedication(m) && m.dose===med.dose && m.unit===med.unit && m.frequency===med.frequency && m.startDate===med.startDate);
+      const episode=visits.flatMap(v=>v.medications.filter(m=>sameMedication(m) && m.startDate===med.startDate && m.endDate).map(m=>({med:m,visit:v}))).at(-1);
+      const endDate=resolvedEnd ?? med.endDate ?? episode?.med.endDate;
       const documentedEnd=endDate ?? stop?.visit.date;
       if(plan.from && documentedEnd && documentedEnd<plan.from) continue;
       const stopped=!!endDate && endDate<=plan.to || !!stop && (!current || stop.visit.date>=last);
@@ -93,10 +96,11 @@ export function executeRecordQuery(ctx: RecordContext, plan: QueryPlan, question
       const status=stopped ? "discontinued" : current ? "current" : superseded ? "historical" : "unknown";
       if(statusFilter==="current" && status!=="current" || statusFilter==="discontinued" && status!=="discontinued" || statusFilter==="unknown" && status!=="unknown" || statusFilter==="historical" && status==="current") continue;
       // A historical dose must not be presented as a current prescription.
-      const label=status==="current" ? `Listed as active in the clinical record dated ${latest!.date}` : status==="discontinued" ? "Documented as discontinued" : status==="historical" ? "Historical prescription; a different prescription is listed in the latest record" : "Historical prescription; current status unknown";
-      add(`${med.name}: ${med.dose} ${med.unit}, ${med.frequency}; start date ${med.startDate}; end date ${endDate ?? (stop ? stop.visit.date+" (documented stop event)" : "not recorded")}. ${label}. Prescription recorded ${first}${last!==first ? ` through ${last}` : ""}.`, [...sources,...(episode ? [visitSource(episode.visit,"Recorded prescription end date")] : []),...(latest && !sources.some(source=>source.visitId===latest.id) ? [visitSource(latest,"Latest medication snapshot for status comparison")] : []),...(stop ? [visitSource(stop.visit,"Documented medication stop")] : [])]);
+      const label=status==="current" ? (med.prescription ? `Recorded as active on ${plan.to}` : `Listed as active in the clinical record dated ${latest?.date ?? last}`) : status==="discontinued" ? "Documented as discontinued" : status==="historical" ? "Historical prescription; a different prescription is listed in the latest record" : "Historical prescription; current status unknown";
+      const name=med.prescription ? med.prescription.product : med.name;
+      add(`${name}: ${med.dose} ${med.unit}, ${med.frequency}; start date ${med.startDate}; end date ${endDate ?? (stop ? stop.visit.date+" (documented stop event)" : "not recorded")}. ${label}. Prescription recorded ${first}${last!==first ? ` through ${last}` : ""}.`, [...sources,...(episode ? [visitSource(episode.visit,"Recorded prescription end date")] : []),...(latest && !sources.some(source=>source.visitId===latest.id) ? [visitSource(latest,"Latest medication snapshot for status comparison")] : []),...(stop ? [visitSource(stop.visit,"Documented medication stop")] : [])]);
       const fact=findings.at(-1)!;
-      fact.table={columns:["Medication","Dose","Frequency","Start","End","Status","Recorded"],rows:[{cells:[med.name,`${med.dose} ${med.unit}`,med.frequency,med.startDate,endDate ?? (stop ? `${stop.visit.date} (stop event)` : "Not recorded"),label,first===last ? first : `${first} to ${last}`],evidence:fact.evidence}]};
+      fact.table={columns:["Medication","Dose","Frequency","Start","End","Status","Recorded"],rows:[{cells:[name,`${med.dose} ${med.unit}`,med.frequency,med.startDate,endDate ?? (stop ? `${stop.visit.date} (stop event)` : "Not recorded"),label,first===last ? first : `${first} to ${last}`],evidence:fact.evidence}]};
     }
     for(const v of visits.filter(v=>inPeriod(v.date))) for(const c of v.medicationChanges) {
       if(!matches(c.medicationName,c.medClass) || c.type==="unchanged" || statusFilter==="current" || statusFilter==="unknown" || statusFilter==="discontinued" && c.type!=="stop") continue;

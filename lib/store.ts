@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { GeneticHistory, LabReport, Patient } from "@/lib/types";
+import type { GeneticHistory, LabReport, Patient, Visit } from "@/lib/types";
 import { buildSeedCohort, localizeStoredPatientName } from "@/lib/data/seed";
 import {
   generatePatient,
@@ -12,6 +12,7 @@ import {
 import { isCalendarDate } from "./dates";
 import { ANALYTES } from "./clinical/units";
 import { activeMedicationsAt } from "./clinical/context";
+import { toMedication } from "./prescriptions";
 
 import {
   appointmentSchema,
@@ -107,8 +108,8 @@ export const useAppStore = create<AppState>()(
         const s = summarySchema.parse(input);
         const state = get();
 
-        if (!state.patients.some((p) => p.id === s.patientId))
-          throw new Error("Patient not found");
+        const patient = state.patients.find(p => p.id === s.patientId);
+        if (!patient) throw new Error("Patient not found");
 
         const old = state.summaries.find((x) => x.id === s.id);
 
@@ -145,6 +146,25 @@ export const useAppStore = create<AppState>()(
         if (s.status === "Finalized" && !s.complaint.trim())
           throw new Error("Chief complaint is required to finalize");
 
+        const medications = s.status === "Finalized" ? (s.draftPrescriptions ?? []).map(toMedication) : [];
+        let prescriptionVisit: Visit | undefined;
+        if (medications.length) {
+          if (!isCalendarDate(s.date)) throw new Error("Enter a valid visit date");
+          const visitId = `summary:${s.id}`;
+          if (patient.visits.some(v => v.id === visitId || medications.some(m => v.medications.some(existing => existing.id === m.id)))) {
+            throw new Error("A prescription has already been recorded");
+          }
+          prescriptionVisit = {
+            id: visitId, sourceSummaryId: s.id, patientId: patient.id, date: s.date,
+            reason: s.complaint, vitals: {}, labs: {}, clinicianNote: "",
+            medications, medicationChanges: medications.map(m => ({
+              id: m.id, medicationName: m.name, medClass: m.medClass,
+              type: "prescribe", toDose: m.dose, unit: m.unit,
+            })),
+          };
+          delete s.draftPrescriptions;
+        }
+        const visit = prescriptionVisit;
         set({
           summaries: [
             ...state.summaries.filter((x) => x.id !== s.id),
@@ -155,6 +175,8 @@ export const useAppStore = create<AppState>()(
               ? { ...a, status: "Completed" }
               : a
           ),
+          patients: visit ? state.patients.map(p => p.id === patient.id
+            ? { ...p, visits: [...p.visits, visit] } : p) : state.patients,
         });
       },
 

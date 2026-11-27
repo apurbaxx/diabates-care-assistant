@@ -83,13 +83,14 @@ export function timelineObservations(
 
     if (insight.evidence.some(e => e.kind === "medication")) {
       const medicationVisits = linkedVisits.filter(v => !v.sourceReportId && !v.id.includes("-v-report-"));
-      const latest = medicationVisits.at(-1);
+      const snapshots = medicationVisits.filter(visit => !visit.sourceSummaryId);
+      const latest = snapshots.at(-1);
       if (latest) {
         const medications = latest.medications.filter(m => m.startDate <= latest.date && (!m.endDate || m.endDate > latest.date));
         const list = medications.map(m => `${m.name} ${m.dose} ${m.unit} ${m.frequency}`).join("; ") || "No active medications recorded";
         statements.push(`Documented medication list (${latest.date}): ${list}.`);
         // Retain every dated snapshot, even if no explicit dose-change event was recorded.
-        evidence.push(...medicationVisits.map(visit => ({
+        evidence.push(...snapshots.map(visit => ({
           id: `${insight.id}:medications:${visit.id}`, kind: "medication" as const, label: "Documented medication list", date: visit.date, visitId: visit.id,
           value: visit.medications.filter(m => m.startDate <= visit.date && (!m.endDate || m.endDate > visit.date))
             .map(m => `${m.name} ${m.dose} ${m.unit} ${m.frequency}`).join("; ") || "No active medications recorded",

@@ -70,6 +70,7 @@ export type MedicationClass =
   | "basal-insulin"
   | "bolus-insulin"
   | "premix-insulin"
+  | "insulin"
   | "acei"
   | "arb"
   | "statin"
@@ -89,10 +90,19 @@ export interface Medication {
   startDate: string;
   endDate?: string;
   indication?: string;
+  prescription?: {
+    rxCui: string;
+    product: string;
+    strength: string;
+    route: string;
+    durationDays: number;
+    instructions: string;
+  };
 }
 
 export type MedicationChangeType =
   | "start"
+  | "prescribe"
   | "stop"
   | "increase"
   | "decrease"
@@ -121,6 +131,7 @@ export interface Visit {
   medicationChanges: MedicationChange[];
   clinicianNote: string;
   sourceReportId?: string;
+  sourceSummaryId?: string;
 }
 
 export type LabReportSource = "upload" | "manual" | "synthetic";

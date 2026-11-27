@@ -835,6 +835,34 @@ html:has(.patient-record), body:has(.patient-record) { overflow-x:hidden; }
 .visit-summary-dialog .summary-print > .workflow-form { margin-top:18px; }
 .visit-summary-dialog .workflow-form { grid-template-columns:minmax(0,1fr); }
 .visit-summary-dialog .workflow-form label { font-size:14px; }
+.visit-summary-dialog .summary-medications { display:grid; gap:10px; padding:14px; border:1px solid #d3dde7; border-radius:8px; overflow-wrap:anywhere; }
+.visit-summary-dialog .summary-medications > h2 { font-size:18px; }
+.visit-summary-dialog .summary-medications > button { justify-self:start; }
+.summary-medication-details + .workflow-actions { margin-top:8px; }
+.summary-medication-details p { white-space:pre-wrap; }
+.summary-prescription-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr)); gap:10px; }
+.summary-prescription-fields label:last-child { grid-column:1 / -1; }
+.visit-summary-dialog .summary-prescription-fields input[type="date"] { width:100%; }
+.summary-prescription-selection { grid-column:1 / -1; padding:8px 12px; background:#eef4fa; border-radius:5px; }
+.summary-prescription-selection strong { color:#172530; }
+.summary-prescription-selection p { color:#43566b; }
+.summary-medicine-search { position:relative; min-width:0; }
+.summary-medicine-search input { width:100%; min-height:44px; }
+.summary-medicine-results { max-height: min(300px, 42vh); overflow-y:auto; margin-top:4px; background:#fff; border:1px solid #b8c8d9; border-radius:6px; }
+.summary-medicine-results > p { padding:8px 12px; }
+.summary-medicine-group { padding:8px 12px; }
+.summary-medicine-group + .summary-medicine-group { border-top:1px solid #d3dde7; }
+.summary-medicine-group h3 { font-size:16px; font-weight:700; }
+.summary-medicine-variant { padding-block:5px; }
+.summary-medicine-variant p { color:#43566b; }
+.summary-medicine-options { display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:3px; }
+.workflow-dialog.visit-summary-dialog .summary-medicine-options button { min-height:32px; padding:3px 9px; color:#205fa8; }
+.workflow-dialog.visit-summary-dialog .summary-medicine-options button:focus-visible { outline:2px solid #205fa8; outline-offset:1px; }
+.visit-summary-dialog .summary-prescribed-row + .summary-prescribed-row { padding-top:10px; border-top:1px solid #d3dde7; }
+@media print {
+  .summary-print .summary-medication-details { margin-bottom:7pt; }
+  .summary-print .summary-medication-details > p:first-child { break-after:avoid; }
+}
 .visit-summary-dialog .workflow-form :is(input,select,textarea) { min-width:0; border-color:#c3cfdb; font-size:16px; font-weight:400; line-height:1.5; }
 .visit-summary-dialog .workflow-form input[type="date"] { justify-self:start; }
 .visit-summary-dialog .summary-tools { margin-top:20px; padding-top:16px; border-top:1px solid #d3dde7; }

@@ -1,4 +1,4 @@
-import type { Insight } from "@/lib/types";
+import type { Insight, Medication } from "@/lib/types";
 import { makeInsight, type AnalysisContext } from "../context";
 import { guidelines } from "../guidelines";
 import {
@@ -15,8 +15,11 @@ import { yearsBetween } from "../stats";
 export function analyseSafety(ctx: AnalysisContext): Insight[] {
   const out: Insight[] = [];
   const { activeMedications, derived, visits, patient } = ctx;
-  const lastVisit = visits[visits.length - 1];
+  const lastVisit = visits.findLast(visit => !visit.sourceSummaryId) ?? visits.at(-1);
   if (!lastVisit) return out;
+  const medicationSource = (medication: Medication) => medication.prescription
+    ? visits.findLast(visit => visit.medications.some(record => record.id === medication.id) && !visit.sourceReportId) ?? lastVisit
+    : lastVisit;
 
   const egfr = derived.egfr;
   const metformin = activeMedications.find((m) => m.medClass === "biguanide");
@@ -35,7 +38,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
             "A repeat measurement distinguishes a reversible change (e.g. volume depletion, acute illness) from a sustained one.",
           evidence: [
             medicationEvidence(
-              lastVisit,
+              medicationSource(metformin),
               `${metformin.name} active`,
               `${metformin.dose} ${metformin.unit} ${metformin.frequency}`,
               `Started ${metformin.startDate}`,
@@ -52,7 +55,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         }),
       );
     } else if (egfr < 45) {
-      const maxDose = metformin.dose > 1000;
+      const maxDose = metformin.unit.trim().toLowerCase() === "mg" && metformin.dose > 1000;
       out.push(
         makeInsight({
           scope: "safety",
@@ -64,7 +67,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
             "This eGFR band (30–44) is the range ADA's metformin-dosing guidance specifically addresses (see citation), including a more frequent eGFR-monitoring interval than the annual default.",
           evidence: [
             medicationEvidence(
-              lastVisit,
+              medicationSource(metformin),
               `${metformin.name} dose`,
               `${metformin.dose} ${metformin.unit} ${metformin.frequency}`,
             ),
@@ -94,7 +97,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
           title: "No vitamin B12 on record despite long-term metformin",
           statement: `${metformin.name} has been prescribed for ${yearsOn.toFixed(1)} years and no vitamin B12 measurement appears in the record${hasNeuropathy ? ", in a patient with documented neuropathy" : anaemic ? ", in a patient with a low haemoglobin" : ""}.`,
           evidence: [
-            medicationEvidence(lastVisit, `${metformin.name} duration`, `${yearsOn.toFixed(1)} years`, `Started ${metformin.startDate}`),
+            medicationEvidence(medicationSource(metformin), `${metformin.name} duration`, `${yearsOn.toFixed(1)} years`, `Started ${metformin.startDate}`),
             ...(anaemic && lastVisit.labs.hemoglobin !== undefined
               ? [labValueEvidence("hemoglobin", lastVisit.labs.hemoglobin, lastVisit.date, { visitId: lastVisit.id })]
               : []),
@@ -120,7 +123,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         detail:
           "The ADA-cited initiation threshold for this class is ≥20 mL/min/1.73m² (see citation); the glucose-lowering effect of this class is reported to be minimal at this eGFR.",
         evidence: [
-          medicationEvidence(lastVisit, `${sglt2.name} active`, `${sglt2.dose} ${sglt2.unit}`),
+          medicationEvidence(medicationSource(sglt2), `${sglt2.name} active`, `${sglt2.dose} ${sglt2.unit}`),
           labValueEvidence("egfr", egfr, lastVisit.date, { visitId: lastVisit.id }),
         ],
         guidelines: guidelines("ADA_SGLT2_CKD"),
@@ -134,7 +137,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
   // --- Hypoglycaemia risk stacking ----------------------------------------
   const su = activeMedications.find((m) => m.medClass === "sulfonylurea");
   const insulin = activeMedications.find((m) =>
-    ["basal-insulin", "bolus-insulin", "premix-insulin"].includes(m.medClass),
+    ["basal-insulin", "bolus-insulin", "premix-insulin", "insulin"].includes(m.medClass),
   );
   if (su && insulin) {
     out.push(
@@ -147,8 +150,8 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
         detail:
           "ADA's guidance discusses hypoglycaemia risk when a secretagogue and insulin are both active (see citation).",
         evidence: [
-          medicationEvidence(lastVisit, `${su.name}`, `${su.dose} ${su.unit} ${su.frequency}`),
-          medicationEvidence(lastVisit, `${insulin.name}`, `${insulin.dose} ${insulin.unit} ${insulin.frequency}`),
+          medicationEvidence(medicationSource(su), `${su.name}`, `${su.dose} ${su.unit} ${su.frequency}`),
+          medicationEvidence(medicationSource(insulin), `${insulin.name}`, `${insulin.dose} ${insulin.unit} ${insulin.frequency}`),
           ...(lastVisit.labs.hba1c !== undefined
             ? [labValueEvidence("hba1c", lastVisit.labs.hba1c, lastVisit.date, { visitId: lastVisit.id })]
             : []),
@@ -197,7 +200,7 @@ export function analyseSafety(ctx: AnalysisContext): Insight[] {
     classCounts.set(m.medClass, names);
   }
   for (const [cls, names] of classCounts) {
-    if (names.length > 1 && !["bolus-insulin", "other"].includes(cls)) {
+    if (names.length > 1 && !["bolus-insulin", "insulin", "other"].includes(cls)) {
       out.push(
         makeInsight({
           scope: "safety",

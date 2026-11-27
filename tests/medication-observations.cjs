@@ -13,8 +13,12 @@ require.extensions['.ts'] = (m, f) => m._compile(ts.transpileModule(fs.readFileS
 
 const { generatePatient } = require('../lib/data/generator.ts');
 const { runEngine } = require('../lib/clinical/engine.ts');
-const { KIND_LABEL } = require('../lib/clinical/context.ts');
+const { KIND_LABEL, activeMedicationsAt, isActiveMedication, medicationHistoryAt } = require('../lib/clinical/context.ts');
 const { describeChange } = require('../lib/clinical/analyzers/medication.ts');
+const { assistantRequestSchema } = require('../lib/assistant/schema.ts');
+const { createRecordContext, executeRecordQuery } = require('../lib/assistant/tools.ts');
+const { planQuestion } = require('../lib/assistant/plan.ts');
+const { newSummary } = require('../lib/workflow.ts');
 
 const patient = generatePatient({ archetypeId: 'therapeutic-inertia', seed: 1008, years: 2, visitIntervalMonths: 4 });
 const medication = { id: 'med-a', name: 'Recorded medicine A', medClass: 'other', dose: 12, unit: 'mg', frequency: 'daily', startDate: '2026-01-01' };
@@ -85,4 +89,53 @@ const future = structuredClone(patient);
 future.visits.push(visit('future', '2099-01-01', 99));
 assert.deepEqual(observations(future), original);
 assert(!describeChange({ medicationName: 'Recorded medicine', type: 'increase' }).includes('undefined'));
+
+const scheduled = { ...medication, id: 'scheduled', name: 'Prescription B', startDate: '2026-05-15', endDate: '2026-06-03' };
+const prescriptionVisit = { ...visit('summary:1', '2026-05-01'), sourceSummaryId: '1', medications: [scheduled],
+  medicationChanges: [{ id: scheduled.id, medicationName: scheduled.name, medClass: scheduled.medClass, type: 'prescribe' }] };
+const sparseVisit = { ...visit('v3', '2026-05-20'), medications: [] };
+const history = [...patient.visits, prescriptionVisit, sparseVisit];
+assert.deepEqual(activeMedicationsAt(history, '2026-05-10').map(m => m.id), [medication.id]);
+assert.deepEqual(activeMedicationsAt(history, '2026-06-01').map(m => m.id), [scheduled.id]);
+assert.deepEqual(medicationHistoryAt(history, '2026-06-01').filter(m => isActiveMedication(m, '2026-06-01')).map(m => m.id),
+  [medication.id, scheduled.id]);
+const stop = { ...visit('v4', '2026-05-25'), medications: [],
+  medicationChanges: [{ id: 'stop', type: 'stop', medicationName: scheduled.name, medClass: scheduled.medClass }] };
+const stale = { ...visit('v5', '2026-05-26'), medications: [scheduled] };
+assert.equal(medicationHistoryAt([...history, stop, stale], '2026-06-01').find(m => m.id === scheduled.id).endDate, '2026-05-25');
+assert.deepEqual(activeMedicationsAt([...history, stop, stale], '2026-06-01'), []);
+const observationsWithPrescription = observations({ ...patient, visits: history });
+assert.match(observationsWithPrescription[0].statement, /Active medications as of 2026-06-01: Prescription B/);
+assert.match(observationsWithPrescription[0].statement, /Prescription B prescribed/);
+assert(observationsWithPrescription[0].evidence.some(e => e.visitId === prescriptionVisit.id));
+
+const insulinVisit = { ...prescriptionVisit, medications: ['10', '20'].map((strength, index) => ({
+  ...scheduled, id: `insulin-${index}`, name: 'Test insulin', medClass: 'insulin',
+  prescription: { rxCui: strength, product: `Test insulin ${strength} units/mL`, strength: `${strength} units/mL`,
+    route: 'Subcutaneous', durationDays: 19, instructions: '' },
+})) };
+insulinVisit.medicationChanges = insulinVisit.medications.map(m => ({
+  id: m.id, medicationName: m.name, medClass: m.medClass, type: 'prescribe',
+}));
+const parsed = assistantRequestSchema.parse({
+  patient: { ...patient, visits: [...patient.visits, insulinVisit] },
+  asOf: '2026-06-01', question: 'Show current insulins',
+});
+assert.equal(parsed.patient.visits.at(-1).sourceSummaryId, '1');
+const plan = planQuestion(parsed.question, parsed.asOf);
+const answer = executeRecordQuery(createRecordContext(parsed.patient, parsed.asOf), plan, parsed.question);
+assert(answer.patientFindings.some(f => f.text.includes('Test insulin 10 units/mL')));
+assert(answer.patientFindings.some(f => f.text.includes('Test insulin 20 units/mL')));
+
+const measurementVisit = { ...patient.visits[1], clinicianNote: 'Original note remains available.' };
+const dosageVisit = { ...prescriptionVisit, medications: [{
+  ...scheduled, name: 'Test biguanide', medClass: 'biguanide', dose: 2000, unit: 'tablet',
+  prescription: { ...insulinVisit.medications[0].prescription, product: 'Test biguanide tablet' },
+}], labs: {}, vitals: {} };
+const dosagePatient = { ...patient, visits: [measurementVisit, dosageVisit] };
+const safety = runEngine(dosagePatient, '2026-06-01').insights.find(i => i.title.includes('30–44 dosing band'));
+assert(safety.evidence.some(e => e.kind === 'medication' && e.visitId === dosageVisit.id));
+assert(safety.evidence.some(e => e.kind === 'measurement' && e.visitId === measurementVisit.id));
+assert.doesNotMatch(safety.statement, /dose is above/);
+assert.match(newSummary(dosagePatient).history, /Original note remains available/);
 console.log('PASS: neutral medication observations, dynamic values, source evidence, dose history, sparse records and date isolation');

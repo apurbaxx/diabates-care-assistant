@@ -182,6 +182,7 @@ async function run() {
       assert.deepEqual(await paper.locator("section h2").allTextContents(), [
         "Patient information", "Chief complaint / reason for visit", "Relevant patient history",
         "Recorded vitals (source date retained)", "Available laboratory results (source date retained)",
+        "Current Medications", "Newly Prescribed Medications",
         "Clinical observations", "Doctor’s notes", "Follow-up instructions",
       ]);
       for (const value of [patientInfo, visitDate, "2030-02-15", "Unscheduled visit", "Draft"]) {

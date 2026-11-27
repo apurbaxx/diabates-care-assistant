@@ -2,7 +2,7 @@
 import { ClinIQLogo } from "@/components/shared/ClinIQLogo";
 import { GeneticHistoryEditor } from "@/components/patient/GeneticHistoryEditor";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { hasGeneticHistory } from "@/lib/genetic-history";
 import { createPortal } from "react-dom";
 import { useAppStore } from "@/lib/store";
@@ -14,6 +14,10 @@ import {
 } from "@/lib/summary-translation";
 import { TranslationCooldown, translateDevelopmentSummary } from "@/lib/summary-translation-http";
 import { TranslationDiagnosticError } from "@/lib/summary-translation-diagnostics";
+import { isActiveMedication, medicationHistoryAt } from "@/lib/clinical/context";
+import { sortedVisits } from "@/lib/clinical/derive";
+import { prescriptionKey, toMedication, type Prescription } from "@/lib/prescriptions";
+import { MedicationDetails, PrescriptionForm } from "./SummaryMedications";
 
 function Modal({title,close,children,className=""}:{title:string;close:()=>void;children:React.ReactNode;className?:string}) {
   const ref=useRef<HTMLDialogElement>(null);
@@ -39,13 +43,28 @@ export function AppointmentEditor({patientId,appointment,close}:{patientId?:stri
 }
 export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;patient:Patient;close:()=>void}) {
   const [s,setS]=useState(summary);const [error,setError]=useState("");const save=useAppStore(s=>s.saveSummary);
+  const [prescriptionEntry, setPrescriptionEntry] = useState<Prescription | "new">();
+  const visits = sortedVisits(patient).filter(visit => visit.patientId === s.patientId);
+  const newMedications = s.status === "Finalized"
+    ? visits.find(visit => visit.sourceSummaryId === s.id)?.medications ?? []
+    : (s.draftPrescriptions ?? []).map(toMedication);
+  const today = localDate();
+  const currentMedications = medicationHistoryAt(visits, today)
+    .filter(m => isActiveMedication(m, today) && !newMedications.some(p => p.id === m.id));
+  const medicationInstructions = [...currentMedications, ...newMedications]
+    .filter(m => !!m.prescription?.instructions);
   const [editingGenetics, setEditingGenetics] = useState(false);
   const [historySaved, setHistorySaved] = useState(false);
   const geneticsButton = useRef<HTMLButtonElement>(null);
   const geneticsPanelId = useId();
   const all=useAppStore(s=>s.summaries);const [previous,setPrevious]=useState("");
   const appointmentDate = useAppStore(state => state.appointments.find(a => a.id === s.appointmentId)?.date);
-  const [language, setLanguage] = useState<SummaryLanguage>(summary.translation?.selected ?? "en");
+  const [language, setLanguage] = useState<SummaryLanguage>(() => {
+    const selected = summary.translation?.selected ?? "en";
+    if (selected !== "en" && summary.status === "Draft" && process.env.NODE_ENV === "development" &&
+      medicationInstructions.some(m => summary.prescriptionTranslations?.[selected]?.[m.id] === undefined)) return "en";
+    return selected;
+  });
   const [translationError, setTranslationError] = useState("");
   const [translationDiagnostic, setTranslationDiagnostic] = useState("");
   const [retryUntil, setRetryUntil] = useState(0);
@@ -65,11 +84,13 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
   const versions = s.translation?.versions ?? {};
   const localPreview = process.env.NODE_ENV === "development";
   const availableLanguages = Object.entries(versions)
-    .filter(([, version]) => translationKeys.every(key => version?.[key] !== undefined))
+    .filter(([code, version]) => translationKeys.every(key => version?.[key] !== undefined) &&
+      (readonly || !localPreview || medicationInstructions.every(m =>
+        s.prescriptionTranslations?.[code as Exclude<SummaryLanguage, "en">]?.[m.id] !== undefined)))
     .map(([code]) => code);
   const translated = language !== "en" && availableLanguages.includes(language) ? versions[language] : undefined;
   const waitingForTranslation = language !== "en" && !translated;
-  const canSelectLanguage = (!readonly && localPreview) || availableLanguages.length > 0;
+  const canSelectLanguage = language !== "en" || (!readonly && localPreview) || availableLanguages.length > 0;
   const linkedAppointment = appointmentDate ?? (s.appointmentId ? "Not recorded" : "Unscheduled visit");
   const recordNote = "Recorded values are historical, not findings from this visit. Blank fields remain unrecorded. No AI clinical decisions are generated.";
 
@@ -80,6 +101,7 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
     setTranslationDiagnostic("");
     if (next === "en" || availableLanguages.includes(next)) return;
     if (readonly || !localPreview) return;
+    const target = next;
 
     const source = originalFields(s);
     const existing = versions[next];
@@ -91,12 +113,17 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
     request.current = controller;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const result = await Promise.race([
-        translateSummary(source, next, controller.signal, translateDevelopmentSummary),
-        new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new TranslationDiagnosticError("UI_TIMEOUT")), 16000);
-        }),
-      ]);
+      async function translateWithTimeout(fields: typeof source) {
+        clearTimeout(timer);
+        return Promise.race([
+          translateSummary(fields, target, controller.signal, translateDevelopmentSummary),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new TranslationDiagnosticError("UI_TIMEOUT")), 16000);
+          }),
+        ]);
+      }
+      const result = translationKeys.every(key => existing?.[key] !== undefined)
+        ? existing : await translateWithTimeout(source);
       if (controller.signal.aborted) return;
       setS(current => ({
         ...current,
@@ -105,6 +132,19 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
           versions: { ...current.translation?.versions, [next]: { ...result, ...existing } },
         },
       }));
+      for (const medication of medicationInstructions) {
+        if (s.prescriptionTranslations?.[next]?.[medication.id] !== undefined) continue;
+        const instructions = medication.prescription?.instructions ?? "";
+        const result = await translateWithTimeout({ complaint: "", observations: "", notes: "", instructions });
+        if (controller.signal.aborted) return;
+        setS(current => ({
+          ...current,
+          prescriptionTranslations: {
+            ...current.prescriptionTranslations,
+            [next]: { ...current.prescriptionTranslations?.[next], [medication.id]: result.instructions },
+          },
+        }));
+      }
     } catch (failure) {
       if (!controller.signal.aborted) {
         if (localPreview) {
@@ -152,7 +192,7 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
   }
 
   function commit(status:VisitSummary["status"]) {
-    if (waitingForTranslation) return;
+    if (waitingForTranslation || prescriptionEntry || patient.id !== s.patientId) return;
     try {
       const translation = s.translation && { ...s.translation, selected: language };
       save({ ...s, translation, status, updatedAt: new Date().toISOString() });
@@ -161,16 +201,63 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
       setError((e as Error).message);
     }
   }
+  function updatePrescription(id: string, prescription?: Prescription) {
+    const existing = s.draftPrescriptions ?? [];
+    if (prescription && existing.some(p => p.id !== id && prescriptionKey(p) === prescriptionKey(prescription))) {
+      throw new Error("This prescription is already listed.");
+    }
+    request.current?.abort();
+    setLanguage("en");
+    setS(current => ({
+      ...current,
+      draftPrescriptions: prescription
+        ? existing.some(p => p.id === id) ? existing.map(p => p.id === id ? prescription : p) : [...existing, prescription]
+        : existing.filter(p => p.id !== id),
+      prescriptionTranslations: Object.fromEntries(Object.entries(current.prescriptionTranslations ?? {}).map(([code, translations]) =>
+        [code, Object.fromEntries(Object.entries(translations ?? {}).filter(([key]) => key !== id))])),
+    }));
+    setPrescriptionEntry(undefined);
+  }
+
+  function medicationSections(print = false) {
+    function details(m: (typeof currentMedications)[number]) {
+      return <MedicationDetails medication={m} language={language}
+        instruction={translated && language !== "en" ? s.prescriptionTranslations?.[language]?.[m.id] : undefined}/>;
+    }
+    return <>
+      <section className="summary-medications">
+        <h2>Current Medications</h2>
+        {currentMedications.length ? currentMedications.map(m => <div key={m.id}>{details(m)}</div>)
+          : <p>No current medications recorded.</p>}
+      </section>
+      <section className="summary-medications">
+        <h2>{print || readonly ? "Newly Prescribed Medications" : "Prescribe New Medication"}</h2>
+        {newMedications.length ? newMedications.map(m => <div className="summary-prescribed-row" key={m.id}>
+          {details(m)}
+          {!print && !readonly && !prescriptionEntry && language === "en" && <div className="workflow-actions">
+            <button type="button" onClick={() => setPrescriptionEntry(s.draftPrescriptions?.find(p => p.id === m.id))}>Edit {m.name}</button>
+            <button type="button" onClick={() => updatePrescription(m.id)}>Remove {m.name}</button>
+          </div>}
+        </div>) : <p>No new medications prescribed.</p>}
+        {!print && !readonly && language === "en" && (prescriptionEntry
+          ? <PrescriptionForm initial={prescriptionEntry === "new" ? undefined : prescriptionEntry}
+            confirm={p => updatePrescription(p.id, p)} cancel={() => setPrescriptionEntry(undefined)}/>
+          : <button type="button" onClick={() => setPrescriptionEntry("new")}>{newMedications.length ? "Add another medication" : "Add medication"}</button>)}
+      </section>
+    </>;
+  }
+
+  if (patient.id !== s.patientId) return null;
   return <><Modal title={`${s.status} visit summary`} close={close} className="summary-dialog visit-summary-dialog"><div className="summary-editor-body"><div className="summary-editor-fields"><h1><ClinIQLogo size={27} /> · Visit summary</h1><p>Synthetic patient record · {s.date}</p><p>Linked appointment: {linkedAppointment}</p>
     {translated && <p>Translation · {summaryLanguages[language]}</p>}
     <div className="workflow-form"><label>Visit date<input disabled={readonly} type="date" max={localDate()} value={s.date} onChange={e=>setS({...s,date:e.target.value})}/></label>
     {(Object.keys(fields) as (keyof typeof fields)[]).map(key => {
       const translatedField = language !== "en" && isTranslationKey(key);
       const value = fieldValue(key);
-      return <label key={key}>{fields[key]}{readonly || translatedField
+      return <Fragment key={key}><label>{fields[key]}{readonly || translatedField
         ? <div className="summary-text" lang={translatedField && isTranslationKey(key) && translated?.[key] !== undefined ? language : undefined}>{value || "Not recorded"}</div>
         : <textarea rows={key === "history" || key === "labs" ? 4 : 2} value={value} onChange={e => editField(key, e.target.value)}/>}
-      </label>;
+      </label>{key === "labs" && medicationSections()}</Fragment>;
     })}
     <label>Next follow-up date<input type="date" disabled={readonly} min={s.date} value={s.followUp} onChange={e=>setS({...s,followUp:e.target.value})}/></label></div></div>
     <div className="summary-tools workflow-form"><p>{recordNote}</p>
@@ -203,16 +290,16 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
     </div></div>
     <footer className="summary-actions">
       <div className="summary-output-actions">
-      {canSelectLanguage && <label>Language<select aria-label="Language" value={language} onChange={e => void selectLanguage(e.target.value as SummaryLanguage)}>
+      {canSelectLanguage && <label>Language<select aria-label="Language" disabled={!!prescriptionEntry} value={language} onChange={e => void selectLanguage(e.target.value as SummaryLanguage)}>
         {Object.entries(summaryLanguages).filter(([code]) => code === "en" || (localPreview && !readonly) || availableLanguages.includes(code)).map(([code, name]) =>
           <option key={code} value={code}>{name}</option>
         )}
       </select></label>}
-      <button type="button" disabled={waitingForTranslation} onClick={()=>window.print()}>Print summary</button>
+      <button type="button" disabled={waitingForTranslation || !!prescriptionEntry} onClick={()=>window.print()}>Print summary</button>
       </div>
       {!readonly && <div className="summary-save-actions">
-        <button type="button" disabled={waitingForTranslation} onClick={()=>commit("Draft")}>Save draft</button>
-        <button type="button" disabled={waitingForTranslation} className="primary" onClick={()=>commit("Finalized")}>Finalize summary</button>
+        <button type="button" disabled={waitingForTranslation || !!prescriptionEntry} onClick={()=>commit("Draft")}>Save draft</button>
+        <button type="button" disabled={waitingForTranslation || !!prescriptionEntry} className="primary" onClick={()=>commit("Finalized")}>Finalize summary</button>
       </div>}
     </footer>
   </Modal>
@@ -230,10 +317,10 @@ export function SummaryEditor({summary,patient,close}:{summary:VisitSummary;pati
         </dl>
       </header>
       {(Object.keys(fields) as (keyof typeof fields)[]).map(key =>
-        <section key={key}>
+        <Fragment key={key}><section>
           <h2>{fields[key]}</h2>
           <p lang={translated && isTranslationKey(key) ? language : undefined}>{fieldValue(key) || "Not recorded"}</p>
-        </section>
+        </section>{key === "labs" && medicationSections(true)}</Fragment>
       )}
       <p className="summary-print-note">{recordNote}</p>
     </article>,
@@ -277,6 +364,6 @@ export function PatientSummaries({patient}:{patient:Patient}) {
         {saved.map(s => <div className="workflow-row" key={s.id}><span>{s.date} · {s.complaint || "Untitled visit"}<small>{s.status}</small></span><button onClick={() => setSummary(s)}>{s.status === "Draft" ? "Edit draft" : "View summary"}</button></div>)}
       </details>}
     </div>
-    {summary && <SummaryEditor summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
+    {summary?.patientId === patient.id && <SummaryEditor key={summary.id} summary={summary} patient={patient} close={() => setSummary(undefined)}/>}
   </div>;
 }

@@ -68,7 +68,7 @@ export function planQuestion(question: string, asOf: string, previous?: QueryPla
   const knownDrugs = [...new Set([...medicationNames, ...nameTerms, "metformin", "glipizide", "glimepiride", "losartan", "atorvastatin", "sitagliptin", "dapagliflozin", "semaglutide", "finerenone", "ramipril", "insulin", "insulin glargine", "insulin aspart"])];
   const drugs = knownDrugs.filter(name=>contains(q,name)).filter(name=>!knownDrugs.some(other=>other.length>name.length && contains(q,other) && contains(normalizeQuery(other),name)));
   const classAliases: [RegExp,string[]][] = [
-    [/\bstatins?\b/,["statin"]], [/\binsulins?\b/,["basal-insulin","bolus-insulin","premix-insulin"]],
+    [/\bstatins?\b/,["statin"]], [/\binsulins?\b/,["basal-insulin","bolus-insulin","premix-insulin","insulin"]],
     [/\bsglt2(?: inhibitors?)?\b/,["sglt2-inhibitor"]], [/\bglp1|glp 1\b/,["glp1-receptor-agonist"]],
     [/\bantihypertensives?\b/,["acei","arb","diuretic","ccb","beta-blocker","ns-mra"]],
     [/\bace inhibitors?\b/,["acei"]], [/\barbs?\b/,["arb"]], [/\bdiuretics?\b/,["diuretic"]],

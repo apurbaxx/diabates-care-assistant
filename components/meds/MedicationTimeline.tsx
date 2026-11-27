@@ -7,7 +7,8 @@ import { Pill } from "lucide-react";
 import type { Insight, Medication, MedicationChange, Visit } from "@/lib/types";
 import { TrendChart } from "@/components/trends/TrendChart";
 import { InsightList } from "@/components/shared/InsightCard";
-import { buildSeries } from "@/lib/clinical/context";
+import { buildSeries, isActiveMedication, medicationHistoryAt } from "@/lib/clinical/context";
+import { localDate } from "@/lib/dates";
 import { paramStyle } from "@/lib/clinical/paramStyle";
 import { describeChange } from "@/lib/clinical/analyzers/medication";
 import { cn } from "@/lib/cn";
@@ -39,8 +40,13 @@ function MedCard({ entry, current }: { entry: MedEntry; current: boolean }) {
       </div>
       <p className="mt-1 text-xs text-muted">
         Started {med.startDate}
-        {med.endDate ? ` · Stopped ${med.endDate}` : " · Ongoing"}
+        {med.prescription && med.endDate && med.endDate > localDate() ? ` · Planned end ${med.endDate}`
+          : med.endDate ? ` · Stopped ${med.endDate}` : " · Ongoing"}
       </p>
+      {med.prescription && <p className="mt-1 text-xs text-ink-secondary">
+        {med.prescription.strength} · {med.prescription.route} · {med.prescription.durationDays} days
+        {med.prescription.instructions && <span className="block whitespace-pre-wrap">{med.prescription.instructions}</span>}
+      </p>}
       {changes.length > 0 && (
         <ul className="mt-2 space-y-1 border-t border-gridline pt-2">
           {changes.map((c, i) => (
@@ -63,17 +69,19 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
   const series = useMemo(() => buildSeries(sorted), [sorted]);
   const medInsights = insights.filter((i) => i.scope === "medication");
 
-  const { currentMeds, pastMeds, rangeLabel } = useMemo(() => {
-    if (sorted.length === 0) return { currentMeds: [] as MedEntry[], pastMeds: [] as MedEntry[], rangeLabel: "" };
+  const { currentMeds, upcomingMeds, pastMeds, rangeLabel } = useMemo(() => {
+    if (sorted.length === 0) return { currentMeds: [] as MedEntry[], upcomingMeds: [] as MedEntry[], pastMeds: [] as MedEntry[], rangeLabel: "" };
 
-    const allMeds = new Map<string, Medication>();
-    for (const v of sorted) for (const m of v.medications) allMeds.set(m.id, m);
+    const today = localDate();
+    const all = medicationHistoryAt(sorted, today);
+    const allMeds = new Map(all.map(medication => [medication.id, medication]));
 
     const changesByMed = new Map<string, { date: string; change: MedicationChange }[]>();
     for (const v of sorted) {
       for (const c of v.medicationChanges) {
         if (c.type === "unchanged") continue;
-        const med = [...allMeds.values()].find((m) => m.name === c.medicationName);
+        const med = allMeds.get(c.id) ?? v.medications.find(m => m.name === c.medicationName && m.medClass === c.medClass)
+          ?? all.find(m => m.name === c.medicationName && m.medClass === c.medClass);
         if (!med) continue;
         const arr = changesByMed.get(med.id) ?? [];
         arr.push({ date: v.date, change: { ...c, reason: medicationReason(c.reason, sorted, v.date) } });
@@ -81,12 +89,12 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
       }
     }
 
-    const all = [...allMeds.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
     const toEntry = (med: Medication): MedEntry => ({ med, changes: changesByMed.get(med.id) ?? [] });
 
     return {
-      currentMeds: all.filter((m) => !m.endDate).map(toEntry),
-      pastMeds: all.filter((m) => !!m.endDate).map(toEntry),
+      currentMeds: all.filter(m => isActiveMedication(m, today)).map(toEntry),
+      upcomingMeds: all.filter(m => !!m.prescription && m.startDate > today).map(toEntry),
+      pastMeds: all.filter(m => !!m.endDate && m.endDate <= today).map(toEntry),
       rangeLabel: `${sorted[0].date} → ${sorted[sorted.length - 1].date}`,
     };
   }, [sorted]);
@@ -119,6 +127,15 @@ export function MedicationTimeline({ visits, insights }: { visits: Visit[]; insi
           </div>
         )}
       </div>
+
+      {upcomingMeds.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h3 className="mb-1 text-sm font-semibold text-ink">Upcoming medications</h3>
+          <div className="mt-2 space-y-2">
+            {upcomingMeds.map(entry => <MedCard key={entry.med.id} entry={entry} current={false} />)}
+          </div>
+        </div>
+      )}
 
       {pastMeds.length > 0 && (
         <div className="rounded-xl border border-border bg-surface p-4">

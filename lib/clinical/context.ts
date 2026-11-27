@@ -73,11 +73,51 @@ export function buildTrends(
 }
 
 export function activeMedicationsAt(visits: Visit[], referenceDate?: string): Medication[] {
-  // Report-only visits cannot establish or change a medication regimen.
-  const clinical = visits.filter(v => !v.sourceReportId && !v.id.includes("-v-report-"));
-  const last = clinical[clinical.length - 1];
   const asOf = referenceDate ?? visits[visits.length - 1]?.date;
-  return last ? last.medications.filter(m => (!asOf || m.startDate <= asOf) && (!m.endDate || !!asOf && m.endDate > asOf)) : [];
+  if (!asOf) return [];
+  const eligible = visits.filter(v => v.date <= asOf && !v.sourceReportId && !v.id.includes("-v-report-"));
+  const regimen = eligible.findLast(v => !v.sourceSummaryId);
+  const ids = new Set(regimen?.medications.map(m => m.id));
+  for (const visit of eligible) {
+    if (visit.sourceSummaryId) for (const medication of visit.medications) ids.add(medication.id);
+  }
+  const recorded = new Map(medicationHistoryAt(eligible, asOf).map(m => [m.id, m]));
+  return [...ids].flatMap(id => {
+    const medication = recorded.get(id);
+    return medication && isActiveMedication(medication, asOf) ? [medication] : [];
+  });
+}
+
+/** Medication section history, including records omitted from a later visit. */
+export function medicationHistoryAt(visits: Visit[], asOf: string): Medication[] {
+  const records = new Map<string, Medication>();
+  const stoppedOn = new Map<string, string>();
+  for (const visit of visits) {
+    if (visit.date > asOf || visit.sourceReportId || visit.id.includes("-v-report-")) continue;
+    for (const medication of visit.medications) {
+      const stop = stoppedOn.get(medication.id);
+      records.set(medication.id, stop && (!medication.endDate || stop < medication.endDate)
+        ? { ...medication, endDate: stop } : medication);
+    }
+    for (const change of visit.medicationChanges) {
+      if (change.type !== "stop") continue;
+      const identified = records.get(change.id);
+      const sameName = [...records.values()].filter(medication => medication.name === change.medicationName &&
+        medication.medClass === change.medClass && medication.startDate <= visit.date);
+      if (!identified && sameName.some(medication => medication.endDate === visit.date)) continue;
+      const active = sameName.filter(medication => !medication.endDate || medication.endDate > visit.date);
+      const stopped = identified ?? (active.length === 1 ? active[0] : undefined);
+      if (stopped && (!stopped.endDate || stopped.endDate > visit.date)) {
+        stoppedOn.set(stopped.id, visit.date);
+        records.set(stopped.id, { ...stopped, endDate: visit.date });
+      }
+    }
+  }
+  return [...records.values()].sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
+export function isActiveMedication(medication: Medication, asOf: string): boolean {
+  return medication.startDate <= asOf && (!medication.endDate || medication.endDate > asOf);
 }
 
 // ---------------------------------------------------------------------------

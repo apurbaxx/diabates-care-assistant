@@ -19,14 +19,17 @@ export function analyseMedication(ctx: AnalysisContext): Insight[] {
   const changes = visits.flatMap(visit => visit.medicationChanges
     .filter(change => change.type !== "unchanged")
     .map(change => ({ visit, change })));
-  // A report-only visit cannot establish a medication list.
-  const medicationVisit = [...visits].reverse().find(visit => !visit.sourceReportId && !visit.id.includes("-v-report-"));
+  const medicationVisit = visits.findLast(visit =>
+    !visit.sourceSummaryId && !visit.sourceReportId && !visit.id.includes("-v-report-"));
+  const hasPrescriptions = visits.some(visit => !!visit.sourceSummaryId);
+  const listLabel = hasPrescriptions ? `Active medications as of ${ctx.today}`
+    : medicationVisit ? `Medication list (${medicationVisit.date})` : "";
   const latestChange = changes.at(-1);
-  const medicationSummary = activeMedications.length && medicationVisit
-    ? `Medication list (${medicationVisit.date}): ${activeMedications.map(m => `${m.name} ${m.dose} ${m.unit} ${m.frequency}`).join("; ")}.`
-    : medicationVisit
-      ? `Medication list (${medicationVisit.date}): no active medications recorded.`
-      : "No medication list documented in the available visits.";
+  const describeList = (medications: typeof activeMedications) =>
+    medications.map(m => `${m.name} ${m.dose} ${m.unit} ${m.frequency}`).join("; ");
+  const medicationSummary = listLabel
+    ? `${listLabel}: ${describeList(activeMedications) || "no active medications recorded"}.`
+    : "No medication list documented in the available visits.";
   const changeSummary = latestChange
     ? `Latest documented medication changes (${latestChange.visit.date}): ${changes.filter(c => c.visit.id === latestChange.visit.id).map(c => describeChange(c.change)).join("; ")}.`
     : "No medication changes documented in the available visits.";
@@ -34,8 +37,8 @@ export function analyseMedication(ctx: AnalysisContext): Insight[] {
   const detail = "Medication history and measurements are separate record summaries. Timing alone does not establish causation or treatment effectiveness."
     + (history ? `\n\nDocumented medication history:\n${history}` : "");
   const medicationSources = (): EvidenceRef[] => [
-    ...(medicationVisit ? [medicationEvidence(medicationVisit, "Documented medication list", activeMedications
-      .map(m => `${m.name} ${m.dose} ${m.unit} ${m.frequency}`).join("; ") || "No active medications recorded")] : []),
+    ...(medicationVisit ? [medicationEvidence(medicationVisit, "Documented medication list",
+      describeList(hasPrescriptions ? medicationVisit.medications : activeMedications) || "No medications recorded")] : []),
     ...changes.map(({ visit, change }) => medicationEvidence(visit, describeChange(change))),
   ];
 
@@ -80,6 +83,8 @@ export function analyseMedication(ctx: AnalysisContext): Insight[] {
 export function describeChange(c: MedicationChange): string {
   const unit = c.unit ?? "";
   switch (c.type) {
+    case "prescribe":
+      return `${c.medicationName} prescribed${c.toDose !== undefined ? ` at ${c.toDose} ${unit}`.trimEnd() : ""}`;
     case "start":
       return `${c.medicationName} started${c.toDose !== undefined ? ` at ${c.toDose} ${unit}`.trimEnd() : ""}`;
     case "stop":
