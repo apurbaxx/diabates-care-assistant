@@ -68,7 +68,7 @@ export function Scene({slide,enter,animateEhr}:{slide:Slide;enter:()=>void;anima
     {kind==="architecture" && <EngineDiagram/>}
     {kind==="metrics" && <Evaluation rows={rows}/>}
     {kind==="cost" && <dl className="pilot-costs">{rows.map(([label,amount],i)=>
-      <div key={label}><dt>{label}</dt><dd>{amount} <span>{i < 2 ? "/month" : "one-time"}</span></dd></div>
+      <div key={label}><dt>{label}</dt><dd>{amount} <span>{i < 2 ? "/month" : "(one-time)"}</span></dd></div>
     )}</dl>}
     {!["architecture","chart","metrics","cost"].includes(kind) && rows.length>0 && <div className="entries">{rows.map(([label,detail],i)=>{
       const Icon=journeyIcons[i];

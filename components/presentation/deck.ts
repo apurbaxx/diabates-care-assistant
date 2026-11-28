@@ -24,8 +24,8 @@ export const slides: Slide[] = [
   {
     kind: "cost", section: "Deployment plan", title: "A single-site hospital pilot in India.",
     copy: "ClinIQ runs open-source ML models with zero recurring LLM API costs. The pilot budget covers hosting and the work of connecting to the hospital’s EHR.",
-    rows: [["Prototype hosting","₹1,500–3,000"],["Single-site pilot infrastructure","₹5,000–10,000"],["Integration and setup","₹25,000–50,000"]],
-    note: "Indicative estimates depend on hospital requirements, usage and EHR compatibility."
+    rows: [["Prototype hosting","₹3,000–5,000"],["Single-site pilot infrastructure","₹15,000–25,000"],["EHR integration and setup","₹75,000–1,50,000"]],
+    note: "Indicative estimates for a limited hospital pilot. Actual costs depend on infrastructure, security requirements and EHR compatibility."
   },
   { kind: "team", section: "Team ClinIQ   /   VIT Bhopal", title: "Thank you.", copy: "Health-a-thon 2026 Grand Finale · IIT Bombay · KJI1F1", rows: [["Apurba Das","Technical lead & full-stack development"],["Prakriti Wadhwani","AI retrieval & UI/UX"],["Neeraj Yadav","UI/UX development & testing"],["Aparna Baghel","UI/UX development"],["Dr Meeta Amit Burande","Clinical advisor · Diabetology & diabetes management"]], note: "apurbadas.work@gmail.com" }
 ];

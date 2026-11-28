@@ -173,6 +173,15 @@
 @keyframes grow{from{transform:scaleX(0)}}
 @keyframes trace{from{stroke-dashoffset:1}}
 @media(max-width:800px){.keynote .scene{display:block}.cover-art{height:24vh;width:65%;margin:1em auto}.entries,.engine ol{flex-wrap:wrap}.entries>div,.engine li{min-width:42%}.time-study,.scene :is(.engine,.evaluation,.entries){margin-top:1em}.split header>span:nth-child(2),.split footer label{display:none}.split footer{gap:0}.split .scene h1{font-size:32px}}
+@media (720px <= width <= 800px) and (orientation:landscape) {
+  .keynote .scene-cost {
+    display:grid;
+    grid-template-columns:.96fr 1.04fr;
+    column-gap:3vw;
+    padding-block:1.5vh;
+  }
+  .scene-cost .pilot-costs {margin-top:0}
+}
 @media(prefers-reduced-motion:reduce){.keynote *,.keynote *::before,.keynote-app.staged{animation:none!important;transition:none!important}}
 
 
